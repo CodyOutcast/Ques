@@ -2,15 +2,15 @@ import os
 import json
 import requests
 import logging
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, HTTPException  # Changed from FastAPI to APIRouter
 from pydantic import BaseModel
 from dotenv import load_dotenv
 from utils.db_utils import store_user_tags, insert_to_vector_db
 
 load_dotenv()
-app = FastAPI()
+router = APIRouter()  # This is now a router, not a full app
 DEEPSEEK_API_KEY = os.getenv('DEEPSEEK_API_KEY')
-DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"  # Adjust if needed
+DEEPSEEK_URL = "https://api.deepseek.com/v1/chat/completions"
 
 class ProfileInput(BaseModel):
     user_id: int
@@ -20,6 +20,7 @@ def extract_tags_from_paragraph(paragraph):
     prompt = (
         f"Extract 1-5 feature tags from this paragraph: '{paragraph}'. "
         "Tags should be short phrases like 'investor', 'like coding', 'good at video editing'. "
+        "Focus on the general transferable skills or project types or user types rather than specific technologies."
         "Include user types if mentioned. Output only a JSON list of tags, e.g., [\"tag1\", \"tag2\"]."
     )
     payload = {
@@ -41,7 +42,7 @@ def extract_tags_from_paragraph(paragraph):
         logging.error(f"DeepSeek error: {e}")
         raise HTTPException(status_code=500, detail="Failed to extract tags")
 
-@app.post("/profile/summarize")
+@router.post("/summarize")  # Changed from @app.post to @router.post (no prefix needed here)
 async def summarize_profile(input: ProfileInput):
     tags = extract_tags_from_paragraph(input.paragraph)
     tags_json = json.dumps(tags)  # For PG storage
