@@ -7,39 +7,38 @@ from tcvectordb.model.document import Document
 from tcvectordb.model.enum import EmbeddingModel, IndexType, MetricType, FieldType
 from tcvectordb.model.collection import Embedding
 from tcvectordb.model.index import Index, FilterIndex, VectorIndex, HNSWParams
-import psycopg2
 from sentence_transformers import SentenceTransformer  # For local query embedding
+from sqlalchemy import text  # For raw SQL execution
 
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 
-# PostgreSQL Connection
-def get_pg_connection():
-    return psycopg2.connect(
-        host=os.getenv('PG_HOST'),
-        port=os.getenv('PG_PORT'),
-        user=os.getenv('PG_USER'),
-        password=os.getenv('PG_PASSWORD'),
-        database=os.getenv('PG_DATABASE')
-    )
+# Assuming models/base.py exists with the following:
+# from sqlalchemy import create_engine
+# from sqlalchemy.ext.declarative import declarative_base
+# from sqlalchemy.orm import sessionmaker
+# DATABASE_URL = os.getenv('DATABASE_URL') or f"postgresql://{os.getenv('PG_USER')}:{os.getenv('PG_PASSWORD')}@{os.getenv('PG_HOST')}:{os.getenv('PG_PORT')}/{os.getenv('PG_DATABASE')}"
+# engine = create_engine(DATABASE_URL)
+# SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# Base = declarative_base()
+from models.base import SessionLocal
 
 # Store tags and vector_id in PG
 def store_user_tags(user_id, tags, vector_id):
-    conn = get_pg_connection()
-    cur = conn.cursor()
+    db = SessionLocal()
     try:
-        cur.execute(
-            "UPDATE users SET feature_tags = %s, vector_id = %s WHERE id = %s",
-            (json.dumps(tags), vector_id, user_id)
+        db.execute(
+            text("UPDATE users SET feature_tags = :tags, vector_id = :vector_id WHERE id = :user_id"),
+            {"tags": json.dumps(tags), "vector_id": vector_id, "user_id": user_id}
         )
-        conn.commit()
+        db.commit()
         logging.info(f"Stored tags for user {user_id}")
     except Exception as e:
+        db.rollback()
         logging.error(f"PG error: {e}")
         raise
     finally:
-        cur.close()
-        conn.close()
+        db.close()
 
 # Tencent VectorDB Client
 def get_vdb_client():
@@ -142,14 +141,13 @@ def query_vector_db(query_vector, top_k=20):
 def get_user_infos(user_ids):
     if not user_ids:
         return []
-    conn = get_pg_connection()
-    cur = conn.cursor()
+    db = SessionLocal()
     try:
-        cur.execute(
-            "SELECT id, name, bio, feature_tags FROM users WHERE id::text IN %s",
-            (tuple(user_ids),)  # ids are str, cast id to text
+        result = db.execute(
+            text("SELECT id, name, bio, feature_tags FROM users WHERE id::text IN :user_ids"),
+            {"user_ids": tuple(user_ids)}  # ids are str, cast id to text
         )
-        rows = cur.fetchall()
+        rows = result.fetchall()
         users = [
             {"id": row[0], "name": row[1], "bio": row[2], "feature_tags": json.loads(row[3])}
             for row in rows
@@ -160,8 +158,7 @@ def get_user_infos(user_ids):
         logging.error(f"PG fetch error: {e}")
         raise
     finally:
-        cur.close()
-        conn.close()
+        db.close()
 
 # Helper: Embed text locally to match server model
 def embed_text(text):
