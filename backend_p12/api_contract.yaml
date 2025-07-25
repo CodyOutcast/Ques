@@ -1,0 +1,172 @@
+openapi: 3.0.0
+info:
+  title: Project Startup API
+  description: API for a mobile app to discover, like, and search projects/partners.
+  version: 1.0.0
+  contact:
+    name: Cody x Rhys x William x Jimmy
+    email: zhuokaichen@link.cuhk.edu.cn
+
+servers:
+  - url: https://your-cvm-backend-url.com/api/v1
+    description: Production server (Tencent Cloud CVM)
+
+components:
+  securitySchemes:
+    bearerAuth:  # Add if using JWT or API keys for auth
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    UserProfile:
+      type: object
+      properties:
+        userId:
+          type: string
+          example: "user123"
+        featureTags:
+          type: array
+          items:
+            type: string
+          example: ["Investor", "Like coding", "Interested in AI"]
+        vector:
+          type: array
+          items:
+            type: number
+          description: User's vector embedding
+          example: [0.1, 0.2, 0.3]
+
+    Card:
+      type: object
+      properties:
+        cardId:
+          type: string
+          example: "card456"
+        type:
+          type: string
+          enum: ["project_highlight", "project_image", "person_image"]
+        contentUrl:
+          type: string
+          example: "https://example.com/image.jpg"
+        featureTags:
+          type: array
+          items:
+            type: string
+          example: ["Investor", "AI Startup"]
+        projectId:
+          type: string
+          example: "proj789"
+
+    SwipeAction:
+      type: object
+      properties:
+        cardId:
+          type: string
+        action:
+          type: string
+          enum: ["like", "dislike"]
+
+    SearchQuery:
+      type: object
+      properties:
+        description:
+          type: string
+          example: "Looking for AI projects to invest in"
+
+    SearchResult:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Card'
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: integer
+          example: 400
+        message:
+          type: string
+          example: "Invalid request"
+
+paths:
+  /recommendations:
+    get:
+      summary: Get 20 recommended cards for the user (Home page)
+      description: Fetches personalized cards based on user vector, excluding previously seen ones.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of recommended cards
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Card'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /swipe:
+    post:
+      summary: Log a swipe action (like/dislike) on a card
+      description: Stores the action in DB to avoid showing the card again.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwipeAction'
+      responses:
+        '200':
+          description: Action logged successfully
+        '400':
+          description: Invalid action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /search:
+    post:
+      summary: AI-powered search for cards (AI Search page)
+      description: Extracts tags from query, vectorizes, queries vector DB, filters history, returns results.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchQuery'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResult'
+        '400':
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+# Add more paths as needed for other pages/features
