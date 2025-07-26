@@ -1,12 +1,12 @@
 from logging.config import fileConfig
 from models.likes import Like
-from models.chats import Chat, Message
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
 from alembic import context
 from models.base import Base  # Import the Base class
 from models.users import User  # Import your User model (this ensures Alembic sees it)
+from models.auth import UserAuth, VerificationCode, RefreshToken  # Import auth models
 import os
 from dotenv import load_dotenv
 load_dotenv()
@@ -30,7 +30,9 @@ target_metadata = Base.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
-DATABASE_URL = f"postgresql://{os.getenv('PG_USER')}:{os.getenv('PG_PASSWORD')}@{os.getenv('PG_HOST')}:{os.getenv('PG_PORT')}/{os.getenv('PG_DATABASE')}"
+
+# Set database URL from environment variables (using psycopg3 driver)
+DATABASE_URL = f"postgresql+psycopg://{os.getenv('PG_USER')}:{os.getenv('PG_PASSWORD')}@{os.getenv('PG_HOST')}:{os.getenv('PG_PORT')}/{os.getenv('PG_DATABASE')}"
 config.set_main_option('sqlalchemy.url', DATABASE_URL)
 
 def run_migrations_offline() -> None:

@@ -275,3 +275,57 @@ def store_swipe_action(liker_id, liked_item_id, liked_item_type, is_like):
         raise
     finally:
         db.close()
+
+# Get random unseen users for fallback recommendations
+def get_random_unseen_users(user_id, seen_card_ids, limit):
+    """
+    Get random users that haven't been seen yet by the user.
+    Used as fallback when similarity-based recommendations are exhausted.
+    """
+    db = SessionLocal()
+    try:
+        # Convert seen_card_ids to integers for SQL query
+        seen_ids_int = []
+        for card_id in seen_card_ids:
+            try:
+                seen_ids_int.append(int(card_id))
+            except (ValueError, TypeError):
+                continue
+        
+        # Build exclusion list (user themselves + seen cards)
+        exclude_ids = [user_id] + seen_ids_int
+        
+        # Query for random users not in exclusion list
+        if exclude_ids:
+            result = db.execute(
+                text("""
+                    SELECT id FROM users 
+                    WHERE id NOT IN :exclude_ids 
+                    ORDER BY RANDOM() 
+                    LIMIT :limit
+                """),
+                {"exclude_ids": tuple(exclude_ids), "limit": limit}
+            )
+        else:
+            # If no exclusions, just get random users excluding self
+            result = db.execute(
+                text("""
+                    SELECT id FROM users 
+                    WHERE id != :user_id 
+                    ORDER BY RANDOM() 
+                    LIMIT :limit
+                """),
+                {"user_id": user_id, "limit": limit}
+            )
+        
+        rows = result.fetchall()
+        random_user_ids = [str(row[0]) for row in rows]  # Convert to string to match vector DB format
+        
+        logging.info(f"Found {len(random_user_ids)} random unseen users for user {user_id}")
+        return random_user_ids
+        
+    except Exception as e:
+        logging.error(f"Error getting random unseen users: {e}")
+        return []
+    finally:
+        db.close()
