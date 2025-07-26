@@ -1,13 +1,22 @@
-from sqlalchemy import Column, Integer, String, JSON
+from sqlalchemy import Column, Integer, String, Boolean
 from .base import Base  # This imports the Base from base.py
 from sqlalchemy.orm import relationship
 
 class User(Base):
     __tablename__ = "users"  # The name of the table in the DB
 
-    id = Column(Integer, primary_key=True, index=True)  # Primary key column
+    user_id = Column(Integer, primary_key=True, index=True)  # Primary key column (matches existing schema)
     name = Column(String)  # User's name
     bio = Column(String)  # User's bio
-    feature_tags = Column(JSON)  # JSON field for tags
-    vector_id = Column(String)  # String field for vector ID
-    likes_sent = relationship("Like", back_populates="liker")  # Likes this user has given
+    verification_status = Column(String)  # Verification status (matches existing schema)
+    is_active = Column(Boolean, default=True)  # Active status (corrected to Boolean type)
+    
+    # Property to access user_id as id for compatibility
+    @property
+    def id(self):
+        return self.user_id
+    
+    # Relationships
+    # likes_sent = relationship("Like", back_populates="liker")  # Likes this user has given - commented for now
+    auth_methods = relationship("UserAuth", back_populates="user")  # Authentication methods
+    refresh_tokens = relationship("RefreshToken", back_populates="user")  # Refresh tokens

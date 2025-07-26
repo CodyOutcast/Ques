@@ -1,130 +1,313 @@
 openapi: 3.0.0
 info:
-  title: Project Startup API
-  description: API for a mobile app to discover, like, and search projects/partners.
+  title: Project Tinder Backend API
+  description: |
+    Backend API for a "Tinder for Projects" mobile app to discover, like, and search projects/partners.
+    
+    **Current Implementation Status:**
+    - ✅ Authentication System (Email/Password + JWT)
+    - ✅ Page 1: Recommendations/Swiping
+    - ✅ Page 2: AI-powered Search
+    - ✅ Database & Security
+    - ✅ Ready for Frontend Integration
+    
+    **Authentication Required:** All endpoints except /health require JWT Bearer token.
   version: 1.0.0
   contact:
     name: Cody x Rhys x William x Jimmy
     email: zhuokaichen@link.cuhk.edu.cn
 
 servers:
-  - url: https://your-cvm-backend-url.com/api/v1
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://your-cvm-backend-url.com
     description: Production server (Tencent Cloud CVM)
 
 components:
   securitySchemes:
-    bearerAuth:  # Add if using JWT or API keys for auth
+    bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
+      description: JWT token obtained from /auth/login/email
 
   schemas:
+    # Authentication Schemas
+    EmailRegisterRequest:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          minLength: 8
+          example: "SecurePass123!"
+        name:
+          type: string
+          example: "John Doe"
+        bio:
+          type: string
+          example: "AI enthusiast and startup founder"
+
+    EmailLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        password:
+          type: string
+          example: "SecurePass123!"
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        refresh_token:
+          type: string
+          example: "def502004..."
+        token_type:
+          type: string
+          example: "bearer"
+        expires_in:
+          type: integer
+          example: 1800
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
     UserProfile:
       type: object
       properties:
-        userId:
+        id:
+          type: integer
+          example: 123
+        name:
           type: string
-          example: "user123"
-        featureTags:
+          example: "John Doe"
+        bio:
+          type: string
+          example: "AI enthusiast and startup founder"
+        auth_methods:
           type: array
           items:
             type: string
-          example: ["Investor", "Like coding", "Interested in AI"]
-        vector:
-          type: array
-          items:
-            type: number
-          description: User's vector embedding
-          example: [0.1, 0.2, 0.3]
+          example: ["email"]
 
-    Card:
+    # Recommendations Schemas
+    RecommendationCard:
       type: object
       properties:
-        cardId:
+        id:
+          type: integer
+          example: 456
+        name:
           type: string
-          example: "card456"
-        type:
+          example: "Jane Smith"
+        bio:
           type: string
-          enum: ["project_highlight", "project_image", "person_image"]
-        contentUrl:
-          type: string
-          example: "https://example.com/image.jpg"
-        featureTags:
+          example: "Tech investor looking for AI startups"
+        feature_tags:
           type: array
           items:
             type: string
-          example: ["Investor", "AI Startup"]
-        projectId:
+          example: ["investor", "AI enthusiast", "startup mentor"]
+        similarity_score:
+          type: number
+          format: float
+          example: 0.85
+
+    RecommendationsResponse:
+      type: object
+      properties:
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecommendationCard'
+        total_cards:
+          type: integer
+          example: 20
+        strategy_used:
           type: string
-          example: "proj789"
+          example: "vector_similarity_top_50"
 
     SwipeAction:
       type: object
+      required: [card_id, action]
       properties:
-        cardId:
-          type: string
+        card_id:
+          type: integer
+          example: 456
         action:
           type: string
           enum: ["like", "dislike"]
+          example: "like"
 
-    SearchQuery:
+    # Search Schemas
+    SearchRequest:
       type: object
+      required: [query]
       properties:
-        description:
+        query:
           type: string
-          example: "Looking for AI projects to invest in"
+          example: "Looking for AI developers to invest in"
 
-    SearchResult:
+    SearchResponse:
       type: object
       properties:
+        query:
+          type: string
+          example: "Looking for AI developers to invest in"
+        extracted_tags:
+          type: array
+          items:
+            type: string
+          example: ["AI developer", "investor", "startup"]
         results:
           type: array
           items:
-            $ref: '#/components/schemas/Card'
+            $ref: '#/components/schemas/RecommendationCard'
+        total_results:
+          type: integer
+          example: 15
+        strategy_used:
+          type: string
+          example: "vector_similarity_with_fallback"
 
+    # Common Error Schema
     Error:
       type: object
       properties:
-        code:
-          type: integer
-          example: 400
-        message:
+        detail:
           type: string
-          example: "Invalid request"
+          example: "Invalid credentials"
+        type:
+          type: string
+          example: "authentication_error"
 
 paths:
-  /recommendations:
+  # Health Check
+  /health:
     get:
-      summary: Get 20 recommended cards for the user (Home page)
-      description: Fetches personalized cards based on user vector, excluding previously seen ones.
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: userId
-          in: query
-          required: true
-          schema:
-            type: string
+      summary: Health check endpoint
+      description: Check if the API is running
+      tags: [Health]
       responses:
         '200':
-          description: List of recommended cards
+          description: API is healthy
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Card'
-        '401':
-          description: Unauthorized
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  message:
+                    type: string
+                    example: "Backend is running"
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  environment:
+                    type: string
+                    example: "development"
+
+  # Authentication Endpoints
+  /auth/register/email:
+    post:
+      summary: Register with email and password
+      description: Create a new user account with email verification
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailRegisterRequest'
+      responses:
+        '200':
+          description: Registration successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid input or email already exists
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /swipe:
+  /auth/login/email:
     post:
-      summary: Log a swipe action (like/dislike) on a card
-      description: Stores the action in DB to avoid showing the card again.
+      summary: Login with email and password
+      description: Authenticate and receive JWT tokens
+      tags: [Authentication]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EmailLoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  # Page 1: Recommendations
+  /recommendations/cards:
+    get:
+      summary: Get recommendation cards for swiping (Page 1)
+      description: |
+        Fetches 20 personalized cards based on user profile similarity.
+        Uses progressive search strategy to ensure results are always available.
+        Excludes previously seen cards based on swipe history.
+      tags: [Recommendations]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of recommendation cards
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationsResponse'
+        '401':
+          description: Unauthorized - invalid or missing token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error (expected for empty database)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /recommendations/swipe:
+    post:
+      summary: Record a swipe action (like/dislike)
+      description: |
+        Log a swipe action to prevent showing the same card again.
+        Creates entry in swipe history for filtering future recommendations.
+      tags: [Recommendations]
       security:
         - bearerAuth: []
       requestBody:
@@ -135,18 +318,44 @@ paths:
               $ref: '#/components/schemas/SwipeAction'
       responses:
         '200':
-          description: Action logged successfully
+          description: Swipe action recorded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Swipe recorded"
         '400':
-          description: Invalid action
+          description: Invalid swipe action
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: Unauthorized
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
 
-  /search:
+  # Page 2: AI Search
+  /search/query:
     post:
-      summary: AI-powered search for cards (AI Search page)
-      description: Extracts tags from query, vectorizes, queries vector DB, filters history, returns results.
+      summary: AI-powered search for projects and people (Page 2)
+      description: |
+        Natural language search that:
+        1. Extracts feature tags from the query using DeepSeek AI
+        2. Performs vector similarity search
+        3. Filters out previously seen results
+        4. Returns 20 most relevant matches
+        
+        Uses progressive search strategy with fallback to ensure results.
+      tags: [AI Search]
       security:
         - bearerAuth: []
       requestBody:
@@ -154,19 +363,29 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SearchQuery'
+              $ref: '#/components/schemas/SearchRequest'
       responses:
         '200':
           description: Search results
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SearchResult'
+                $ref: '#/components/schemas/SearchResponse'
         '400':
-          description: Invalid query
+          description: Invalid search query
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
-
-# Add more paths as needed for other pages/features
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error (expected for empty database)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
