@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for Project Tinder Backend API
+Test script for Ques Backend API
 Tests both Page 1 (Recommendations) and Page 2 (AI Search) functionality
 """
 
@@ -128,7 +128,7 @@ def test_api_docs():
         print("❌ ReDoc not accessible")
 
 def main():
-    print("🚀 Project Tinder Backend API Test")
+    print("🚀 Ques Backend API Test")
     print("=" * 40)
     
     # Test basic connectivity
@@ -136,7 +136,11 @@ def main():
         response = requests.get(f"{BASE_URL}/")
         if response.status_code == 200:
             print("✅ Backend server is running")
-            print(f"   Message: {response.json()['message']}")
+            data = response.json()
+            if 'data' in data and 'message' in data['data']:
+                print(f"   Message: {data['data']['message']}")
+            else:
+                print(f"   Response: {data}")
         else:
             print("❌ Backend server not responding properly")
             return

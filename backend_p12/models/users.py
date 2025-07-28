@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, JSON
 from .base import Base  # This imports the Base from base.py
 from sqlalchemy.orm import relationship
 
@@ -10,6 +10,8 @@ class User(Base):
     bio = Column(String)  # User's bio
     verification_status = Column(String)  # Verification status (matches existing schema)
     is_active = Column(Boolean, default=True)  # Active status (corrected to Boolean type)
+    feature_tags = Column(JSON)  # Feature tags for vector matching
+    vector_id = Column(String)  # Vector ID in external vector database
     
     # Property to access user_id as id for compatibility
     @property

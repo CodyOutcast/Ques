@@ -18,10 +18,11 @@ try:
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMER_AVAILABLE = True
     logging.info("SentenceTransformer imported successfully")
-except ImportError as e:
+except (ImportError, ValueError) as e:
     logging.warning(f"SentenceTransformer import failed: {e}")
     logging.warning("Some vector embedding features may not work properly")
     SENTENCE_TRANSFORMER_AVAILABLE = False
+    SentenceTransformer = None  # Define as None to prevent NameError
 
 # Assuming models/base.py exists with the following:
 # from sqlalchemy import create_engine
@@ -38,7 +39,7 @@ def store_user_tags(user_id, tags, vector_id):
     db = SessionLocal()
     try:
         db.execute(
-            text("UPDATE users SET feature_tags = :tags, vector_id = :vector_id WHERE id = :user_id"),
+            text("UPDATE users SET feature_tags = :tags, vector_id = :vector_id WHERE user_id = :user_id"),
             {"tags": json.dumps(tags), "vector_id": vector_id, "user_id": user_id}
         )
         db.commit()
@@ -78,13 +79,17 @@ def get_vdb_collection():
     # Get or create database
     try:
         db = client.database(database_name)
-    except tcvectordb.exceptions.VectorDBException:
-        db = client.create_database(database_name)
+    except (tcvectordb.exceptions.VectorDBException, tcvectordb.exceptions.ServerInternalError) as e:
+        # Handle case where database already exists
+        if "already exist" in str(e):
+            db = client.database(database_name)
+        else:
+            db = client.create_database(database_name)
 
     # Get or create collection
     try:
         coll = db.collection(collection_name)
-    except tcvectordb.exceptions.VectorDBException:
+    except (tcvectordb.exceptions.VectorDBException, tcvectordb.exceptions.ServerInternalError) as e:
         # Configure server-side embedding (auto-embeds text to vector)
         embedding = Embedding(
             vector_field="vector",
@@ -111,7 +116,7 @@ def get_vdb_collection():
             name=collection_name,
             shard=1,  # Basic setup; increase for production
             replicas=0,
-            description="User feature vectors for project matchmaking",
+            description="User feature vectors for Ques recommendations",
             index=index,
             embedding=embedding
         )
@@ -152,7 +157,11 @@ def query_vector_db(query_vector, top_k=20):
         matches = []
         for hits in res:  # res is list of hit lists (for batch, but we have 1)
             for hit in hits:
-                matches.append({"id": hit.id, "score": hit.score})
+                # Handle both object-style and dict-style responses
+                if hasattr(hit, 'id'):
+                    matches.append({"id": hit.id, "score": hit.score})
+                else:
+                    matches.append({"id": hit.get('id'), "score": hit.get('score', 0)})
         matches = sorted(matches, key=lambda x: x['score'], reverse=True)  # Higher cosine is better
         logging.info(f"Found {len(matches)} matches")
         return [m['id'] for m in matches]  # Return list of str user_ids
@@ -166,13 +175,22 @@ def get_user_infos(user_ids):
         return []
     db = SessionLocal()
     try:
+        # Create placeholders for the IN clause
+        placeholders = ','.join([':user_id_' + str(i) for i in range(len(user_ids))])
+        user_id_params = {f'user_id_{i}': int(uid) for i, uid in enumerate(user_ids)}
+        
         result = db.execute(
-            text("SELECT id, name, bio, feature_tags FROM users WHERE id::text IN :user_ids"),
-            {"user_ids": tuple(user_ids)}  # ids are str, cast id to text
+            text(f"SELECT user_id, name, bio, feature_tags FROM users WHERE user_id IN ({placeholders})"),
+            user_id_params
         )
         rows = result.fetchall()
         users = [
-            {"id": row[0], "name": row[1], "bio": row[2], "feature_tags": json.loads(row[3])}
+            {
+                "id": row[0], 
+                "name": row[1], 
+                "bio": row[2], 
+                "feature_tags": row[3] if isinstance(row[3], list) else (json.loads(row[3]) if row[3] else [])
+            }
             for row in rows
         ]
         logging.info(f"Fetched {len(users)} user infos")
@@ -216,7 +234,7 @@ def get_user_vector(user_id):
     db = SessionLocal()
     try:
         result = db.execute(
-            text("SELECT feature_tags FROM users WHERE id = :user_id"),
+            text("SELECT feature_tags FROM users WHERE user_id = :user_id"),
             {"user_id": user_id}
         )
         row = result.fetchone()
@@ -297,21 +315,23 @@ def get_random_unseen_users(user_id, seen_card_ids, limit):
         
         # Query for random users not in exclusion list
         if exclude_ids:
+            # Convert to string for SQL
+            exclude_ids_str = ','.join(map(str, exclude_ids))
             result = db.execute(
-                text("""
-                    SELECT id FROM users 
-                    WHERE id NOT IN :exclude_ids 
+                text(f"""
+                    SELECT user_id FROM users 
+                    WHERE user_id NOT IN ({exclude_ids_str}) 
                     ORDER BY RANDOM() 
                     LIMIT :limit
                 """),
-                {"exclude_ids": tuple(exclude_ids), "limit": limit}
+                {"limit": limit}
             )
         else:
             # If no exclusions, just get random users excluding self
             result = db.execute(
                 text("""
-                    SELECT id FROM users 
-                    WHERE id != :user_id 
+                    SELECT user_id FROM users 
+                    WHERE user_id != :user_id 
                     ORDER BY RANDOM() 
                     LIMIT :limit
                 """),

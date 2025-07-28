@@ -1,5 +1,5 @@
 import os
-import random
+import secrets
 import string
 import requests
 from datetime import datetime, timedelta, timezone
@@ -16,8 +16,9 @@ class AuthService:
     
     @staticmethod
     def generate_verification_code() -> str:
-        """Generate a 6-digit verification code"""
-        return ''.join(random.choices(string.digits, k=6))
+        """Generate a cryptographically secure 6-digit verification code"""
+        # Use secrets module for cryptographically secure random generation
+        return ''.join(secrets.choice(string.digits) for _ in range(6))
     
     @staticmethod
     def create_user_auth(
@@ -105,65 +106,26 @@ class AuthService:
         return True
     
     @staticmethod
-    def send_email_verification(email: str, code: str, purpose: str) -> bool:
+    def send_email_verification(email: str, code: str, purpose: str, language: str = "en") -> bool:
         """Send email verification code using Tencent Cloud SES"""
         try:
             from services.email_service import email_service
-            return email_service.send_verification_email(email, code, purpose)
+            return email_service.send_verification_email(email, code, purpose, language)
         except ImportError:
             # Fallback to console logging if email service not available
-            print(f"📧 Sending email to {email}: Your verification code is {code} for {purpose}")
+            print(f"📧 Sending email to {email}: Your verification code is {code} for {purpose} ({language})")
             return True
     
     @staticmethod
-    def verify_wechat_code(wechat_code: str) -> Optional[Dict[str, Any]]:
-        """Verify WeChat authorization code using WeChat Developer API"""
-        # TODO: Implement WeChat Developer API OAuth integration
-        # This is a placeholder implementation
-        
-        wechat_app_id = os.getenv('WECHAT_APP_ID')
-        wechat_secret = os.getenv('WECHAT_SECRET')
-        
-        if not wechat_app_id or not wechat_secret:
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail="WeChat configuration not found"
-            )
-        
-        # Step 1: Exchange code for access token
-        token_url = "https://api.weixin.qq.com/sns/oauth2/access_token"
-        token_params = {
-            'appid': wechat_app_id,
-            'secret': wechat_secret,
-            'code': wechat_code,
-            'grant_type': 'authorization_code'
-        }
+    def verify_wechat_code(wechat_code: str, platform: str = "web") -> Optional[Dict[str, Any]]:
+        """Verify WeChat authorization code using enhanced WeChat service"""
+        from services.wechat_service import wechat_service
         
         try:
-            token_response = requests.get(token_url, params=token_params)
-            token_data = token_response.json()
-            
-            if 'access_token' not in token_data:
-                return None
-            
-            # Step 2: Get user info
-            userinfo_url = "https://api.weixin.qq.com/sns/userinfo"
-            userinfo_params = {
-                'access_token': token_data['access_token'],
-                'openid': token_data['openid'],
-                'lang': 'en'
-            }
-            
-            userinfo_response = requests.get(userinfo_url, params=userinfo_params)
-            user_data = userinfo_response.json()
-            
-            return {
-                'openid': user_data.get('openid'),
-                'nickname': user_data.get('nickname'),
-                'avatar': user_data.get('headimgurl'),
-                'unionid': user_data.get('unionid')
-            }
-            
+            if platform == "mini_program":
+                return wechat_service.verify_mini_program_code(wechat_code)
+            else:
+                return wechat_service.verify_web_auth_code(wechat_code)
         except Exception as e:
             print(f"WeChat verification error: {e}")
             return None

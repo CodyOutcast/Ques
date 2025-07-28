@@ -137,7 +137,7 @@ def test_database_connection():
 
 def main():
     """Main setup function"""
-    print("🚀 Project Tinder Database Setup")
+    print("🚀 Ques Database Setup")
     print("=" * 40)
     
     # Test connection
