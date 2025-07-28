@@ -24,6 +24,7 @@ from schemas.auth import (
     TokenRefreshResponse
 )
 from services.auth_service import AuthService
+from services.monitoring import security_audit
 
 router = APIRouter()
 
@@ -55,32 +56,71 @@ def legacy_login(user_id: int):
 @router.post("/register/email", response_model=AuthResponse)
 def register_with_email(
     request: EmailRegisterRequest,
+    http_request: Request,
     db: Session = Depends(get_db)
 ):
     """Register a new user with email and password"""
-    user, tokens = AuthService.register_user(
-        db=db,
-        provider_type=AuthProviderType.EMAIL,
-        provider_id=request.email,
-        name=request.name,
-        bio=request.bio,
-        password=request.password,
-        verification_code=None  # For demo, skip verification
-    )
+    client_ip = http_request.client.host if http_request.client else "unknown"
+    user_agent = http_request.headers.get("User-Agent", "unknown")
     
-    return AuthResponse(
-        **tokens,
-        user=create_user_profile(user, db)
-    )
+    try:
+        user, tokens = AuthService.register_user(
+            db=db,
+            provider_type=AuthProviderType.EMAIL,
+            provider_id=request.email,
+            name=request.name,
+            bio=request.bio,
+            password=request.password,
+            verification_code=None  # For demo, skip verification
+        )
+        
+        # Log successful registration
+        security_audit.log_authentication_event(
+            event_type="register",
+            user_id=get_user_id(user),
+            email=request.email,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            success=True
+        )
+        
+        return AuthResponse(
+            **tokens,
+            user=create_user_profile(user, db)
+        )
+    except Exception as e:
+        # Log failed registration
+        security_audit.log_authentication_event(
+            event_type="register",
+            email=request.email,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            success=False,
+            details=str(e)
+        )
+        raise
 
 @router.post("/login/email", response_model=AuthResponse)
 def login_with_email(
     request: EmailLoginRequest,
+    http_request: Request,
     db: Session = Depends(get_db)
 ):
     """Login with email and password"""
+    client_ip = http_request.client.host if http_request.client else "unknown"
+    user_agent = http_request.headers.get("User-Agent", "unknown")
+    
     user = authenticate_user_by_email(db, request.email, request.password)
     if not user:
+        # Log failed login
+        security_audit.log_authentication_event(
+            event_type="login",
+            email=request.email,
+            ip_address=client_ip,
+            user_agent=user_agent,
+            success=False,
+            details="Invalid credentials"
+        )
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password"
@@ -90,6 +130,16 @@ def login_with_email(
     access_token = create_access_token(data={"sub": str(get_user_id(user))})
     refresh_token_str = create_refresh_token()
     store_refresh_token(db, get_user_id(user), refresh_token_str)
+    
+    # Log successful login
+    security_audit.log_authentication_event(
+        event_type="login",
+        user_id=get_user_id(user),
+        email=request.email,
+        ip_address=client_ip,
+        user_agent=user_agent,
+        success=True
+    )
     
     return AuthResponse(
         access_token=access_token,
@@ -118,7 +168,8 @@ def send_verification_code(
     AuthService.send_email_verification(
         request.provider_id, 
         code_value, 
-        request.purpose
+        request.purpose,
+        request.language or "en"
     )
     
     return VerificationCodeResponse(

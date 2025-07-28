@@ -22,6 +22,7 @@ class SendVerificationCodeRequest(BaseModel):
     provider_type: Literal["email"]
     provider_id: str  # email address
     purpose: Literal["registration", "login", "password_reset"]
+    language: Optional[Literal["en", "zh"]] = "en"  # Default to English
 
 class PasswordResetRequest(BaseModel):
     email: EmailStr
