@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { motion, PanInfo, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { Star, ChevronDown, MapPin, Calendar, Users, Target, ExternalLink, ArrowLeft, Check, Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ImageWithFallback } from './components/figma/ImageWithFallback';
@@ -8,6 +8,8 @@ import { Checkbox } from './components/ui/checkbox';
 import { Badge } from './components/ui/badge';
 import svgPaths from "./imports/svg-fko3i96u3r";
 import { t } from './translations';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
 
 interface Collaborator {
   name: string;
@@ -851,21 +853,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
 function MediaViewer({ media, onClose }: { media: string[]; onClose: () => void }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-
-  const nextImage = () => {
-    setCurrentIndex((prev) => (prev + 1) % media.length);
-  };
-
-  const prevImage = () => {
-    setCurrentIndex((prev) => (prev - 1 + media.length) % media.length);
-  };
-
-  const isVideo = (url: string) => {
-    return url.includes('.mp4') || url.includes('.webm') || url.includes('.mov');
-  };
-
-  const currentMedia = media[currentIndex];
-  const isCurrentVideo = isVideo(currentMedia);
+  const panStartX = useRef(0);
 
   return (
     <motion.div
@@ -882,65 +870,62 @@ function MediaViewer({ media, onClose }: { media: string[]; onClose: () => void 
         >
           <X size={24} />
         </button>
-
-        {/* Navigation buttons */}
-        {media.length > 1 && (
-          <>
-            <button
-              onClick={prevImage}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
-            >
-              <ChevronLeft size={24} />
-            </button>
-            <button
-              onClick={nextImage}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
-            >
-              <ChevronRight size={24} />
-            </button>
-          </>
-        )}
-
-        {/* Media content */}
-        <div className="relative max-w-4xl max-h-[80vh] mx-4">
-          {isCurrentVideo ? (
-            <div className="relative">
-              {!isVideoPlaying ? (
-                <div className="relative">
-                  <video
-                    src={currentMedia}
-                    className="max-w-full max-h-[80vh] object-contain rounded-lg"
-                    controls
-                    onPlay={() => setIsVideoPlaying(true)}
-                  />
-                  <button
-                    onClick={() => setIsVideoPlaying(true)}
-                    className="absolute inset-0 flex items-center justify-center bg-black/30 hover:bg-black/50 transition-colors rounded-lg"
-                  >
-                    <Play size={48} className="text-white" />
-                  </button>
-                </div>
-              ) : (
+        {/* Swipeable big image/video */}
+        <motion.div
+          className="relative max-w-4xl max-h-[80vh] mx-4 w-full h-full flex items-center justify-center"
+          whileTap={{ cursor: 'grabbing' }}
+          onPanStart={(_, info) => {
+            panStartX.current = info.point.x;
+          }}
+          onPanEnd={(_, info) => {
+            const delta = info.point.x - panStartX.current;
+            const threshold = 50;
+            if (delta > threshold && currentIndex > 0) {
+              setCurrentIndex(currentIndex - 1);
+            } else if (delta < -threshold && currentIndex < media.length - 1) {
+              setCurrentIndex(currentIndex + 1);
+            }
+          }}
+        >
+          {(() => {
+            const url = media[currentIndex];
+            if (!url) return null;
+            if (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov')) {
+              return (
                 <video
-                  src={currentMedia}
+                  src={url}
                   className="max-w-full max-h-[80vh] object-contain rounded-lg"
                   controls
                   autoPlay
                 />
-              )}
-            </div>
-          ) : (
-            <ImageWithFallback
-              src={currentMedia}
-              alt={`Media ${currentIndex + 1}`}
-              className="max-w-full max-h-[80vh] object-contain rounded-lg"
-            />
-          )}
-        </div>
-
-        {/* Image counter */}
+              );
+            }
+            return (
+              <ImageWithFallback
+                src={url}
+                alt={`Media ${currentIndex + 1}`}
+                className="max-w-full max-h-[80vh] object-contain rounded-lg"
+              />
+            );
+          })()}
+        </motion.div>
+        {/* Slide indicators */}
         {media.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black/50 text-white px-4 py-2 rounded-full text-sm">
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
+            {media.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentIndex(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                  index === currentIndex ? 'bg-white' : 'bg-white/50'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+        {/* Media counter */}
+        {media.length > 1 && (
+          <div className="absolute top-4 right-20 bg-black/50 text-white px-2 py-1 rounded text-xs z-20">
             {currentIndex + 1} / {media.length}
           </div>
         )}
@@ -951,25 +936,7 @@ function MediaViewer({ media, onClose }: { media: string[]; onClose: () => void 
 
 function ProjectDetailView({ project, onClose }: { project: Project; onClose: () => void }) {
   const [showMediaViewer, setShowMediaViewer] = useState(false);
-  const [currentMediaIndex, setCurrentMediaIndex] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
-
-  const handleMediaClick = (index: number) => {
-    setCurrentMediaIndex(index);
-    setShowMediaViewer(true);
-  };
-
-  const handleSlideChange = (direction: 'left' | 'right') => {
-    if (direction === 'left' && currentSlide > 0) {
-      setCurrentSlide(currentSlide - 1);
-    } else if (direction === 'right' && currentSlide < (project.media.length - 1)) {
-      setCurrentSlide(currentSlide + 1);
-    }
-  };
-
-  const isVideo = (url: string) => {
-    return url.includes('.mp4') || url.includes('.webm') || url.includes('.mov');
-  };
 
   return (
     <motion.div
@@ -994,112 +961,80 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
         <div className="flex-1 overflow-y-auto">
           <div className="space-y-6">
             {/* Media Carousel */}
-            {project.media.length > 0 ? (
-              <div className="relative w-full h-80 bg-gray-100">
-                {/* Main media display */}
-                <div className="relative w-full h-full overflow-hidden">
+            <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden">
+              {project.media.length > 0 ? (
+                <Swiper
+                  spaceBetween={0}
+                  slidesPerView={1}
+                  onSlideChange={(swiper: any) => setCurrentSlide(swiper.activeIndex)}
+                  initialSlide={currentSlide}
+                  style={{ width: '100%', height: '100%' }}
+                >
                   {project.media.map((url, index) => (
-                    <motion.div
-                      key={index}
-                      className={`absolute inset-0 ${index === currentSlide ? 'z-10' : 'z-0'}`}
-                      initial={{ opacity: 0 }}
-                      animate={{ 
-                        opacity: index === currentSlide ? 1 : 0,
-                        x: (index - currentSlide) * 100
-                      }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      {isVideo(url) ? (
-                        <div className="relative w-full h-full">
+                    <SwiperSlide key={index}>
+                      <div className="w-full h-full flex items-center justify-center">
+                        {url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') ? (
                           <video
                             src={url}
                             className="w-full h-full object-cover"
                             controls
                             muted
                           />
-                          <div className="absolute top-2 right-2 bg-black/50 text-white px-2 py-1 rounded text-xs">
-                            <Play size={12} className="inline mr-1" />
-                            视频
-                          </div>
-                        </div>
-                      ) : (
-                        <ImageWithFallback
-                          src={url}
-                          alt={`Media ${index + 1}`}
-                          className="w-full h-full object-cover cursor-pointer"
-                          onClick={() => handleMediaClick(index)}
-                        />
-                      )}
-                    </motion.div>
+                        ) : (
+                          <ImageWithFallback
+                            src={url}
+                            alt={`Media ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                    </SwiperSlide>
+                  ))}
+                </Swiper>
+              ) : (
+                /* Fallback for no media */
+                <div className="w-full h-48 rounded-lg overflow-hidden">
+                  {project.cardStyle === 'profile' ? (
+                    <div className="w-full h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 flex items-center justify-center">
+                      <ImageWithFallback
+                        src={project.owner.avatar}
+                        alt={project.owner.name}
+                        className="w-32 h-32 rounded-full object-cover border-4 border-white"
+                      />
+                    </div>
+                  ) : project.background ? (
+                    <ImageWithFallback
+                      src={project.background}
+                      alt={project.title}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center">
+                      <h3 className="text-white text-2xl font-bold">{project.title}</h3>
+                    </div>
+                  )}
+                </div>
+              )}
+              {/* Slide indicators */}
+              {project.media.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
+                  {project.media.map((_, index) => (
+                    <button
+                      key={index}
+                      onClick={() => setCurrentSlide(index)}
+                      className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                        index === currentSlide ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    />
                   ))}
                 </div>
-
-                {/* Navigation arrows */}
-                {project.media.length > 1 && (
-                  <>
-                    <button
-                      onClick={() => handleSlideChange('left')}
-                      disabled={currentSlide === 0}
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/50 rounded-full text-white disabled:opacity-30 transition-all duration-200"
-                    >
-                      <ChevronLeft size={20} />
-                    </button>
-                    <button
-                      onClick={() => handleSlideChange('right')}
-                      disabled={currentSlide === project.media.length - 1}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 z-20 p-2 bg-black/50 rounded-full text-white disabled:opacity-30 transition-all duration-200"
-                    >
-                      <ChevronRight size={20} />
-                    </button>
-                  </>
-                )}
-
-                {/* Slide indicators */}
-                {project.media.length > 1 && (
-                  <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
-                    {project.media.map((_, index) => (
-                      <button
-                        key={index}
-                        onClick={() => setCurrentSlide(index)}
-                        className={`w-2 h-2 rounded-full transition-all duration-200 ${
-                          index === currentSlide ? 'bg-white' : 'bg-white/50'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* Media counter */}
-                {project.media.length > 1 && (
-                  <div className="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-xs z-20">
-                    {currentSlide + 1} / {project.media.length}
-                  </div>
-                )}
-              </div>
-            ) : (
-              /* Fallback for no media */
-              <div className="w-full h-48 rounded-lg overflow-hidden">
-                {project.cardStyle === 'profile' ? (
-                  <div className="w-full h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 flex items-center justify-center">
-                    <ImageWithFallback
-                      src={project.owner.avatar}
-                      alt={project.owner.name}
-                      className="w-32 h-32 rounded-full object-cover border-4 border-white"
-                    />
-                  </div>
-                ) : project.background ? (
-                  <ImageWithFallback
-                    src={project.background}
-                    alt={project.title}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700 flex items-center justify-center">
-                    <h3 className="text-white text-2xl font-bold">{project.title}</h3>
-                  </div>
-                )}
-              </div>
-            )}
+              )}
+              {project.media.length > 1 && (
+                <div className="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-xs z-20">
+                  {currentSlide + 1} / {project.media.length}
+                </div>
+              )}
+            </div>
 
             <div className="p-6 space-y-6">
 
