@@ -7,6 +7,7 @@ import { Slider } from './components/ui/slider';
 import { Checkbox } from './components/ui/checkbox';
 import { Badge } from './components/ui/badge';
 import svgPaths from "./imports/svg-fko3i96u3r";
+import { t } from './translations';
 
 interface Collaborator {
   name: string;
@@ -49,6 +50,26 @@ interface Project {
 }
 
 const positiveEmojis = ['😊', '😍', '🥰', '😘', '🤩', '😎', '🙌', '👍', '💖', '✨', '🎉', '🔥'];
+
+// Random gradient backgrounds
+const gradientBackgrounds = [
+  'bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700',
+  'bg-gradient-to-br from-pink-500 via-red-500 to-purple-600',
+  'bg-gradient-to-br from-green-400 via-blue-500 to-purple-600',
+  'bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500',
+  'bg-gradient-to-br from-teal-400 via-blue-500 to-indigo-600',
+  'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600',
+  'bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600',
+  'bg-gradient-to-br from-rose-400 via-pink-500 to-purple-600',
+  'bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600',
+  'bg-gradient-to-br from-orange-400 via-red-500 to-pink-600',
+  'bg-gradient-to-br from-lime-400 via-green-500 to-emerald-600',
+  'bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-600'
+];
+
+const getRandomGradient = () => {
+  return gradientBackgrounds[Math.floor(Math.random() * gradientBackgrounds.length)];
+};
 
 const projects: Project[] = [
   {
@@ -223,7 +244,7 @@ function PopupButton() {
             lineHeight: '9px'
           }}
         >
-          Ques
+          {t('appName')}
         </p>
       </motion.div>
       <div className="flex flex-col font-normal justify-center relative text-[#0088ff]">
@@ -256,16 +277,16 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent side="right" className="w-80 bg-gradient-to-br from-blue-50 to-blue-100 border-l-2 border-blue-200">
         <SheetHeader className="px-6 pt-6 pb-4">
-          <SheetTitle className="text-blue-900 text-xl">Filters</SheetTitle>
+          <SheetTitle className="text-blue-900 text-xl">{t('filters')}</SheetTitle>
           <SheetDescription className="text-blue-700">
-            Customize your search to find the perfect project collaborators
+            {t('filterDescription')}
           </SheetDescription>
         </SheetHeader>
         <div className="h-[calc(100%-120px)] overflow-y-auto px-6 pb-6">
           <div className="space-y-6">
             {/* Card Types */}
             <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-blue-200">
-              <h3 className="mb-3 text-blue-900 font-semibold">Card Types</h3>
+              <h3 className="mb-3 text-blue-900 font-semibold">{t('cardTypes')}</h3>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Checkbox
@@ -279,7 +300,7 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
                     }
                     className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                   />
-                  <label htmlFor="project" className="text-blue-800 cursor-pointer">Projects</label>
+                  <label htmlFor="project" className="text-blue-800 cursor-pointer">{t('projects')}</label>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Checkbox
@@ -293,14 +314,14 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
                     }
                     className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                   />
-                  <label htmlFor="profile" className="text-blue-800 cursor-pointer">Profiles</label>
+                  <label htmlFor="profile" className="text-blue-800 cursor-pointer">{t('profiles')}</label>
                 </div>
               </div>
             </div>
 
             {/* Project Status */}
             <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-blue-200">
-              <h3 className="mb-3 text-blue-900 font-semibold">Project Status</h3>
+              <h3 className="mb-3 text-blue-900 font-semibold">{t('projectStatus')}</h3>
               <div className="space-y-3">
                 <div className="flex items-center space-x-3">
                   <Checkbox
@@ -314,7 +335,7 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
                     }
                     className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                   />
-                  <label htmlFor="ongoing" className="text-blue-800 cursor-pointer">Ongoing</label>
+                  <label htmlFor="ongoing" className="text-blue-800 cursor-pointer">{t('ongoing')}</label>
                 </div>
                 <div className="flex items-center space-x-3">
                   <Checkbox
@@ -328,14 +349,14 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
                     }
                     className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
                   />
-                  <label htmlFor="finished" className="text-blue-800 cursor-pointer">Finished</label>
+                  <label htmlFor="finished" className="text-blue-800 cursor-pointer">{t('finished')}</label>
                 </div>
               </div>
             </div>
 
             {/* Project Types */}
             <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-blue-200">
-              <h3 className="mb-3 text-blue-900 font-semibold">Project Types</h3>
+              <h3 className="mb-3 text-blue-900 font-semibold">{t('projectTypes')}</h3>
               <div className="flex flex-wrap gap-2">
                 {projectTypes.map((type) => (
                   <Badge
@@ -361,7 +382,7 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
 
             {/* Distance */}
             <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-blue-200">
-              <h3 className="mb-3 text-blue-900 font-semibold">Distance (km)</h3>
+              <h3 className="mb-3 text-blue-900 font-semibold">{t('distance')}</h3>
               <Slider
                 value={filters.distance}
                 onValueChange={(value) => setFilters({ ...filters, distance: value })}
@@ -378,7 +399,7 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
 
             {/* Age */}
             <div className="bg-white/60 backdrop-blur-sm rounded-lg p-4 border border-blue-200">
-              <h3 className="mb-3 text-blue-900 font-semibold">Age Range</h3>
+              <h3 className="mb-3 text-blue-900 font-semibold">{t('ageRange')}</h3>
               <Slider
                 value={filters.age}
                 onValueChange={(value) => setFilters({ ...filters, age: value })}
@@ -388,8 +409,8 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
                 className="w-full [&_[role=slider]]:bg-blue-600 [&_[role=slider]]:border-blue-600"
               />
               <div className="flex justify-between text-sm text-blue-600 mt-2 font-medium">
-                <span>{filters.age[0]} years</span>
-                <span>{filters.age[1]} years</span>
+                <span>{filters.age[0]} {t('years')}</span>
+                <span>{filters.age[1]} {t('years')}</span>
               </div>
             </div>
           </div>
@@ -518,11 +539,11 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                   {project.description}
                 </p>
                 <div className="flex items-center mb-4">
-                  <span className="font-medium">By&nbsp;</span>
+                  <span className="font-medium">{t('cardBy')}&nbsp;</span>
                   <span className="font-semibold">{project.author}</span>
                   <span className="mx-2">·</span>
                   <span className="font-semibold">{project.collaborators}</span>
-                  <span className="font-medium">&nbsp;collaborators</span>
+                  <span className="font-medium">&nbsp;{t('cardCollaborators')}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {project.tags.map((tag, i) => (
@@ -545,6 +566,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
       case 'video':
         return (
           <>
+            <div className={`absolute inset-0 ${getRandomGradient()}`} />
             <video
               className="absolute inset-0 w-full h-full object-cover"
               autoPlay
@@ -571,11 +593,11 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                   {project.description}
                 </p>
                 <div className="flex items-center mb-4">
-                  <span className="font-medium">By&nbsp;</span>
+                  <span className="font-medium">{t('cardBy')}&nbsp;</span>
                   <span className="font-semibold">{project.author}</span>
                   <span className="mx-2">·</span>
                   <span className="font-semibold">{project.collaborators}</span>
-                  <span className="font-medium">&nbsp;collaborators</span>
+                  <span className="font-medium">&nbsp;{t('cardCollaborators')}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {project.tags.map((tag, i) => (
@@ -598,7 +620,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
       case 'text-only':
         return (
           <>
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700" />
+            <div className={`absolute inset-0 ${getRandomGradient()}`} />
             <div className="absolute inset-0 bg-black/20" />
             {/* Geometric pattern background */}
             <div className="absolute inset-0 opacity-10">
@@ -636,11 +658,11 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                   {project.description}
                 </p>
                 <div className="flex items-center justify-center mb-4">
-                  <span className="font-medium">By&nbsp;</span>
+                  <span className="font-medium">{t('cardBy')}&nbsp;</span>
                   <span className="font-semibold">{project.author}</span>
                   <span className="mx-2">·</span>
                   <span className="font-semibold">{project.collaborators}</span>
-                  <span className="font-medium">&nbsp;collaborators</span>
+                  <span className="font-medium">&nbsp;{t('cardCollaborators')}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {project.tags.map((tag, i) => (
@@ -712,7 +734,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                 <div className="text-white/80 text-sm">
                   <span className="font-medium">{project.owner.role}</span>
                   <span className="mx-2">·</span>
-                  <span>{project.owner.distance} km away</span>
+                  <span>{project.owner.distance} {t('kmAway')}</span>
                 </div>
               </motion.div>
             </div>
@@ -831,10 +853,10 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b">
           <button onClick={onClose} className="p-2">
-            <ArrowLeft size={24} />
+            <ArrowLeft size={24} className="text-blue-600" />
           </button>
           <h1 className="font-semibold">
-            {project.type === 'profile' ? 'Profile Details' : 'Project Details'}
+            {project.type === 'profile' ? t('profileDetails') : t('projectDetails')}
           </h1>
           <div className="w-10" />
         </div>
@@ -869,8 +891,8 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-2xl font-bold">{project.title}</h2>
                 {project.type === 'project' && (
-                  <Badge variant={project.status === 'ongoing' ? 'default' : 'secondary'}>
-                    {project.status}
+                  <Badge variant={project.status === 'ongoing' ? 'default' : 'secondary'} className="text-[10px] px-3 py-1 rounded-full whitespace-nowrap">
+                    {project.status === 'ongoing' ? t('ongoing') : t('finished')}
                   </Badge>
                 )}
               </div>
@@ -882,7 +904,7 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
                   </div>
                   <div className="flex items-center gap-1">
                     <Target size={16} />
-                    <span>{project.currentProgress}% complete</span>
+                    <span>{project.currentProgress}% {t('complete')}</span>
                   </div>
                 </div>
               )}
@@ -890,8 +912,8 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
 
             {/* Owner Info */}
             <div className="border rounded-lg p-4">
-              <h3 className="font-semibold mb-3">
-                {project.type === 'profile' ? 'About' : 'Project Owner'}
+              <h3 className="text-xl font-semibold mb-3">
+                {project.type === 'profile' ? t('about') : t('projectOwner')}
               </h3>
               <div className="flex items-start gap-3">
                 <ImageWithFallback
@@ -900,12 +922,18 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
                   className="w-16 h-16 rounded-full object-cover"
                 />
                 <div className="flex-1">
-                  <h4 className="font-medium">{project.owner.name}</h4>
+                  <h4 className="font-medium">{project.owner.name} {project.owner.gender !== 'Non-binary' && (
+                    <span className="ml-0">
+                      <svg className="inline w-4 h-4 -mt-0.5" fill="none" viewBox="0 0 24 24">
+                        <path d={project.owner.gender === 'Male' ? svgPaths.male : svgPaths.female} stroke="black" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </span>
+                  )} <span className="text-black text-s -ml-1 mr-0.5">,</span> {project.owner.age}</h4>
                   <p className="text-sm text-gray-600">{project.owner.role}</p>
                   <div className="flex items-center gap-4 mt-2 text-sm text-gray-500">
                     <div className="flex items-center gap-1">
                       <MapPin size={12} />
-                      <span>{project.owner.distance} km away</span>
+                      <span>{project.owner.distance} {t('kmAway')}</span>
                     </div>
                   </div>
                   <div className="flex flex-wrap gap-1 mt-2">
@@ -922,9 +950,9 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
             {/* Collaborators - only for projects */}
             {project.type === 'project' && project.collaboratorsList.length > 0 && (
               <div className="border rounded-lg p-4">
-                <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
                   <Users size={20} />
-                  Collaborators ({project.collaboratorsList.length})
+                  {t('collaborators')} ({project.collaboratorsList.length})
                 </h3>
                 <div className="space-y-3">
                   {project.collaboratorsList.map((collaborator, index) => (
@@ -946,42 +974,48 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
 
             {/* Description */}
             <div>
-              <h3 className="font-semibold mb-2">Description</h3>
+              <h3 className="text-xl font-semibold mb-2">{t('description')}</h3>
               <p className="text-gray-700 leading-relaxed">{project.detailedDescription}</p>
+            </div>
+
+            {/* Purpose */}
+            <div>
+              <h3 className="text-xl font-semibold mb-2">
+                {project.type === 'profile' ? t('goals') : t('purpose')}
+              </h3>
+              <p className="text-gray-700 leading-relaxed">{project.purpose}</p>
             </div>
 
             {/* Content - only for projects */}
             {project.type === 'project' && (
               <div>
-                <h3 className="font-semibold mb-2">What We're Building</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('whatWeAreBuilding')}</h3>
                 <p className="text-gray-700 leading-relaxed">{project.content}</p>
               </div>
             )}
 
-            {/* Purpose */}
-            <div>
-              <h3 className="font-semibold mb-2">
-                {project.type === 'profile' ? 'Goals' : 'Purpose'}
-              </h3>
-              <p className="text-gray-700 leading-relaxed">{project.purpose}</p>
-            </div>
-
             {/* Looking For */}
             <div>
-              <h3 className="font-semibold mb-2">Looking For</h3>
-              <div className="flex flex-wrap gap-2">
+              <h3 className="text-xl font-semibold mb-2">{t('lookingFor')}</h3>
+              <div className="flex flex-wrap gap-2 mb-3">
                 {project.lookingFor.map((role) => (
                   <Badge key={role} variant="secondary">
                     {role}
                   </Badge>
                 ))}
               </div>
+              <p className="text-gray-700 leading-relaxed">
+                {project.type === 'project' 
+                  ? "We're actively seeking talented individuals to join our team and contribute to this exciting project. If you have the skills and passion we're looking for, we'd love to hear from you!"
+                  : "I'm looking for interesting opportunities and collaborations that align with my skills and interests. Feel free to reach out if you think we could work well together."
+                }
+              </p>
             </div>
 
             {/* Media */}
             {project.media.length > 0 && (
               <div>
-                <h3 className="font-semibold mb-2">Media</h3>
+                <h3 className="text-xl font-semibold mb-2">{t('media')}</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {project.media.map((url, index) => (
                     <ImageWithFallback
@@ -997,7 +1031,7 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
 
             {/* Links */}
             <div>
-              <h3 className="font-semibold mb-2">Links</h3>
+                              <h3 className="text-xl font-semibold mb-2">{t('links')}</h3>
               <div className="space-y-2">
                 {project.links.map((link, index) => (
                   <a
