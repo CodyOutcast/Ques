@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { motion, PanInfo, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { Star, ChevronDown, MapPin, Calendar, Users, Target, ExternalLink, ArrowLeft, Check, Play, X, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ImageWithFallback } from './components/figma/ImageWithFallback';
@@ -850,10 +850,14 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
   );
 }
 
-function MediaViewer({ media, onClose }: { media: string[]; onClose: () => void }) {
-  const [currentIndex, setCurrentIndex] = useState(0);
+function MediaViewer({ media, onClose, initialIndex = 0 }: { media: string[]; onClose: () => void; initialIndex?: number }) {
+  const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [isVideoPlaying, setIsVideoPlaying] = useState(false);
-  const panStartX = useRef(0);
+
+  // 当initialIndex变化时更新currentIndex
+  useEffect(() => {
+    setCurrentIndex(initialIndex);
+  }, [initialIndex]);
 
   return (
     <motion.div
@@ -870,45 +874,35 @@ function MediaViewer({ media, onClose }: { media: string[]; onClose: () => void 
         >
           <X size={24} />
         </button>
-        {/* Swipeable big image/video */}
-        <motion.div
-          className="relative max-w-4xl max-h-[80vh] mx-4 w-full h-full flex items-center justify-center"
-          whileTap={{ cursor: 'grabbing' }}
-          onPanStart={(_, info) => {
-            panStartX.current = info.point.x;
-          }}
-          onPanEnd={(_, info) => {
-            const delta = info.point.x - panStartX.current;
-            const threshold = 50;
-            if (delta > threshold && currentIndex > 0) {
-              setCurrentIndex(currentIndex - 1);
-            } else if (delta < -threshold && currentIndex < media.length - 1) {
-              setCurrentIndex(currentIndex + 1);
-            }
-          }}
+        {/* Swiper大图浏览 */}
+        <Swiper
+          spaceBetween={0}
+          slidesPerView={1}
+          initialSlide={currentIndex}
+          onSlideChange={(swiper: any) => setCurrentIndex(swiper.activeIndex)}
+          style={{ width: '100%', height: '100%' }}
         >
-          {(() => {
-            const url = media[currentIndex];
-            if (!url) return null;
-            if (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov')) {
-              return (
-                <video
-                  src={url}
-                  className="max-w-full max-h-[80vh] object-contain rounded-lg"
-                  controls
-                  autoPlay
-                />
-              );
-            }
-            return (
-              <ImageWithFallback
-                src={url}
-                alt={`Media ${currentIndex + 1}`}
-                className="max-w-full max-h-[80vh] object-contain rounded-lg"
-              />
-            );
-          })()}
-        </motion.div>
+          {media.map((url, index) => (
+            <SwiperSlide key={index}>
+              <div className="w-full h-full flex items-center justify-center">
+                {url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') ? (
+                  <video
+                    src={url}
+                    className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                    controls
+                    autoPlay
+                  />
+                ) : (
+                  <ImageWithFallback
+                    src={url}
+                    alt={`Media ${index + 1}`}
+                    className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                  />
+                )}
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
         {/* Slide indicators */}
         {media.length > 1 && (
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
@@ -923,12 +917,7 @@ function MediaViewer({ media, onClose }: { media: string[]; onClose: () => void 
             ))}
           </div>
         )}
-        {/* Media counter */}
-        {media.length > 1 && (
-          <div className="absolute top-4 right-20 bg-black/50 text-white px-2 py-1 rounded text-xs z-20">
-            {currentIndex + 1} / {media.length}
-          </div>
-        )}
+        {/* Media counter 已去除 */}
       </div>
     </motion.div>
   );
@@ -937,6 +926,27 @@ function MediaViewer({ media, onClose }: { media: string[]; onClose: () => void 
 function ProjectDetailView({ project, onClose }: { project: Project; onClose: () => void }) {
   const [showMediaViewer, setShowMediaViewer] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [showNavButtons, setShowNavButtons] = useState(false);
+  const swiperRef = useRef<any>(null);
+  const buttonTimerRef = useRef<number | null>(null);
+
+  const showButtons = () => {
+    setShowNavButtons(true);
+    // 清除之前的定时器
+    if (buttonTimerRef.current) {
+      clearTimeout(buttonTimerRef.current);
+    }
+    // 设置新的定时器
+    buttonTimerRef.current = setTimeout(() => {
+      setShowNavButtons(false);
+    }, 2000);
+  };
+
+  const handleSlideChange = (swiper: any) => {
+    setCurrentSlide(swiper.activeIndex);
+    // 切换图片时重新显示按钮
+    showButtons();
+  };
 
   return (
     <motion.div
@@ -961,18 +971,27 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
         <div className="flex-1 overflow-y-auto">
           <div className="space-y-6">
             {/* Media Carousel */}
-            <div className="relative w-full h-80 bg-gray-100 rounded-lg overflow-hidden">
+            <div 
+              className="relative w-full h-96 bg-gray-100 rounded-lg overflow-hidden"
+              onTouchStart={showButtons}
+              onMouseEnter={() => setShowNavButtons(true)}
+              onMouseLeave={() => setShowNavButtons(false)}
+            >
               {project.media.length > 0 ? (
                 <Swiper
                   spaceBetween={0}
                   slidesPerView={1}
-                  onSlideChange={(swiper: any) => setCurrentSlide(swiper.activeIndex)}
+                  onSlideChange={handleSlideChange}
                   initialSlide={currentSlide}
                   style={{ width: '100%', height: '100%' }}
+                  onSwiper={(swiper: any) => { swiperRef.current = swiper; }}
                 >
                   {project.media.map((url, index) => (
                     <SwiperSlide key={index}>
-                      <div className="w-full h-full flex items-center justify-center">
+                      <div 
+                        className="w-full h-full flex items-center justify-center cursor-pointer"
+                        onClick={() => { setCurrentSlide(index); setShowMediaViewer(true); }}
+                      >
                         {url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') ? (
                           <video
                             src={url}
@@ -1015,6 +1034,29 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
                   )}
                 </div>
               )}
+              {/* 左右切换按钮 - 手指触摸时显示 */}
+              {project.media.length > 1 && (
+                <>
+                  <button
+                    onClick={() => swiperRef.current?.slidePrev()}
+                    disabled={currentSlide === 0}
+                    className={`absolute left-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 text-white rounded-full flex items-center justify-center transition-opacity duration-200 disabled:opacity-0 z-20 ${
+                      showNavButtons ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button
+                    onClick={() => swiperRef.current?.slideNext()}
+                    disabled={currentSlide === project.media.length - 1}
+                    className={`absolute right-2 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-black/30 hover:bg-black/50 text-white rounded-full flex items-center justify-center transition-opacity duration-200 disabled:opacity-0 z-20 ${
+                      showNavButtons ? 'opacity-100' : 'opacity-0'
+                    }`}
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
               {/* Slide indicators */}
               {project.media.length > 1 && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
@@ -1030,7 +1072,9 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
                 </div>
               )}
               {project.media.length > 1 && (
-                <div className="absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-xs z-20">
+                <div className={`absolute top-4 right-4 bg-black/50 text-white px-2 py-1 rounded text-xs z-20 transition-opacity duration-200 ${
+                  showNavButtons ? 'opacity-100' : 'opacity-0'
+                }`}>
                   {currentSlide + 1} / {project.media.length}
                 </div>
               )}
@@ -1189,12 +1233,13 @@ function ProjectDetailView({ project, onClose }: { project: Project; onClose: ()
       </div>
     </div>
 
-      {/* Media Viewer */}
+      {/* 大图浏览弹窗 */}
       <AnimatePresence>
         {showMediaViewer && (
           <MediaViewer
             media={project.media}
             onClose={() => setShowMediaViewer(false)}
+            initialIndex={currentSlide}
           />
         )}
       </AnimatePresence>
