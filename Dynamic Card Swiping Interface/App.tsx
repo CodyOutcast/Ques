@@ -187,39 +187,6 @@ const projects: Project[] = [
     lookingFor: ["Security Auditor", "Community Manager", "Business Development"],
     links: ["https://blockchain-project.com", "https://github.com/blockchain-solution"],
     media: []
-  },
-  {
-    id: 4,
-    title: "Emma Davis",
-    author: "Emma Davis",
-    collaborators: 0,
-    description: "Product Manager passionate about creating user-centered digital experiences. Love working on projects that make a real impact on people's lives.",
-    tags: ["Product Management", "Strategy", "User Research"],
-    type: 'profile',
-    cardStyle: 'profile',
-    status: 'ongoing',
-    media: [
-      "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=300&fit=crop",
-      "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=300&fit=crop",
-      "https://videos.pexels.com/video-files/4753989/4753989-hd_1920_1080_24fps.mp4"
-    ],
-    owner: {
-      name: "Emma Davis",
-      age: 27,
-      gender: "Female",
-      role: "Product Manager",
-      distance: 1.2,
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
-      tags: ["Product Management", "Strategy", "User Research", "Agile", "Analytics"]
-    },
-    collaboratorsList: [],
-    detailedDescription: "Experienced Product Manager with 5+ years in tech, specializing in user-centered design and data-driven product decisions.",
-    startTime: "Available Now",
-    currentProgress: 0,
-    content: "Looking to collaborate on meaningful projects that solve real user problems.",
-    purpose: "To help teams build products that users love and that drive business success.",
-    lookingFor: ["Interesting Projects", "Startup Opportunities", "Consulting Work"],
-    links: ["https://linkedin.com/in/emmadavis", "https://emmadavis.dev"]
   }
 ];
 
