@@ -859,44 +859,65 @@ function MediaViewer({ media, onClose, initialIndex = 0 }: { media: string[]; on
     setCurrentIndex(initialIndex);
   }, [initialIndex]);
 
+  const handleBackgroundClick = (e: React.MouseEvent) => {
+    // 检查点击的是否是背景元素
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <motion.div
-      className="fixed inset-0 bg-black/90 z-50 flex items-center justify-center"
+      className="fixed left-0 right-0 top-0 bottom-0 w-[393px] h-[852px] mx-auto my-auto bg-black/90 z-50 flex items-center justify-center"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      onClick={handleBackgroundClick}
     >
-      <div className="relative w-full h-full flex items-center justify-center">
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
-        >
-          <X size={24} />
-        </button>
+      {/* Close button */}
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onClose();
+        }}
+        className="absolute top-12 right-4 z-10 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+      >
+        <X size={24} />
+      </button>
+      <div 
+        className="relative w-full flex flex-col items-center justify-center"
+        onClick={e => e.stopPropagation()}
+      >
         {/* Swiper大图浏览 */}
         <Swiper
           spaceBetween={0}
           slidesPerView={1}
           initialSlide={currentIndex}
           onSlideChange={(swiper: any) => setCurrentIndex(swiper.activeIndex)}
+          className="w-full h-full"
           style={{ width: '100%', height: '100%' }}
+          onClick={(e: any) => e.stopPropagation()}
         >
           {media.map((url, index) => (
-            <SwiperSlide key={index}>
-              <div className="w-full h-full flex items-center justify-center">
+            <SwiperSlide key={index} className="w-full h-full" onClick={(e: any) => e.stopPropagation()}>
+              <div 
+                className="w-full h-full flex items-center justify-center"
+                onClick={(e: any) => e.stopPropagation()}
+              >
                 {url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') ? (
                   <video
                     src={url}
-                    className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                    className="max-w-full max-h-full object-contain rounded-lg"
                     controls
                     autoPlay
+                    onClick={(e: any) => e.stopPropagation()}
                   />
                 ) : (
                   <ImageWithFallback
                     src={url}
                     alt={`Media ${index + 1}`}
-                    className="max-w-full max-h-[80vh] object-contain rounded-lg"
+                    className="max-w-full max-h-full object-contain rounded-lg"
+                    onClick={(e: any) => e.stopPropagation()}
                   />
                 )}
               </div>
@@ -905,11 +926,17 @@ function MediaViewer({ media, onClose, initialIndex = 0 }: { media: string[]; on
         </Swiper>
         {/* Slide indicators */}
         {media.length > 1 && (
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20">
+          <div 
+            className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2 z-20"
+            onClick={(e: any) => e.stopPropagation()}
+          >
             {media.map((_, index) => (
               <button
                 key={index}
-                onClick={() => setCurrentIndex(index)}
+                onClick={(e: any) => {
+                  e.stopPropagation();
+                  setCurrentIndex(index);
+                }}
                 className={`w-2 h-2 rounded-full transition-all duration-200 ${
                   index === currentIndex ? 'bg-white' : 'bg-white/50'
                 }`}
@@ -917,7 +944,6 @@ function MediaViewer({ media, onClose, initialIndex = 0 }: { media: string[]; on
             ))}
           </div>
         )}
-        {/* Media counter 已去除 */}
       </div>
     </motion.div>
   );
