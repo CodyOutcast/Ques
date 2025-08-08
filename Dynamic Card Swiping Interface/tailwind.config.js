@@ -6,6 +6,25 @@ export default {
     "./components/**/*.{js,ts,jsx,tsx}",
     "./*.{js,ts,jsx,tsx}",
   ],
+  safelist: [
+    // Popup Frame Component custom classes
+    'box-border', 'content-stretch', 'flex', 'flex-col', 'flex-row', 'gap-1', 'gap-2.5', 'gap-3', 'gap-[7px]', 'gap-[147px]',
+    'items-start', 'items-center', 'items-end', 'justify-center', 'justify-start', 'justify-end', 'justify-between',
+    'leading-[0]', 'leading-[normal]', 'italic', 'font-bold',
+    'h-[78px]', 'h-14', 'h-[38px]', 'h-12', 'h-[127.114px]', 'h-[166.994px]',
+    'w-[311px]', 'w-[477px]', 'w-[134px]', 'w-[548px]', 'w-[127.943px]', 'w-[167.433px]',
+    'relative', 'absolute', 'shrink-0', 'p-0', 'pl-[22px]', 'pr-0', 'py-0', 'pb-12', 'pt-[22px]', 'left-0', 'top-0', 'top-4', 'top-[-24px]', 'top-[213px]', 'left-[30px]', 'left-[439px]', 'left-[377.23px]',
+    'rounded-[30px]', 'rounded-[48px]', 'rounded-[41.088px]', 'rounded-[100px]', 'rounded-sm',
+    'shadow-[5px_4px_20px_0px_rgba(0,0,0,0.13)]', 'shadow-[0px_15px_28px_0px_rgba(171,178,187,0.25)]',
+    'bg-[#ffffff]', 'bg-[#0a0c0f]', 'bg-transparent', 'bg-[#3369ff]', 'bg-[#0088ff]', 'bg-[#b1bccd]',
+    'text-[#2a2f3f]', 'text-[#3369ff]', 'text-[#000000]', 'text-[#b1bccd]', 'text-[#8a9bb3]', 'text-[13px]', 'text-[15px]', 'text-[16px]', 'text-[72px]', 'text-[128px]',
+    'text-left', 'text-nowrap', 'whitespace-pre', 'block', 'transition-all', 'duration-200', 'scale-125', 'scale-100', 'hover:scale-110', 'drop-shadow-md', 'brightness-110',
+    'border', 'border-[#0088ff]', 'border-[#49454f]', 'border-solid', 'border-2', 'pointer-events-none', 'outline-none', 'outline-ring/50', 'z-10', 'filter', 'blur-[25px]', 'opacity-40',
+    'overflow-clip', 'overflow-hidden', 'overflow-auto', 'overflow-scroll',
+    'size-full', 'size-6',
+    'cursor-pointer', 'hover:bg-gray-50', 'transition-colors', 'hover:text-[#8a9bb3]',
+    '[text-decoration-line:underline]', '[text-decoration-style:solid]', '[text-underline-position:from-font]'
+  ],
   theme: {
     extend: {
       // Colors from design tokens (restored to original)
