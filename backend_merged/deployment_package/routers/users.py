@@ -355,3 +355,139 @@ async def get_mutual_likes(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to fetch mutual likes"
         )
+
+
+@router.delete("/account", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_user_account(
+    token: str = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Delete the current user's account permanently
+    
+    This will:
+    - Remove all user data (profile, matches, messages, projects, etc.)
+    - Invalidate all authentication tokens
+    - Trigger CASCADE DELETE for all related entities
+    - Cannot be undone
+    
+    Requires user authentication.
+    """
+    # Authenticate user
+    current_user = auth_service.get_current_user(db, token.credentials)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    try:
+        # Import here to avoid circular imports
+        from ..services.user_service import UserService
+        
+        # Delete the user account (will cascade to all related entities)
+        success = UserService.delete_user_account(db, current_user.user_id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User account not found or already deleted"
+            )
+        
+        logger.info(f"User account deleted successfully: user_id={current_user.user_id}")
+        # Return 204 No Content (successful deletion)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting user account {current_user.user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete user account"
+        )
+
+
+@router.get("/account/deletion-preview")
+async def get_deletion_preview(
+    token: str = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Get a preview of what data will be deleted when the user deletes their account
+    
+    This shows users exactly what data will be permanently removed,
+    helping them make an informed decision about account deletion.
+    """
+    # Authenticate user
+    current_user = auth_service.get_current_user(db, token.credentials)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    try:
+        from ..services.user_service import UserService
+        
+        preview = UserService.get_user_deletion_preview(db, current_user.user_id)
+        
+        if "error" in preview:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=preview["error"]
+            )
+        
+        return preview
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error generating deletion preview for user {current_user.user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to generate deletion preview"
+        )
+
+
+@router.post("/account/deactivate", status_code=status.HTTP_200_OK)
+async def deactivate_user_account(
+    token: str = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Deactivate the current user's account (soft delete)
+    
+    This will:
+    - Mark the account as inactive
+    - Hide the user from discovery
+    - Anonymize basic profile information
+    - Preserve data for potential account recovery
+    - Can be reversed by contacting support
+    
+    Requires user authentication.
+    """
+    # Authenticate user
+    current_user = auth_service.get_current_user(db, token.credentials)
+    if not current_user:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    try:
+        from ..services.user_service import UserService
+        
+        # Soft delete the user account
+        success = UserService.soft_delete_user_account(db, current_user.user_id)
+        
+        if not success:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User account not found"
+            )
+        
+        logger.info(f"User account deactivated successfully: user_id={current_user.user_id}")
+        return {
+            "message": "Account deactivated successfully",
+            "note": "Your account has been deactivated. Contact support to reactivate if needed."
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deactivating user account {current_user.user_id}: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to deactivate user account"
+        )

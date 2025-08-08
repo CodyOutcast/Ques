@@ -43,6 +43,11 @@ This is the comprehensive API contract for the merged dating app backend, combin
 - `GET /api/v1/users/search/` - Search users with filters
 - `POST /api/v1/users/swipe` - Record swipe action (like/dislike)
 
+### Account Management
+- `GET /api/v1/users/account/deletion-preview` - Preview what data will be deleted
+- `POST /api/v1/users/account/deactivate` - Deactivate account (soft delete)
+- `DELETE /api/v1/users/account` - Permanently delete user account
+
 ### Matching & Likes
 - `GET /api/v1/users/liked` - Get users you've liked
 - `GET /api/v1/users/liked/mutual` - Get mutual likes (matches)
@@ -356,6 +361,48 @@ Response: 204 No Content
 - Environment-specific CORS settings
 - Configurable feature flags
 - Debug mode controls
+
+## User Account Management Examples
+
+### Get Deletion Preview
+```json
+GET /api/v1/users/account/deletion-preview
+
+Response:
+{
+  "user_id": 123,
+  "name": "John Doe",
+  "data_to_delete": {
+    "profile": "All profile information and photos",
+    "matches": "5 matches and conversations",
+    "messages": "127 messages sent",
+    "projects": "3 projects created",
+    "reports": "1 reports made",
+    "authentication": "All login sessions and tokens",
+    "preferences": "All app preferences and settings",
+    "activity": "All swipe history and interactions"
+  },
+  "warning": "This action cannot be undone. All data will be permanently deleted."
+}
+```
+
+### Deactivate Account (Soft Delete)
+```json
+POST /api/v1/users/account/deactivate
+
+Response:
+{
+  "message": "Account deactivated successfully",
+  "note": "Your account has been deactivated. Contact support to reactivate if needed."
+}
+```
+
+### Permanently Delete Account
+```json
+DELETE /api/v1/users/account
+
+Response: 204 No Content
+```
 
 ## Database Models
 - Users and authentication
