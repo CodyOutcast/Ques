@@ -55,18 +55,56 @@ This is the comprehensive API contract for the merged dating app backend, combin
 ## AI Search (`/api/v1/search`)
 - `POST /api/v1/search/query` - AI-powered user search with natural language
 
+## User Reports (`/api/v1/reports`)
+
+### Report Management
+- `POST /api/v1/reports/create` - Create a new user report
+- `GET /api/v1/reports/my-reports` - Get reports submitted by current user
+- `GET /api/v1/reports/against-me` - Get reports filed against current user
+- `GET /api/v1/reports/{report_id}` - Get specific report details
+
+### Administrative (Admin/Moderator only)
+- `GET /api/v1/reports/pending` - Get pending reports requiring review
+- `POST /api/v1/reports/{report_id}/assign` - Assign report to moderator
+- `POST /api/v1/reports/{report_id}/resolve` - Resolve report with action
+- `POST /api/v1/reports/{report_id}/dismiss` - Dismiss report as invalid
+- `GET /api/v1/reports/statistics/overview` - Get moderation statistics
+- `GET /api/v1/reports/user/{user_id}/violations` - Get user's violation history
+
 ## Messaging (`/api/v1/messages`)
+
+### Conversation Management
 - `GET /api/v1/messages/conversations` - Get all conversations
 - `GET /api/v1/messages/{match_id}/messages` - Get messages for a match
 - `POST /api/v1/messages/{match_id}/messages` - Send a message
 - `DELETE /api/v1/messages/{message_id}` - Delete a message
 
+### Message Search (NEW)
+- `GET /api/v1/messages/{match_id}/search` - Search within a specific conversation
+- `GET /api/v1/messages/search/global` - Global message search across all conversations
+- `GET /api/v1/messages/{message_id}/context` - Get message context
+
+## Real-time Chat (`/api/chats`)
+*Note: This is a separate system from regular messaging with greeting/acceptance flow*
+
+### Chat Initialization
+- `POST /api/chats/greeting` - Send initial greeting to start chat (requires mutual like)
+- `POST /api/chats/{chat_id}/accept` - Accept greeting to enable full chat
+- `POST /api/chats/{chat_id}/decline` - Decline greeting
+
+### Chat Messaging
+- `GET /api/chats/` - Get all active chats
+- `GET /api/chats/{chat_id}` - Get specific chat details
+- `GET /api/chats/{chat_id}/messages` - Get chat messages
+- `POST /api/chats/{chat_id}/messages` - Send message in chat
+- `POST /api/chats/{chat_id}/read` - Mark messages as read
+
+### Chat Search
+- `POST /api/chats/search` - Search across all chats
+
 ## Recommendations (`/api/v1/recommendations`)
 *Available if recommendation service is running*
 - Various recommendation endpoints for smart matching
-
-## User Reports (`/api/v1`)
-- User reporting system for inappropriate behavior
 
 ## SMS Verification (`/api/v1/sms`)
 
@@ -80,9 +118,6 @@ This is the comprehensive API contract for the merged dating app backend, combin
 
 ### Administrative
 - `POST /api/v1/sms/cleanup-expired` - Cleanup expired codes (Admin only)
-
-## Chats (`/api/v1`)
-- Real-time chat functionality
 
 ## Projects (`/api/v1/projects`)
 
