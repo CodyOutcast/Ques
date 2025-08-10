@@ -7,7 +7,7 @@ const TITLE_TOP_PX = 320;       // Ques 顶部位置
 const TITLE_SIZE_PX = 128;      // Ques 字号
 const LINES_LEFT_PX = 60;       // 三行左边距
 const LINES_TOP_PX = 440;       // 三行顶部位置（保证与 Ques 有足够间距）
-const LINES_GAP_PX = -10;        // 三行之间的行间距（允许为负值）
+const LINES_GAP_PX = (typeof document !== 'undefined' && document.documentElement.lang?.startsWith('zh')) ? 4 : -10; // 仅中文时增大行距
 
 export function LaunchingPage() {
   return (
@@ -55,7 +55,7 @@ export function LaunchingPage() {
           transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
           className="block font-['Rubik',_sans-serif] font-bold text-[#0055f7] text-[24px]"
         >
-          匹配。
+          匹配
         </motion.p>
         <motion.p
           initial={{ y: 30, opacity: 0 }}
@@ -64,7 +64,7 @@ export function LaunchingPage() {
           className="block font-['Rubik',_sans-serif] font-bold text-[#0055f7] text-[24px]"
           style={{ marginTop: LINES_GAP_PX }}
         >
-          连接。
+          连接
         </motion.p>
         <motion.p
           initial={{ y: 30, opacity: 0 }}
@@ -73,7 +73,7 @@ export function LaunchingPage() {
           className="block font-['Rubik',_sans-serif] font-bold text-[#0055f7] text-[24px]"
           style={{ marginTop: LINES_GAP_PX }}
         >
-          协作。
+          协作
         </motion.p>
       </div>
     </motion.div>

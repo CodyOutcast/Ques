@@ -178,7 +178,7 @@ export default function Frame13774({ onClose }: { onClose?: () => void }) {
               checked={isChecked}
               onChange={e => setIsChecked(e.target.checked)}
             />
-            设为默认打招呼语<br />近期不再显示
+            设为默认开场白
           </label>
           <span className="popup-later" onClick={handleBackLater} style={{ cursor: 'pointer' }}>
             稍后再说

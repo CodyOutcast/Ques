@@ -19,6 +19,9 @@ export interface AuthPhoneScreenProps {
 export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
   const { smsData, onChangePhone, onChangeCode, errors, isLoading, codeSent, onSendSMS, onVerifyCode } = props;
   const [countdown, setCountdown] = useState<number>(0);
+  // Add touched states for blur-only validation feedback
+  const [phoneTouched, setPhoneTouched] = useState<boolean>(false);
+  const [codeTouched, setCodeTouched] = useState<boolean>(false);
 
   useEffect(() => {
     if (countdown <= 0) return;
@@ -28,6 +31,9 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
     return () => clearInterval(timer);
   }, [countdown]);
   const isPhoneValid = /^\+?[\d\s\-\(\)]{10,}$/.test(smsData.phoneNumber.replace(/\s/g, ''));
+  // Derive local errors only after blur (touched)
+  const phoneErrorToShow = errors.phoneNumber ?? (phoneTouched && !isPhoneValid ? '请输入有效的手机号' : undefined);
+  const codeErrorToShow = errors.verificationCode ?? (codeTouched && codeSent && smsData.verificationCode.length !== 6 ? '请输入6位验证码' : undefined);
   return (
     <div className="absolute bg-black h-[874px] overflow-hidden w-[402px]">
       <div className="absolute inset-0" style={{ background: 'linear-gradient(to top right, #286CFF, #4ade80)' }} />
@@ -37,7 +43,7 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
           Ques
         </div>
         <div className="font-['Inria_Sans:Bold',_sans-serif] font-bold text-white text-[28px] leading-[1.1] whitespace-nowrap">
-          立即找到你的伙伴。
+          即刻找到你的合作伙伴
         </div>
       </div>
 
@@ -53,14 +59,15 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
               type="tel"
               value={smsData.phoneNumber}
               onChange={(e) => onChangePhone(e.target.value)}
+              onBlur={() => setPhoneTouched(true)}
               placeholder="请输入手机号"
-              className={`h-[50px] px-4 rounded-2xl bg-white/90 backdrop-blur-sm text-black text-[16px] font-['Manrope:Medium',_sans-serif] focus:outline-none focus:ring-2 focus:ring-[#0055f7] transition-all ${
-                errors.phoneNumber ? 'ring-2 ring-red-500' : ''
+              className={`h-[50px] px-4 rounded-2xl backdrop-blur-sm text-black text-[16px] font-['Manrope:Medium',_sans-serif] focus:outline-none focus:ring-2 transition-all ${
+                phoneErrorToShow ? 'ring-2 ring-rose-500 bg-rose-50 placeholder:text-rose-400' : 'bg-white/90 focus:ring-[#0055f7]'
               }`}
             />
-            {errors.phoneNumber && (
-              <p className="mt-2 text-red-400 text-[12px]">
-                {errors.phoneNumber}
+            {phoneErrorToShow && (
+              <p className="mt-2 text-rose-600 text-[12px]">
+                {phoneErrorToShow}
               </p>
             )}
           </div>
@@ -75,11 +82,12 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
                 type="text"
                 value={smsData.verificationCode}
                 onChange={(e) => onChangeCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                onBlur={() => setCodeTouched(true)}
                 placeholder="123456"
                 maxLength={6}
                 disabled={!codeSent}
-                className={`h-[50px] px-4 rounded-2xl bg-white/90 backdrop-blur-sm text-black text-[16px] text-center font-['Manrope:SemiBold',_sans-serif] tracking-[0.2em] focus:outline-none focus:ring-2 focus:ring-[#0055f7] transition-all disabled:opacity-50 flex-1 min-w-0 ${
-                  errors.verificationCode ? 'ring-2 ring-red-500' : ''
+                className={`h-[50px] px-4 rounded-2xl backdrop-blur-sm text-black text-[16px] text-center font-['Manrope:SemiBold',_sans-serif] tracking-[0.2em] focus:outline-none focus:ring-2 transition-all disabled:opacity-50 flex-1 min-w-0 ${
+                  codeErrorToShow ? 'ring-2 ring-rose-500 bg-rose-50 placeholder:text-rose-400' : 'bg-white/90 focus:ring-[#0055f7]'
                 }`}
               />
               <button
@@ -99,14 +107,14 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
             <button
               type="button"
               onClick={onVerifyCode}
-              disabled={isLoading}
+              disabled={isLoading || smsData.verificationCode.length !== 6}
               className="mt-3 bg-[#0055f7] h-[50px] w-full rounded-2xl font-['Rubik:Bold',_sans-serif] font-bold text-white text-[16px] hover:bg-[#0045d7] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               确认
             </button>
-            {errors.verificationCode && (
-              <p className="mt-2 text-red-400 text-[12px]">
-                {errors.verificationCode}
+            {codeErrorToShow && (
+              <p className="mt-2 text-rose-600 text-[12px]">
+                {codeErrorToShow}
               </p>
             )}
           </div>

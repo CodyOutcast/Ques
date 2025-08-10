@@ -1713,6 +1713,8 @@ export default function App() {
 
     setIsLoading(true);
     setErrors({});
+    setCodeSent(false);
+    setSmsData(prev => ({ ...prev, verificationCode: '' }));
     
     // Simulate SMS sending API call
     await new Promise(resolve => setTimeout(resolve, 1500));

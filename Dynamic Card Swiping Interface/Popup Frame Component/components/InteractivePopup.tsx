@@ -174,9 +174,7 @@ function Frame13772({ isChecked, onToggle }: Frame13772Props) {
     <div className="box-border content-stretch flex flex-row items-center justify-center p-0 relative shrink-0">
       <Checkboxes isChecked={isChecked} onToggle={onToggle} />
       <div className="font-['Nunito:Bold',_sans-serif] font-bold h-[38px] leading-[0] relative shrink-0 text-[#000000] text-[13px] text-left w-[148px]">
-        <p className="block leading-[normal]">
-          设为默认打招呼语 近期不再显示
-        </p>
+        <p className="block leading-[normal]">设为默认开场白</p>
       </div>
     </div>
   );
@@ -255,7 +253,7 @@ export default function InteractivePopup({ onClose, defaultChecked = false, onDe
         <div className="popup-title">开始行动！</div>
         <div className="popup-subtitle">发送打招呼消息，开启聊天！</div>
         
-        <div className="popup-input-row" style={{ paddingRight: 44 }}>
+        <div className="popup-input-row">
           <input
             type="text"
             value={message}
@@ -268,17 +266,14 @@ export default function InteractivePopup({ onClose, defaultChecked = false, onDe
           </div>
         
         <div className="popup-checkbox-row" style={{ alignItems: 'flex-end' }}>
-          <label className="popup-checkbox-label" style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+          <label className="popup-checkbox-label" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <input
               type="checkbox"
               className="custom-checkbox"
               checked={isChecked}
               onChange={handleToggle}
             />
-            <span>
-              <div>set as default greeting</div>
-              <div>not displayed recently</div>
-            </span>
+            <span>设为默认开场白</span>
           </label>
           <button className="popup-later" onClick={handleBackLater}>
             稍后再说

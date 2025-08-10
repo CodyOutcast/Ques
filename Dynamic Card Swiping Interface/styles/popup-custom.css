@@ -42,6 +42,7 @@
   text-align: left;
 }
 
+/* Base (non-zh) layout */
 .popup-frame .popup-input-row {
   display: flex;
   flex-direction: row;
@@ -58,6 +59,7 @@
   margin-bottom: 4px;
   box-sizing: border-box;
   padding-right: 44px;
+  transition: box-shadow .2s ease, transform .2s ease, border-color .2s ease;
 }
 
 .popup-frame .popup-input-row input {
@@ -74,6 +76,7 @@
   height: 16px;
 }
 
+/* Restore original send button style */
 .popup-frame .popup-send-btn {
   position: absolute;
   width: 20px;
@@ -82,10 +85,70 @@
   top: 14px;
   background: none;
   border: none;
+  border-radius: 0;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: none;
+}
+
+/* zh-CN specific layout adjustments (livelier without changing send button) */
+html:lang(zh-CN) .popup-frame {
+  background: linear-gradient(180deg, #ffffff 0%, #F7FAFF 100%);
+  border-radius: 36px;
+  box-shadow: 0 12px 40px rgba(0,85,247,0.15), 0 6px 18px rgba(0,0,0,0.06);
+}
+
+/* Animated gradient border (zh only) */
+@keyframes borderShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+html:lang(zh-CN) .popup-frame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 36px;
+  padding: 3px; /* border thickness (zh) */
+  background: linear-gradient(120deg, #5b8cff, #3bd1ff, #66f2b7, #ffd166, #ff6b6b, #5b8cff);
+  background-size: 300% 300%;
+  animation: borderShift 6s ease infinite;
+  /* show only the border area */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Title / subtitle spacing (zh only) */
+html:lang(zh-CN) .popup-frame .popup-title { margin-bottom: 6px; letter-spacing: -0.5px; text-shadow: 0 1px 0 #fff; }
+html:lang(zh-CN) .popup-frame .popup-subtitle { margin-bottom: 12px; color: rgba(42,47,63,.75); }
+
+/* Input & buttons vertical rhythm (zh only) */
+html:lang(zh-CN) .popup-frame .popup-input-row { height: 56px; background: linear-gradient(180deg, #fff, #FAFCFF); border-color: #3A83FF; margin-bottom: -12px; }
+html:lang(zh-CN) .popup-frame .popup-input-row:hover,
+html:lang(zh-CN) .popup-frame .popup-input-row:focus-within { box-shadow: 0 10px 24px rgba(0,136,255,0.15); border-color: #2F74FF; transform: translateY(-1px); }
+html:lang(zh-CN) .popup-frame .popup-input-row input { font-size: 13px; line-height: 22px; height: 22px; }
+html:lang(zh-CN) .popup-frame .popup-input-row input::placeholder { color: rgba(51,105,255,.6); }
+html:lang(zh-CN) .popup-frame .popup-checkbox-row { margin-top: 12px; }
+html:lang(zh-CN) .popup-frame .popup-checkbox-label { font-size: 13px; color: #1f2937; }
+html:lang(zh-CN) .popup-frame .popup-later { color: #95A4BD; }
+html:lang(zh-CN) .popup-frame .popup-later:hover { color: #7F8FA8; }
+
+/* Emoji: larger and lower for zh */
+@keyframes float-emoji {
+  0%, 100% { transform: rotate(-23deg) translateY(0); }
+  50% { transform: rotate(-23deg) translateY(-4px); }
+}
+html:lang(zh-CN) .popup-frame .popup-emoji {
+  width: 88px;
+  height: 88px;
+  font-size: 100px;
+  top: 12px; /* moved down */
+  animation: float-emoji 3s ease-in-out infinite;
 }
 
 .popup-frame .popup-checkbox-row {
@@ -177,5 +240,24 @@
 }
 
 .popup-frame { position: relative; }
-.popup-inner { position: relative; z-index: 1; }
+.popup-inner { position: relative; z-index: 2; width: 100%; }
 .popup-emoji { position: absolute; z-index: 0; opacity: 0.9; } 
+
+html:lang(zh-CN) .popup-frame .popup-title {
+  font-size: 48px;        /* 标题字号 */
+  line-height: 52px; 
+  letter-spacing: 1.5px;     /* 建议配合行高 */
+}
+
+@keyframes float-emoji-zh {
+  0%, 100% { transform: rotate(-20deg) translateY(0); }  /* 调整角度 */
+  50%      { transform: rotate(-20deg) translateY(-4px); }
+}
+
+html:lang(zh-CN) .popup-frame .popup-emoji {
+  animation: float-emoji-zh 3s ease-in-out infinite;     /* 仅中文使用中文动画 */
+}
+
+html:lang(zh-CN) .popup-frame .popup-emoji { transform: rotate(-20deg); }
+
+html:lang(zh-CN) .popup-frame::after { padding: 3px; }   /* 改为 4 即更粗 */ 
