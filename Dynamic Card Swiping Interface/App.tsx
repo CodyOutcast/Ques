@@ -12,6 +12,19 @@ import InteractivePopup from './Popup Frame Component/components/InteractivePopu
 import './styles/popup-custom.css';
 import { createPortal } from 'react-dom';
 import TinderCard from 'react-tinder-card';
+import { AuthPhoneScreen } from './auth-components/AuthScreen';
+
+// 新增：导入启动页面组件
+import { LaunchingPage } from './Interactive Ques Sign-Up_Sign-In Prototype/components/LaunchingPage';
+
+// 新增：认证相关接口
+interface SMSData {
+  phoneNumber: string;
+  verificationCode: string;
+}
+
+// 新增：应用状态类型
+type AppState = 'launch' | 'auth' | 'main';
 
 // 可调滑动参数（集中配置）
 export const SWIPE_REQUIREMENT: 'position' | 'velocity' = 'position';
@@ -61,7 +74,7 @@ const sliderStyles = `
   }
   
   .age-slider-right {
-    z-index: 20;
+    z-index: 10;
   }
   
   .age-slider-left::-webkit-slider-thumb {
@@ -70,6 +83,30 @@ const sliderStyles = `
   
   .age-slider-right::-webkit-slider-thumb {
     z-index: 20;
+  }
+  
+  /* 只让滑块拇指响应事件，避免两个输入层互相遮挡 */
+  .age-slider-left,
+  .age-slider-right {
+    pointer-events: none;
+  }
+
+  .age-slider-left::-webkit-slider-thumb,
+  .age-slider-right::-webkit-slider-thumb {
+    pointer-events: all;
+  }
+
+  .age-slider-left::-moz-range-thumb,
+  .age-slider-right::-moz-range-thumb {
+    pointer-events: all;
+  }
+
+  /* 交互时将当前滑块置于顶层 */
+  .age-slider-left:focus,
+  .age-slider-left:active,
+  .age-slider-right:focus,
+  .age-slider-right:active {
+    z-index: 50;
   }
 `;
 
@@ -315,6 +352,7 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
   filters: FilterState;
   setFilters: (filters: FilterState) => void;
 }) {
+  const [activeAgeSlider, setActiveAgeSlider] = useState<'left' | 'right' | null>(null);
   return (
     <AnimatePresence>
       {isOpen && (
@@ -426,9 +464,13 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
                             });
                           }
                         }}
+                        onMouseDown={() => setActiveAgeSlider('left')}
+                        onTouchStart={() => setActiveAgeSlider('left')}
+                        onMouseUp={() => setActiveAgeSlider(null)}
+                        onTouchEnd={() => setActiveAgeSlider(null)}
                         style={{
                           background: 'transparent',
-                          pointerEvents: 'auto'
+                          zIndex: activeAgeSlider === 'left' ? 50 : 10
                         }}
                       />
                       {/* 右滑块 */}
@@ -447,9 +489,13 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
                             });
                           }
                         }}
+                        onMouseDown={() => setActiveAgeSlider('right')}
+                        onTouchStart={() => setActiveAgeSlider('right')}
+                        onMouseUp={() => setActiveAgeSlider(null)}
+                        onTouchEnd={() => setActiveAgeSlider(null)}
                         style={{
                           background: 'transparent',
-                          pointerEvents: 'auto'
+                          zIndex: activeAgeSlider === 'right' ? 50 : 10
                         }}
                       />
                 </div>
@@ -991,35 +1037,18 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
   const topShadow = `shadow-[0px_18px_40px_0px_rgba(0,0,0,0.30)]`;
   const underShadow = `shadow-[0px_8px_24px_0px_rgba(0,0,0,0.18)]`;
 
-  if (isHistory) {
-    // 历史卡片：不支持滑动，仅点击进入详情
-    return (
-      <div className="absolute inset-0" style={{ zIndex: 2 }}>
-        <div
-          className={`${baseCardClass} ${topShadow}`}
-          onMouseDown={handleDown}
-          onMouseMove={handleMove}
-          onMouseUp={handleUp}
-          onTouchStart={handleDown}
-          onTouchMove={handleMove}
-          onTouchEnd={handleUp}
-        >
-          {renderCardContent()}
-        </div>
-      </div>
-    );
-  }
-
   return (
     <TinderCard
-      className="absolute inset-0"
+       className="absolute inset-0"
       key={project.id}
       onSwipe={(dir: string) => {
+        if (isHistory) return; // disable swipe handling for preview/history cards
         const mapped = resolveDir(dir);
         handledRef.current = true;
         onSwipe(mapped);
       }}
       onCardLeftScreen={() => {
+        if (isHistory) return; // disable for preview/history cards
         if (!handledRef.current) {
           const mapped = lastDxRef.current >= 0 ? 'right' : 'left';
           onSwipe(mapped);
@@ -1027,7 +1056,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
         handledRef.current = false;
         lastDxRef.current = 0;
       }}
-      preventSwipe={[ 'down' ]}
+      preventSwipe={[ 'down', ...(isHistory ? ['left', 'right', 'up'] : []) ]}
       swipeRequirementType={SWIPE_REQUIREMENT}
       swipeThreshold={SWIPE_THRESHOLD_PX}
     >
@@ -1157,6 +1186,14 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false }: { pro
   const swiperRef = useRef<any>(null);
   const buttonTimerRef = useRef<number | null>(null);
   const [clickEnabled, setClickEnabled] = useState(!suppressFirstTap);
+  // Like state and animation
+  const [liked, setLiked] = useState(false);
+  const [likeAnimate, setLikeAnimate] = useState(false);
+  const handleLike = () => {
+    setLiked(prev => !prev);
+    setLikeAnimate(true);
+    setTimeout(() => setLikeAnimate(false), 500);
+  };
   useEffect(() => {
     if (suppressFirstTap) {
       const t = setTimeout(() => setClickEnabled(true), 200);
@@ -1469,9 +1506,27 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false }: { pro
               </div>
             </div>
           </div>
+          </div>
         </div>
       </div>
-    </div>
+
+      {/* Like button overlay */}
+      <button
+        onClick={handleLike}
+        className={`absolute right-4 bottom-6 z-[60] rounded-full p-3 backdrop-blur-md bg-black/30 hover:bg-black/40 transition ${likeAnimate ? 'like-animation' : ''} ${liked ? 'opacity-40' : 'opacity-70'}`}
+        aria-label={liked ? '取消点赞' : '点赞'}
+      >
+        <svg className="block w-6 h-6" viewBox="0 0 24 24" fill="none">
+          <path
+            d={svgPaths.like}
+            fill={liked ? '#0055F7' : 'none'}
+            stroke={liked ? '#0055F7' : '#ffffff'}
+            strokeWidth={1.5}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
 
       {/* 大图浏览弹窗 */}
       <AnimatePresence>
@@ -1488,6 +1543,17 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false }: { pro
 }
 
 export default function App() {
+  // 新增：应用状态管理
+  const [appState, setAppState] = useState<AppState>('launch');
+  const [smsData, setSmsData] = useState<SMSData>({
+    phoneNumber: '',
+    verificationCode: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{ phoneNumber?: string; verificationCode?: string }>({});
+  const [codeSent, setCodeSent] = useState(false);
+
+  // 原有状态管理
   const [currentProjects, setCurrentProjects] = useState(projects);
   const [leftSwipedProjects, setLeftSwipedProjects] = useState<Project[]>([]);
   const [selectedProject, setSelectedProject] = useState<Project | null>(null);
@@ -1505,6 +1571,16 @@ export default function App() {
     showOutOfDistance: false,
     typeSearch: ''
   });
+
+  // 新增：启动页面自动跳转逻辑
+  useEffect(() => {
+    if (appState === 'launch') {
+      const timer = setTimeout(() => {
+        setAppState('auth');
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [appState]);
 
   // Responsive canvas scaling (base design size 393x852)
   const BASE_WIDTH = 393;
@@ -1619,6 +1695,55 @@ export default function App() {
 
   const popupWidthPx = Math.round(Math.min(0.88 * BASE_WIDTH * scale, 360));
 
+  // 新增：认证相关函数
+  const validatePhoneNumber = (phone: string) => {
+    return /^\+?[\d\s\-\(\)]{10,}$/.test(phone.replace(/\s/g, ''));
+  };
+
+  const handleSendSMS = async () => {
+    if (!smsData.phoneNumber) {
+      setErrors({ phoneNumber: '请输入手机号' });
+      return;
+    }
+
+    if (!validatePhoneNumber(smsData.phoneNumber)) {
+      setErrors({ phoneNumber: '请输入有效的手机号' });
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+    
+    // Simulate SMS sending API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setIsLoading(false);
+    setCodeSent(true);
+  };
+
+  const handleVerifyCode = async () => {
+    if (!smsData.verificationCode) {
+      setErrors({ verificationCode: '请输入验证码' });
+      return;
+    }
+
+    if (smsData.verificationCode.length !== 6) {
+      setErrors({ verificationCode: '请输入6位验证码' });
+      return;
+    }
+
+    setIsLoading(true);
+    setErrors({});
+    
+    // Simulate verification API call
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    setIsLoading(false);
+    // 认证成功后跳转到主页面
+    setAppState('main');
+    console.log('SMS Authentication successful:', smsData);
+  };
+
   const handleDefaultGreetingChange = (checked: boolean) => {
     setSuppressGreetingPopup(checked);
   };
@@ -1632,252 +1757,292 @@ export default function App() {
           top: offset.top,
           width: BASE_WIDTH,
           height: BASE_HEIGHT,
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
+          transform: appState === 'auth' ? 'none' : `scale(${scale})`,
+           transformOrigin: appState === 'auth' ? undefined as any : 'top left',
         }}
       >
-        <div className="w-[393px] h-[852px] bg-white relative overflow-hidden mx-auto">
-          {/* 添加滑块样式 */}
-          <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
-          {/* Header */}
-          <motion.div 
-            className="pt-4 pb-2 px-[19px] z-0 relative"
-            initial={{ y: -50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            <div className="flex items-center justify-between w-[354px]">
-              <PopupButton />
-              <div className="flex gap-2">
-                <IconButton onClick={toggleHistoryMode}>
-                  <div className="w-6 h-6">
-                    <svg className="block size-full" fill="none" viewBox="0 0 24 24">
-                      <path d={svgPaths.history} fill={isHistoryMode ? "#0055f7" : "black"} />
-                    </svg>
-                  </div>
-                </IconButton>
-                <IconButton onClick={() => setShowFilter(true)}>
-                  <div className="w-6 h-6">
-                    <svg className="block size-full" fill="none" viewBox="0 0 25 24">
-                      <path d={svgPaths.filter} stroke={showFilter ? "#0088ff" : "#000000"} strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round" />
-                    </svg>
-                  </div>
-                </IconButton>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Main Content - Card Stack */}
-          <div className="relative h-[580px] flex items-center justify-center px-4 mt-8">
-            <div className="relative w-[357px] h-[614px]">
-              {isHistoryMode ? (
-                // History Mode - Single card with navigation
-                leftSwipedProjects.length > 0 && currentProject ? (
-                  <div 
-                    className="relative w-full h-full"
-                    onWheel={(e) => {
-                      e.preventDefault();
-                      if (e.deltaY > 0 && historyIndex < leftSwipedProjects.length - 1) {
-                        handleHistorySlide('right');
-                      } else if (e.deltaY < 0 && historyIndex > 0) {
-                        handleHistorySlide('left');
-                      }
-                    }}
-                  >
-                    <ProjectCard
-                      key={`history-${currentProject.id}-${historyIndex}`}
-                      project={currentProject}
-                      index={0}
-                      onSwipe={(dir) => handleHistorySlide(dir)}
-                      isTop={true}
-                      onClick={() => setSelectedProject(currentProject)}
-                      isHistory={true}
-                    />
-                    
-                    {/* Navigation Controls */}
-                    {!selectedProject && (
-                      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4 z-[999]">
-                        <motion.button
-                          onClick={() => handleHistorySlide('left')}
-                          disabled={historyIndex === 0}
-                          className="w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white disabled:opacity-30 transition-all duration-200"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <ArrowLeft size={20} />
-                        </motion.button>
-                        <div className="flex items-center px-4 py-2 bg-black/50 backdrop-blur-sm rounded-full text-white text-sm font-medium min-w-[60px] justify-center">
-                          {historyIndex + 1} / {leftSwipedProjects.length}
-                        </div>
-                        <motion.button
-                          onClick={() => handleHistorySlide('right')}
-                          disabled={historyIndex === leftSwipedProjects.length - 1}
-                          className="w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white disabled:opacity-30 transition-all duration-200"
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <ArrowLeft size={20} className="rotate-180" />
-                        </motion.button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center">
-                    <div className="text-center">
-                      <div className="w-16 h-16 mx-auto mb-4">
-                        <svg className="block size-full" fill="none" viewBox="0 0 24 24">
-                          <path d={svgPaths.history} fill="#9ca3af" />
-                        </svg>
-                      </div>
-                      <h3 className="text-xl font-medium text-gray-700 mb-2">No history yet!</h3>
-                      <p className="text-gray-500">Swipe left on some projects to see them here.</p>
-                    </div>
-                  </div>
-                )
-              ) : (
-                // Normal Mode - Card stack（顶卡可滑动 + 下一张预备卡静态展示）
-                <>
-                  {displayProjects[1] && (
-                    <motion.div
-                      className="absolute inset-0 pointer-events-none"
-                      style={{ zIndex: 1 }}
-                      initial={false}
-                      animate={{ scale: 0.94, y: 14 }}
-                      transition={{ layout: { type: 'spring', stiffness: 180, damping: 24 } }}
-                      layoutId={`card-${displayProjects[1].id}`}
-                    >
-                      <ProjectCard
-                        key={displayProjects[1].id}
-                        project={displayProjects[1]}
-                        index={1}
-                        onSwipe={() => {}}
-                        isTop={false}
-                        onClick={() => {}}
-                        isHistory={true}
-                      />
-                    </motion.div>
-                  )}
-                  {displayProjects[0] && (
-                    <motion.div
-                      className="absolute inset-0"
-                      style={{ zIndex: 2 }}
-                      initial={false}
-                      animate={{ scale: 1, y: 0 }}
-                      transition={{ type: 'spring', stiffness: 260, damping: 26 }}
-                      layoutId={`card-${displayProjects[0].id}`}
-                    >
-                      <ProjectCard
-                        key={displayProjects[0].id}
-                        project={displayProjects[0]}
-                        index={0}
-                        onSwipe={handleSwipe}
-                        isTop={true}
-                        onClick={() => setSelectedProject(displayProjects[0])}
-                      />
-                    </motion.div>
-                  )}
-                 </>
-              )}
-              
-              {!isHistoryMode && displayProjects.length === 0 && (
-                <motion.div
-                  className="w-full h-full flex items-center justify-center"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                >
-                  <div className="text-center">
-                    <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-medium text-gray-700 mb-2">No more projects!</h3>
-                    <p className="text-gray-500">Check back later for new collaboration opportunities.</p>
-                  </div>
-                </motion.div>
-              )}
-            </div>
-          </div>
-
-          {/* Bottom Navigation */}
-          <motion.div 
-            className="absolute bottom-0 left-0 right-0 bg-neutral-50 h-[100px] border-t border-[#e8edf2]"
-            initial={{ y: 126 }}
-            animate={{ y: 0 }}
-            transition={{ delay: 0.7, duration: 0.5 }}
-          >
-            <div className="h-full relative">
-              {/* Navigation Icons */}
-              <div className="absolute left-[13px] top-[25px] flex gap-[105px]">
-                <div className="flex gap-0">
-                  <IconButton className="w-[65.2px]">
-                    <div className="w-6 h-6">
-                      <svg className="block size-full" fill="none" viewBox="0 0 18 19">
-                        <path d={svgPaths.p11f24e80} fill="#0055F7" />
-                      </svg>
-                    </div>
-                  </IconButton>
-                  <IconButton className="w-[65.2px]">
-                    <div className="w-6 h-6">
-                      <svg className="block size-full" fill="none" viewBox="0 0 21 21">
-                        <path d={svgPaths.p11caffd0} fill="#616C78" />
-                      </svg>
-                    </div>
-                  </IconButton>
-                </div>
-                <div className="flex gap-0">
-                  <IconButton className="w-[65.2px]">
-                    <div className="w-6 h-6">
-                      <svg className="block size-full" fill="none" viewBox="0 0 20 20">
-                        <path d={svgPaths.p19a90780} fill="#616C78" />
-                      </svg>
-                    </div>
-                  </IconButton>
-                  <IconButton className="w-[65.2px]">
-                    <div className="w-6 h-6">
-                      <svg className="block size-full" fill="none" viewBox="0 0 20 20">
-                        <path d={svgPaths.p3d54cd00} fill="#616C78" />
-                      </svg>
-                    </div>
-                  </IconButton>
-                </div>
-              </div>
-
-              {/* Center Plus Button */}
-              <motion.button
-                className="absolute left-[170px] top-[16px] w-[53px] h-[53px] bg-[#0055f7] rounded-full flex items-center justify-center shadow-lg"
-                whileHover={{ scale: 1.1, y: -2 }}
-                whileTap={{ scale: 0.95 }}
-                animate={{ rotate: [0, 180, 360] }}
-                transition={{ 
-                  rotate: { duration: 4, repeat: Infinity, ease: "linear" },
-                  scale: { duration: 0.2 },
-                  y: { duration: 0.2 }
-                }}
+        <div className="w-[393px] h-[852px] bg-white relative overflow-hidden mx-auto" style={{ touchAction: appState === 'auth' ? 'manipulation' : undefined }}>
+          {/* 新增：应用状态切换逻辑 */}
+          <AnimatePresence mode="wait" initial={true}>
+            {appState === 'launch' && (
+              <motion.div
+                key="launch"
+                className="absolute inset-0"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.4, ease: 'easeOut' }}
               >
-                <div className="w-6 h-6">
-                <svg className="block size-full" fill="none" viewBox="0 0 23 23">
-                  <path d={svgPaths.p3b63e500} fill="white" stroke="white" />
-                </svg>
-              </div>
-              </motion.button>
-            </div>
-          </motion.div>
-
-          {/* Filter Sidebar */}
-          <FilterSidebar 
-            isOpen={showFilter} 
-            onClose={() => setShowFilter(false)}
-            filters={filters}
-            setFilters={setFilters}
-          />
-
-          {/* Project Detail View */}
-          <AnimatePresence>
-            {selectedProject && (
-              <ProjectDetailView
-                project={selectedProject}
-                onClose={() => setSelectedProject(null)}
-                suppressFirstTap={true}
-              />
+                <LaunchingPage />
+              </motion.div>
             )}
-          </AnimatePresence>
+            {appState === 'auth' && (
+              <motion.div
+                key="auth"
+                className="absolute inset-0"
+                initial={{ opacity: 1, x: 0, scale: 1 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -40, scale: 0.98 }}
+                transition={{ duration: 0.35, ease: 'easeOut' }}
+              >
+                <AuthPhoneScreen
+                  smsData={smsData}
+                  onChangePhone={(v) => {
+                    setSmsData((prev) => ({ ...prev, phoneNumber: v }));
+                    if (errors.phoneNumber) setErrors((prev) => ({ ...prev, phoneNumber: undefined }));
+                  }}
+                  onChangeCode={(v) => {
+                    setSmsData((prev) => ({ ...prev, verificationCode: v }));
+                    if (errors.verificationCode) setErrors((prev) => ({ ...prev, verificationCode: undefined }));
+                  }}
+                  errors={errors}
+                  isLoading={isLoading}
+                  codeSent={codeSent}
+                  onSendSMS={handleSendSMS}
+                  onVerifyCode={handleVerifyCode}
+                />
+              </motion.div>
+            )}
+            
+            {appState === 'main' && (
+              <motion.div
+                key="main"
+                className="absolute inset-0"
+                initial={{ opacity: 0, x: 40, scale: 1.02 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 40, scale: 1.02 }}
+                transition={{ duration: 0.45, ease: 'easeOut' }}
+              >
+                <>
+               {/* 添加滑块样式 */}
+               <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
+               {/* Header */}
+               <motion.div 
+                 className="pt-4 pb-2 px-[19px] z-0 relative"
+                 initial={{ y: -50, opacity: 0 }}
+                 animate={{ y: 0, opacity: 1 }}
+                 transition={{ duration: 0.5 }}
+               >
+                 <div className="flex items-center justify-between w-[354px]">
+                   <PopupButton />
+                   <div className="flex gap-2">
+                     <IconButton onClick={toggleHistoryMode}>
+                       <div className="w-6 h-6">
+                         <svg className="block size-full" fill="none" viewBox="0 0 24 24">
+                           <path d={svgPaths.history} fill={isHistoryMode ? "#0055f7" : "black"} />
+                         </svg>
+                       </div>
+                     </IconButton>
+                     <IconButton onClick={() => setShowFilter(true)}>
+                       <div className="w-6 h-6">
+                         <svg className="block size-full" fill="none" viewBox="0 0 25 24">
+                           <path d={svgPaths.filter} stroke={showFilter ? "#0088ff" : "#000000"} strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round" />
+                         </svg>
+                       </div>
+                     </IconButton>
+                   </div>
+                 </div>
+               </motion.div>
+
+           {/* Main Content - Card Stack */}
+           <div className="relative h-[580px] flex items-center justify-center px-4 mt-8">
+             <div className="relative w-[357px] h-[614px]">
+               {isHistoryMode ? (
+                 // History Mode - Single card with navigation
+                 leftSwipedProjects.length > 0 && currentProject ? (
+                   <div 
+                     className="relative w-full h-full"
+                     onWheel={(e) => {
+                       e.preventDefault();
+                       if (e.deltaY > 0 && historyIndex < leftSwipedProjects.length - 1) {
+                         handleHistorySlide('right');
+                       } else if (e.deltaY < 0 && historyIndex > 0) {
+                         handleHistorySlide('left');
+                       }
+                     }}
+                   >
+                     <ProjectCard
+                       key={`history-${currentProject.id}-${historyIndex}`}
+                       project={currentProject}
+                       index={0}
+                       onSwipe={(dir) => handleHistorySlide(dir)}
+                       isTop={true}
+                       onClick={() => setSelectedProject(currentProject)}
+                       isHistory={true}
+                     />
+                     
+                     {/* Navigation Controls */}
+                     {!selectedProject && (
+                       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-4 z-[999]">
+                         <motion.button
+                           onClick={() => handleHistorySlide('left')}
+                           disabled={historyIndex === 0}
+                           className="w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white disabled:opacity-30 transition-all duration-200"
+                           whileHover={{ scale: 1.1 }}
+                           whileTap={{ scale: 0.95 }}
+                         >
+                           <ArrowLeft size={20} />
+                         </motion.button>
+                         <div className="flex items-center px-4 py-2 bg-black/50 backdrop-blur-sm rounded-full text-white text-sm font-medium min-w-[60px] justify-center">
+                           {historyIndex + 1} / {leftSwipedProjects.length}
+                         </div>
+                         <motion.button
+                           onClick={() => handleHistorySlide('right')}
+                           disabled={historyIndex === leftSwipedProjects.length - 1}
+                           className="w-12 h-12 bg-black/50 backdrop-blur-sm rounded-full flex items-center justify-center text-white disabled:opacity-30 transition-all duration-200"
+                           whileHover={{ scale: 1.1 }}
+                           whileTap={{ scale: 0.95 }}
+                         >
+                           <ArrowLeft size={20} className="rotate-180" />
+                         </motion.button>
+                       </div>
+                     )}
+                   </div>
+                 ) : (
+                   <div className="w-full h-full flex items-center justify-center">
+                     <div className="text-center">
+                       <div className="w-16 h-16 mx-auto mb-4">
+                         <svg className="block size-full" fill="none" viewBox="0 0 24 24">
+                           <path d={svgPaths.history} fill="#9ca3af" />
+                         </svg>
+                       </div>
+                       <h3 className="text-xl font-medium text-gray-700 mb-2">暂无历史记录！</h3>
+                       <p className="text-gray-500">左滑一些项目即可在这里查看。</p>
+                     </div>
+                   </div>
+                 )
+               ) : (
+                 // Normal Mode - Card stack（顶卡可滑动 + 下一张预备卡静态展示）
+                 <>
+                   {displayProjects.slice(0, 2).map((proj, i) => {
+                     const isTopCard = i === 0;
+                     return (
+                       <motion.div
+                         key={proj.id}
+                         className={`absolute inset-0 ${!isTopCard ? 'pointer-events-none' : ''}`}
+                         style={{ zIndex: isTopCard ? 2 : 1 }}
+                         initial={false}
+                         animate={isTopCard ? { scale: 1, y: 0 } : { scale: 0.94, y: 14 }}
+                         transition={isTopCard ? { type: 'spring', stiffness: 260, damping: 26 } : { layout: { type: 'spring', stiffness: 180, damping: 24 } }}
+                         layoutId={`card-${proj.id}`}
+                       >
+                         <ProjectCard
+                           project={proj}
+                           index={i}
+                           onSwipe={isTopCard ? handleSwipe : () => {}}
+                           isTop={isTopCard}
+                           onClick={isTopCard ? () => setSelectedProject(proj) : () => {}}
+                           isHistory={!isTopCard}
+                         />
+                       </motion.div>
+                     );
+                   })}
+                  </>
+               )}
+               
+               {!isHistoryMode && displayProjects.length === 0 && (
+                 <motion.div
+                   className="w-full h-full flex items-center justify-center"
+                   initial={{ opacity: 0 }}
+                   animate={{ opacity: 1 }}
+                 >
+                   <div className="text-center">
+                     <Star className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                     <h3 className="text-xl font-medium text-gray-700 mb-2">没有更多项目了！</h3>
+                     <p className="text-gray-500">稍后再来看看新的合作机会。</p>
+                   </div>
+                 </motion.div>
+               )}
+             </div>
+           </div>
+
+           {/* Bottom Navigation */}
+           <motion.div 
+             className="absolute bottom-0 left-0 right-0 bg-neutral-50 h-[100px] border-t border-[#e8edf2]"
+             initial={{ y: 126 }}
+             animate={{ y: 0 }}
+             transition={{ delay: 0.7, duration: 0.5 }}
+           >
+             <div className="h-full relative">
+               {/* Navigation Icons */}
+               <div className="absolute left-[13px] top-[25px] flex gap-[105px]">
+                 <div className="flex gap-0">
+                   <IconButton className="w-[65.2px]">
+                     <div className="w-6 h-6">
+                       <svg className="block size-full" fill="none" viewBox="0 0 18 19">
+                         <path d={svgPaths.p11f24e80} fill="#0055F7" />
+                       </svg>
+                     </div>
+                   </IconButton>
+                   <IconButton className="w-[65.2px]">
+                     <div className="w-6 h-6">
+                       <svg className="block size-full" fill="none" viewBox="0 0 21 21">
+                         <path d={svgPaths.p11caffd0} fill="#616C78" />
+                       </svg>
+                     </div>
+                   </IconButton>
+                 </div>
+                 <div className="flex gap-0">
+                   <IconButton className="w-[65.2px]">
+                     <div className="w-6 h-6">
+                       <svg className="block size-full" fill="none" viewBox="0 0 20 20">
+                         <path d={svgPaths.p19a90780} fill="#616C78" />
+                       </svg>
+                     </div>
+                   </IconButton>
+                   <IconButton className="w-[65.2px]">
+                     <div className="w-6 h-6">
+                       <svg className="block size-full" fill="none" viewBox="0 0 20 20">
+                         <path d={svgPaths.p3d54cd00} fill="#616C78" />
+                       </svg>
+                     </div>
+                   </IconButton>
+                 </div>
+               </div>
+
+               {/* Center Plus Button */}
+               <motion.button
+                 className="absolute left-[170px] top-[16px] w-[53px] h-[53px] bg-[#0055f7] rounded-full flex items-center justify-center shadow-lg"
+                 whileHover={{ scale: 1.1, y: -2 }}
+                 whileTap={{ scale: 0.95 }}
+                 animate={{ rotate: [0, 180, 360] }}
+                 transition={{ 
+                   rotate: { duration: 4, repeat: Infinity, ease: "linear" },
+                   scale: { duration: 0.2 },
+                   y: { duration: 0.2 }
+                 }}
+               >
+                 <div className="w-6 h-6">
+                 <svg className="block size-full" fill="none" viewBox="0 0 23 23">
+                   <path d={svgPaths.p3b63e500} fill="white" stroke="white" />
+                 </svg>
+               </div>
+               </motion.button>
+             </div>
+           </motion.div>
+
+           {/* Filter Sidebar */}
+           <FilterSidebar 
+             isOpen={showFilter} 
+             onClose={() => setShowFilter(false)}
+             filters={filters}
+             setFilters={setFilters}
+           />
+
+           {/* Project Detail View */}
+           <AnimatePresence>
+             {selectedProject && (
+               <ProjectDetailView
+                 project={selectedProject}
+                 onClose={() => setSelectedProject(null)}
+                 suppressFirstTap={true}
+               />
+             )}
+           </AnimatePresence>
+                 </>
+               </motion.div>
+             )}
+           </AnimatePresence>
         </div>
       </div>
       {showPopup && createPortal(

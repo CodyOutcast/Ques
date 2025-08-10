@@ -30,11 +30,11 @@ function Frame13770() {
   return (
     <div className="box-border content-stretch flex flex-col font-bold gap-1 items-start justify-center leading-[0] p-0 relative shrink-0 text-[#2a2f3f] text-left">
       <div className="font-['Nunito:Bold_Italic',_sans-serif] h-[78px] italic relative shrink-0 text-[72px] w-[311px]">
-        <p className="block leading-[normal]">Get to it !</p>
+        <p className="block leading-[normal]">开始行动！</p>
       </div>
       <div className="font-['Nunito:Bold',_sans-serif] relative shrink-0 text-[16px] text-nowrap">
         <p className="block leading-[normal] whitespace-pre">
-          Send a greeting message to start chat now!
+          发送打招呼消息，开启聊天！
         </p>
       </div>
     </div>
@@ -66,7 +66,7 @@ function Frame35({ message, onMessageChange, onSend }: Frame35Props) {
           }
         }}
         className="bg-transparent border-none outline-none flex-1 font-['Nunito:Bold',_sans-serif] font-bold leading-[0] text-[#3369ff] text-[13px] text-left placeholder:text-[#3369ff]/60"
-        placeholder="Hi! 👋 I'm interested in your project! Would like to know more."
+        placeholder="嗨！👋 我对你的项目很感兴趣，想进一步了解。"
         style={{ fontSize: '13px', lineHeight: 'normal' }}
       />
       <button
@@ -175,7 +175,7 @@ function Frame13772({ isChecked, onToggle }: Frame13772Props) {
       <Checkboxes isChecked={isChecked} onToggle={onToggle} />
       <div className="font-['Nunito:Bold',_sans-serif] font-bold h-[38px] leading-[0] relative shrink-0 text-[#000000] text-[13px] text-left w-[148px]">
         <p className="block leading-[normal]">
-          set as default greeting not displayed recently
+          设为默认打招呼语 近期不再显示
         </p>
       </div>
     </div>
@@ -197,7 +197,7 @@ function Frame13773({ isChecked, onToggle, onBackLater }: Frame13773Props) {
           onClick={onBackLater}
           className="[text-decoration-line:underline] [text-decoration-style:solid] [text-underline-position:from-font] block leading-[normal] cursor-pointer hover:text-[#8a9bb3] transition-colors text-left"
         >
-          I'll back to it later
+          稍后再说
         </button>
       </div>
     </div>
@@ -232,7 +232,7 @@ interface InteractivePopupProps {
 }
 
 export default function InteractivePopup({ onClose, defaultChecked = false, onDefaultChange }: InteractivePopupProps) {
-  const [message, setMessage] = useState("Hi! 👋 I'm interested in your project! Would like to know more.");
+  const [message, setMessage] = useState("嗨！👋 我对你的项目很感兴趣，想进一步了解。");
   const [isChecked, setIsChecked] = useState(!!defaultChecked);
 
   const handleSend = () => {
@@ -252,20 +252,20 @@ export default function InteractivePopup({ onClose, defaultChecked = false, onDe
   return (
     <div className="popup-frame">
       <div className="popup-inner">
-        <div className="popup-title">Get to it !</div>
-        <div className="popup-subtitle">Send a greeting message to start chat now!</div>
+        <div className="popup-title">开始行动！</div>
+        <div className="popup-subtitle">发送打招呼消息，开启聊天！</div>
         
         <div className="popup-input-row" style={{ paddingRight: 44 }}>
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Hi! 👋 I'm interested in your project! Would like to know more."
+            placeholder="嗨！👋 我对你的项目很感兴趣，想进一步了解。"
           />
           <button className="popup-send-btn" onClick={handleSend}>
             <VuesaxBoldSend />
           </button>
-        </div>
+          </div>
         
         <div className="popup-checkbox-row" style={{ alignItems: 'flex-end' }}>
           <label className="popup-checkbox-label" style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
@@ -281,7 +281,7 @@ export default function InteractivePopup({ onClose, defaultChecked = false, onDe
             </span>
           </label>
           <button className="popup-later" onClick={handleBackLater}>
-            I'll back to it later
+            稍后再说
           </button>
         </div>
       </div>

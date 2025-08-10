@@ -4,6 +4,10 @@ export default {
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
+    "./Interactive Ques Sign-Up_Sign-In Prototype/**/*.{js,ts,jsx,tsx}",
+    "./Popup Frame Component/**/*.{js,ts,jsx,tsx}",
+    "./auth-components/**/*.{js,ts,jsx,tsx}",
+    "./auth-imports/**/*.{js,ts,jsx,tsx}",
     "./*.{js,ts,jsx,tsx}",
   ],
   safelist: [

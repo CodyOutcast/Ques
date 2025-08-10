@@ -1,5 +1,13 @@
 import React from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
+
+// Positioning and sizing constants (px) — adjust here if you want to fine-tune
+const TITLE_LEFT_PX = 20;      // Ques 左边距（不再使用水平定位，可作为偏移备用）
+const TITLE_TOP_PX = 320;       // Ques 顶部位置
+const TITLE_SIZE_PX = 128;      // Ques 字号
+const LINES_LEFT_PX = 60;       // 三行左边距
+const LINES_TOP_PX = 440;       // 三行顶部位置（保证与 Ques 有足够间距）
+const LINES_GAP_PX = -10;        // 三行之间的行间距（允许为负值）
 
 export function LaunchingPage() {
   return (
@@ -11,40 +19,61 @@ export function LaunchingPage() {
       className="bg-[#ffffff] relative size-full"
       data-name="luanching page"
     >
-      <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.3, duration: 0.8, type: "spring" }}
-        className="absolute flex flex-col font-['Instrument_Sans:Bold_Italic',_sans-serif] font-bold h-[75px] italic justify-center leading-[0] left-[200.5px] text-[#0055f7] text-[128px] text-center top-[333.5px] tracking-[-2px] translate-x-[-50%] translate-y-[-50%] w-[349px]"
-        style={{ fontVariationSettings: "'wdth' 100" }}
-      >
-        <p className="adjustLetterSpacing block leading-[95px]">Ques</p>
-      </motion.div>
+      {/* Center wrapper to avoid framer-motion overriding transform */}
+      <div className="absolute" style={{ left: '50%', transform: 'translateX(-50%)', top: TITLE_TOP_PX }}>
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.3, duration: 0.8, type: "spring" }}
+          style={{ fontVariationSettings: "'wdth' 100" }}
+        >
+          <p
+            className="adjustLetterSpacing block text-left font-['Instrument Sans',_sans-serif] font-bold italic text-[#0055f7] leading-[95px] tracking-[-2px]"
+            style={{
+              fontFamily: 'Instrument Sans, system-ui, sans-serif',
+              fontStyle: 'italic',
+              fontWeight: 700,
+              color: '#0055f7',
+              fontSize: `${TITLE_SIZE_PX}px`,
+              lineHeight: '95px',
+              letterSpacing: '-2px',
+              textAlign: 'left'
+            }}
+          >
+            Ques
+          </p>
+        </motion.div>
+      </div>
       
-      <div className="absolute bottom-[42.91%] font-['Rubik:Bold',_sans-serif] font-bold leading-[normal] left-[14.93%] right-[32.59%] text-[#0055f7] text-[24px] text-left top-[47.48%]">
+      <div
+        className="absolute"
+        style={{ left: LINES_LEFT_PX, top: LINES_TOP_PX }}
+      >
         <motion.p
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.8, duration: 0.6, ease: "easeOut" }}
-          className="block mb-0"
+          className="block font-['Rubik',_sans-serif] font-bold text-[#0055f7] text-[24px]"
         >
-          Match.
+          匹配。
         </motion.p>
         <motion.p
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 1.0, duration: 0.6, ease: "easeOut" }}
-          className="block mb-0"
+          className="block font-['Rubik',_sans-serif] font-bold text-[#0055f7] text-[24px]"
+          style={{ marginTop: LINES_GAP_PX }}
         >
-          Connect.
+          连接。
         </motion.p>
         <motion.p
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 1.2, duration: 0.6, ease: "easeOut" }}
-          className="block"
+          className="block font-['Rubik',_sans-serif] font-bold text-[#0055f7] text-[24px]"
+          style={{ marginTop: LINES_GAP_PX }}
         >
-          Collab.
+          协作。
         </motion.p>
       </div>
     </motion.div>
