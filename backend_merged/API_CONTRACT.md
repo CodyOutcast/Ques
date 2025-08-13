@@ -104,7 +104,15 @@ This is the comprehensive API contract for the merged dating app backend, combin
 
 ## Recommendations (`/api/v1/recommendations`)
 *Available if recommendation service is running*
-- Various recommendation endpoints for smart matching
+
+### User Recommendations
+- `GET /api/v1/recommendations/users` - Get 20 recommended user profiles for swiping/matching
+
+### Project Cards  
+- `GET /api/v1/recommendations/cards` - Get project cards with rich information (matches card.json structure)
+
+### Swipe Actions
+- `POST /api/v1/recommendations/swipe` - Record swipe action on users (like/dislike)
 
 ## SMS Verification (`/api/v1/sms`)
 

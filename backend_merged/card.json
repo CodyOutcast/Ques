@@ -1,0 +1,40 @@
+{
+    "cards": [
+      {
+        "id": 101,
+        "title": "项目标题",
+        "description": "项目简介",
+        "tags": ["AI", "NLP"],
+        "type": "project",
+        "cardStyle": "text-only", 
+        "status": "ongoing",
+        "owner": {
+          "name": "Alex",
+          "age": 28,
+          "gender": "Male",
+          "role": "Owner",
+          "distance": 3,
+          "avatar": "https://.../avatar.jpg",
+          "tags": ["AI", "PM"]
+        },
+        "collaborators": 3,
+        "collaboratorsList": [
+          { "name": "Sarah", "role": "Frontend", "avatar": "https://..." }
+        ],
+        "detailedDescription": "更详细的描述...",
+        "startTime": "March 2024",
+        "currentProgress": 40,
+        "content": "我们正在构建...",
+        "purpose": "解决什么问题/目标是什么",
+        "lookingFor": {
+          "tags": ["Backend", "Designer"],
+          "description": "希望找到熟悉 Node/React 的同学，一起推进 MVP。"
+        },
+        "links": ["https://github.com/..."],
+        "media": ["https://.../cover1.jpg", "https://.../demo.mp4"],
+        "cover": "https://.../封面图.jpg",
+        "videoUrl": null,
+        "gradientBackground": "bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600"
+      }
+    ]
+  }
