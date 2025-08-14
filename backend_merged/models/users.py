@@ -53,8 +53,8 @@ class User(Base):
     # Message relationships
     sent_messages = relationship("Message", back_populates="sender")
     
-    # Project relationships
-    user_projects = relationship("UserProject", back_populates="user")
+    # Project relationships - will be defined after UserProject is available
+    # user_projects = relationship("UserProject", back_populates="user")
     
     # Report relationships
     reports_made = relationship("UserReport", foreign_keys="UserReport.reporter_id", back_populates="reporter")
