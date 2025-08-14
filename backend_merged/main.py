@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 from dependencies.db import get_db, engine
 from models.base import Base
-from routers import auth, users, matches, messages, profile, chats, projects, location, user_reports, sms_router
+from routers import auth, users, matches, messages, profile, chats, projects, location, user_reports, sms_router, project_ideas
 from config.settings import settings
 try:
     from routers import recommendations
@@ -108,6 +108,7 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(user_reports.router, prefix="/api/v1", tags=["User Reports"])
 app.include_router(sms_router.router, tags=["SMS Verification"])
+app.include_router(project_ideas.router, tags=["Project Ideas"])
 if RECOMMENDATIONS_AVAILABLE:
     app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["Recommendations"])
 app.include_router(matches.router, prefix="/api/v1/search", tags=["AI Search"])
@@ -171,7 +172,8 @@ async def api_info():
             "Swipe History Tracking",
             "Vector Similarity Matching",
             "Feature Flags",
-            "Security Monitoring"
+            "Security Monitoring",
+            "Project Idea Generation Agent"
         ],
         "endpoints": {
             "auth": "/api/v1/auth",
@@ -179,7 +181,8 @@ async def api_info():
             "recommendations": "/api/v1/recommendations",
             "search": "/api/v1/search",
             "messages": "/api/v1/messages",
-            "profile": "/api/v1/profile"
+            "profile": "/api/v1/profile",
+            "project_ideas": "/api/v1/project-ideas"
         }
     }
 

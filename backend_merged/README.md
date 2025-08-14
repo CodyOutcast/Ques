@@ -39,6 +39,20 @@ A comprehensive dating application backend built with FastAPI, featuring intelli
 - **Vector-based Similar User Discovery**
 - **Contextual Recommendations** based on user preferences
 
+### 🤖 **Project Idea Generation System** ⭐ **NEW**
+- **AI-Powered Project Idea Agent** using DeepSeek LLM for creative project suggestions
+- **Web Research Integration** with SearchAPI for up-to-date project trends
+- **Intelligent Content Scraping** using Crawl4AI for parallel web data extraction
+- **Query Refinement Engine** that transforms user queries into optimized search prompts
+- **Quota Management System** with subscription-based usage limits:
+  - **Free Users**: 30 project idea generations per month
+  - **Pro Users**: 300 project idea generations per month
+  - **Enterprise Users**: 1000 project idea generations per month
+- **Real-time Streaming API** for progressive project idea generation
+- **Usage Analytics & Tracking** with detailed request history and success metrics
+- **Content Filtering** optimized for Chinese firewall constraints
+- **Multi-Engine Search Strategy** (Google, Baidu) with intelligent fallbacks
+
 ### 📱 **User Management**
 - Complete user profiles with bio, features, and links
 - User verification system
@@ -59,6 +73,7 @@ backend_merged/
 │   ├── auth.py               # Authentication endpoints
 │   ├── users.py              # User management
 │   ├── chats.py              # Messaging system ⭐ NEW
+│   ├── project_ideas.py      # Project idea generation ⭐ NEW
 │   ├── recommendations.py    # Page 1 recommendations
 │   ├── matches.py            # Page 2 AI search
 │   ├── messages.py           # Legacy messaging
@@ -68,6 +83,8 @@ backend_merged/
 ├── services/
 │   ├── auth_service.py       # Authentication logic
 │   ├── chat_service.py       # Messaging logic ⭐ NEW
+│   ├── project_idea_agent.py # AI project idea generation ⭐ NEW
+│   ├── quota_service.py      # Subscription & quota management ⭐ NEW
 │   ├── email_service.py      # Email notifications
 │   └── security.py           # Security utilities
 
@@ -75,12 +92,15 @@ backend_merged/
 ├── models/
 │   ├── users.py              # User database model
 │   ├── chats.py              # Chat & messaging models ⭐ NEW
+│   ├── subscriptions.py      # Subscription & quota models ⭐ NEW
 │   ├── matches.py            # Match relationships
 │   ├── likes.py              # User interactions
 │   └── user_auth.py          # Authentication models
 
 📁 AI & Matching
 ├── production_recommendation_service.py  # Enterprise matchmaking ⭐
+├── project_idea_agent.py                # Standalone project agent ⭐ NEW
+├── project_agent_test.py                # Agent testing utility ⭐ NEW
 ├── db_utils.py                           # VectorDB utilities ⭐
 └── create_vectordb_collection.py         # VectorDB setup ⭐
 
@@ -132,6 +152,10 @@ VECTORDB_KEY=your-api-key
 
 # AI Search (Optional - for Page 2)
 DEEPSEEK_API_KEY=your-deepseek-api-key
+
+# Project Idea Generation (Required for project idea features) ⭐ NEW
+SEARCHAPI_KEY=your-searchapi-key
+DEEPSEEK_API_KEY_AGENT=your-deepseek-agent-api-key
 
 # Email Service (Optional)
 TENCENT_SECRET_ID=your-tencent-id
@@ -211,6 +235,16 @@ GET  /api/v1/chats/pending            # Get pending greetings
 GET  /api/v1/chats/{chat_id}          # Get chat with messages
 POST /api/v1/chats/messages/read      # Mark messages as read
 POST /api/v1/chats/search             # Search chats and messages ⭐ **NEW**
+```
+
+### 🤖 **Project Idea Generation APIs** ⭐ **NEW**
+```bash
+POST /api/v1/project-ideas/generate        # Generate project ideas
+POST /api/v1/project-ideas/generate-stream # Real-time streaming generation
+GET  /api/v1/project-ideas/quota           # Check user quota status
+GET  /api/v1/project-ideas/history         # Get generation history
+POST /api/v1/project-ideas/quota/reset     # Admin: Reset user quota
+POST /api/v1/project-ideas/subscription/upgrade # Upgrade subscription
 ```
 
 ## 🎯 **Messaging Flow**
@@ -486,7 +520,104 @@ GET /api/v1/users/liked/mutual?page=1&per_page=20
 - `security_logs` - Security audit trail
 - `alembic_version` - Database migration tracking
 
-## 🧪 **Testing**
+## � **Project Idea Generation System** ⭐ **NEW**
+
+### **AI-Powered Project Ideation**
+Transform user queries into creative, actionable project ideas using advanced AI and web research.
+
+### **System Architecture**
+1. **🧠 Query Intelligence** - DeepSeek LLM refines user queries into optimized search prompts
+2. **🌐 Web Research** - SearchAPI gathers up-to-date information from multiple search engines
+3. **🕷️ Content Extraction** - Crawl4AI performs parallel web scraping with intelligent filtering
+4. **💡 Idea Generation** - AI synthesizes research into creative project suggestions
+5. **📊 Usage Tracking** - Comprehensive quota and analytics system
+
+### **Core Features**
+- **🎯 Smart Query Processing**: Transforms vague ideas into specific search strategies
+- **⚡ Real-time Streaming**: Progressive updates during generation process
+- **🔄 Multi-Engine Search**: Google + Baidu with intelligent fallbacks
+- **🚫 Content Filtering**: Optimized for Chinese firewall constraints
+- **📈 Subscription Management**: Tiered quota system with usage analytics
+- **🎨 Creative Synthesis**: AI combines multiple sources into unique project ideas
+
+### **Subscription Tiers & Quotas**
+| Tier | Monthly Quota | Features |
+|------|---------------|----------|
+| **Free** | 30 generations | Basic project ideas |
+| **Pro** | 300 generations | Priority processing + history |
+| **Enterprise** | 1000 generations | Advanced analytics + support |
+
+### **API Endpoints**
+```bash
+# Generate project ideas
+POST /api/v1/project-ideas/generate
+{
+  "query": "Build a mobile app for fitness tracking"
+}
+
+# Stream generation process
+POST /api/v1/project-ideas/generate-stream
+# Returns Server-Sent Events with real-time progress
+
+# Check quota status
+GET /api/v1/project-ideas/quota
+
+# View generation history
+GET /api/v1/project-ideas/history?days=30
+
+# Upgrade subscription
+POST /api/v1/project-ideas/subscription/upgrade
+{
+  "subscription_type": "pro"
+}
+```
+
+### **Example Response**
+```json
+{
+  "search_id": 1234,
+  "original_query": "Build a mobile app for fitness tracking",
+  "total_sources_found": 15,
+  "total_ideas_extracted": 3,
+  "processing_time_seconds": 12.5,
+  "project_ideas": [
+    {
+      "title": "AI-Powered Fitness Coach App",
+      "description": "Mobile app with computer vision for exercise form correction and personalized workout plans",
+      "difficulty": "Intermediate",
+      "technologies": ["React Native", "TensorFlow Lite", "Firebase"],
+      "estimated_time": "3-4 months",
+      "relevance_score": 0.95
+    }
+  ]
+}
+```
+
+### **Environment Configuration**
+```bash
+# Required for project idea generation
+SEARCHAPI_KEY=your-searchapi-key          # Web search capabilities
+DEEPSEEK_API_KEY_AGENT=your-deepseek-key  # AI query processing & idea generation
+```
+
+### **Database Models**
+- **UserSubscription** - Tracks user subscription status and quota limits
+- **ProjectIdeaRequest** - Logs all generation requests with metadata
+- **Usage Analytics** - Detailed tracking of success rates and performance
+
+### **Testing & Development**
+```bash
+# Test project idea agent
+python project_agent_test.py
+
+# Test quota system
+python test_quota_system.py
+
+# Interactive agent testing
+python -c "from services.project_idea_agent import generate_project_ideas; print(generate_project_ideas('build a chatbot', 123))"
+```
+
+## �🧪 **Testing**
 
 ### **Run Tests**
 ```powershell
@@ -495,6 +626,10 @@ python setup_database.py
 
 # Test content moderation system ⭐ NEW
 python test_content_moderation.py
+
+# Test project idea generation system ⭐ NEW
+python project_agent_test.py
+python test_quota_system.py
 
 # Test matchmaking integration
 python test_matchmaking_integration.py

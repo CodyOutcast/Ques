@@ -393,3 +393,85 @@ def get_random_unseen_users(user_id, seen_card_ids, limit):
         return []
     finally:
         db.close()
+
+
+# Quota system functions for project idea agent
+def check_quota(user_id: int) -> bool:
+    """
+    Check if user has quota remaining for project idea generation
+    
+    DEPRECATED: Use QuotaService.check_quota() instead for new implementations
+    This function is kept for backward compatibility.
+    
+    Args:
+        user_id: User ID to check quota for
+        
+    Returns:
+        True if user has quota remaining, False otherwise
+    """
+    try:
+        from services.quota_service import QuotaService
+        has_quota, _ = QuotaService.check_quota(user_id)
+        return has_quota
+    except ImportError:
+        # Fallback to old logic if new service isn't available
+        if not SessionLocal:
+            logging.warning("Database not available, allowing quota check")
+            return True
+        
+        db = SessionLocal()
+        try:
+            # Check user's daily quota (assume 10 requests per day per user)
+            query = text("""
+                SELECT COUNT(*) as used_quota 
+                FROM project_idea_requests 
+                WHERE user_id = :user_id 
+                AND DATE(created_at) = CURRENT_DATE
+            """)
+            result = db.execute(query, {"user_id": user_id}).fetchone()
+            
+            used_quota = result.used_quota if result else 0
+            daily_limit = 10  # Allow 10 project idea generations per day
+            
+            return used_quota < daily_limit
+            
+        except Exception as e:
+            logging.error(f"Error checking quota for user {user_id}: {e}")
+            return True  # Allow on error
+        finally:
+            db.close()
+        # In case of error, allow the request (fail open)
+        return True
+    finally:
+        db.close()
+
+
+def deduct_quota(user_id: int, cost: int = 1):
+    """
+    Deduct quota after successful project idea generation
+    
+    Args:
+        user_id: User ID to deduct quota from
+        cost: Cost to deduct (default 1)
+    """
+    if not SessionLocal:
+        logging.warning("Database not available, skipping quota deduction")
+        return
+    
+    db = SessionLocal()
+    try:
+        # Record the request in project_idea_requests table
+        query = text("""
+            INSERT INTO project_idea_requests (user_id, cost, created_at)
+            VALUES (:user_id, :cost, NOW())
+        """)
+        db.execute(query, {"user_id": user_id, "cost": cost})
+        db.commit()
+        
+        logging.info(f"Deducted {cost} quota from user {user_id}")
+        
+    except Exception as e:
+        logging.error(f"Error deducting quota for user {user_id}: {e}")
+        db.rollback()
+    finally:
+        db.close()
