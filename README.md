@@ -1,15 +1,22 @@
 # Ques 快索
 
-项目社交媒体 The social media for projects
+
+项目社交媒体软件 The social media for projects
 
 
-
-投资者投资小项目，小公司老板招聘人才或合伙人，同学探索有趣项目想法，同学展示自己的项目吸引机会，同学寻找项目伙伴
-
+Target Customers: Students; Recruiters; Onlookers; Investors.
 
 
-Frontend: Rhys, Jimmy
+Roles:
 
 
+Rhys: CTO | Frontend + Design
 
-Backend: Cody, William
+
+Cody: CEO | Marketing + Editing + Sales
+
+
+Jimmy: CMO | AI Content Materials + Legality + AI Agents + Website
+
+
+William: COO | Database + Servers + Matchmaking Algorithms + Cameraman
