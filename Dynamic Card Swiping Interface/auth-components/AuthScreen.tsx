@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import logoUrl from '../auth-imports/no_bg.PNG?url';
 
 interface SMSData {
   phoneNumber: string;
@@ -35,12 +36,14 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
   const phoneErrorToShow = errors.phoneNumber ?? (phoneTouched && !isPhoneValid ? '请输入有效的手机号' : undefined);
   const codeErrorToShow = errors.verificationCode ?? (codeTouched && codeSent && smsData.verificationCode.length !== 6 ? '请输入6位验证码' : undefined);
   return (
-    <div className="absolute bg-black h-[874px] overflow-hidden w-[402px]">
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top right, #286CFF, #4ade80)' }} />
+    <div className="absolute h-[874px] overflow-hidden w-[402px]">
       {/* Title section - Fixed positioning at top */}
       <div className="absolute left-1/2 top-[80px] transform -translate-x-1/2 text-center w-[350px]">
-        <div className="font-['Instrument Sans',_sans-serif] font-bold italic text-white text-[64px] mb-4">
+        <div className="mb-4 flex items-center justify-center gap-3">
+          <img src={logoUrl} alt="Ques" style={{ height: 55, width: 'auto' }} />
+          <div className="font-['Instrument Sans',_sans-serif] font-bold italic text-white text-[64px] leading-[1]">
           Ques
+          </div>
         </div>
         <div className="font-['Inria_Sans:Bold',_sans-serif] font-bold text-white text-[28px] leading-[1.1] whitespace-nowrap">
           即刻找到你的合作伙伴

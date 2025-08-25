@@ -1,5 +1,10 @@
 {
   "dependencies": {
+    "@radix-ui/react-label": "^2.1.7",
+    "@radix-ui/react-slot": "^1.2.3",
+    "class-variance-authority": "^0.7.1",
+    "lucide-react": "^0.539.0",
+    "react-hook-form": "^7.62.0",
     "react-swipes": "^1.1.0",
     "swiper": "^11.2.10"
   }

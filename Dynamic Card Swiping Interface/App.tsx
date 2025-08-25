@@ -13,9 +13,20 @@ import './styles/popup-custom.css';
 import { createPortal } from 'react-dom';
 import TinderCard from 'react-tinder-card';
 import { AuthPhoneScreen } from './auth-components/AuthScreen';
+import logo from './auth-imports/no_bg.PNG';
+import BackgroundGradientAnimation from './components/ui/BackgroundGradientAnimation';
+import { HeaderBar } from './components/HeaderBar';
+import { fetchProjectCards, sendSwipe, CardsResponse } from './src/api/recommendations';
+import { getAccessToken } from './src/api/client';
 
 // 新增：导入启动页面组件
 import { LaunchingPage } from './Interactive Ques Sign-Up_Sign-In Prototype/components/LaunchingPage';
+import AISearchIntegrated from './components/AISearchIntegrated';
+
+// 新增：导入Project Posting Interface组件
+import { PostingProjectPage } from './components/project-posting/PostingProjectPage';
+import { DraftsPage } from './components/project-posting/DraftsPage';
+import { DraftResumeDialog } from './components/project-posting/DraftResumeDialog';
 
 // 新增：认证相关接口
 interface SMSData {
@@ -24,7 +35,7 @@ interface SMSData {
 }
 
 // 新增：应用状态类型
-type AppState = 'launch' | 'auth' | 'main';
+type AppState = 'launch' | 'auth' | 'main' | 'ai' | 'posting' | 'drafts' | 'resume';
 
 // 可调滑动参数（集中配置）
 export const SWIPE_REQUIREMENT: 'position' | 'velocity' = 'position';
@@ -126,7 +137,7 @@ interface Owner {
   tags: string[];
 }
 
-interface Project {
+export interface Project {
   id: number;
   title: string;
   author: string;
@@ -135,8 +146,8 @@ interface Project {
   videoUrl?: string;
   description: string;
   tags: string[];
-  type: 'project' | 'profile';
-  cardStyle: 'image' | 'video' | 'text-only' | 'profile';
+  type: 'project';
+  cardStyle: 'image' | 'video' | 'text-only';
   status: 'ongoing' | 'finished' | 'not_started';
   owner: Owner;
   collaboratorsList: Collaborator[];
@@ -172,6 +183,57 @@ const gradientBackgrounds = [
 const getRandomGradient = () => {
   return gradientBackgrounds[Math.floor(Math.random() * gradientBackgrounds.length)];
 };
+
+// 新增：后端卡片到本地 Project 类型的映射（使用新版字段 cover、lookingFor 对象）
+function mapBackendCardToProject(card: any): Project {
+  const idNum = typeof card?.id === 'string' ? parseInt(card.id, 10) : Number(card?.id || 0);
+  const title: string = card?.title || 'Untitled Project';
+  const description: string = card?.description || 'No description available';
+  const tags: string[] = Array.isArray(card?.tags) ? card.tags : [];
+  const owner = card?.owner || {};
+  const collaboratorsList = Array.isArray(card?.collaboratorsList) ? card.collaboratorsList : [];
+  const links: string[] = Array.isArray(card?.links) ? card.links : [];
+  const media: string[] = Array.isArray(card?.media) ? card.media : [];
+  const cover: string | undefined = card?.cover || undefined;
+  const lookingFor = card?.lookingFor || { tags: [], description: '' };
+
+  return {
+    id: Number.isFinite(idNum) ? idNum : Math.floor(Math.random() * 1000000),
+    title,
+    author: owner?.name || title,
+    collaborators: Number(card?.collaborators ?? collaboratorsList.length ?? 0),
+    description,
+    tags,
+    type: 'project',
+    cardStyle: (card?.cardStyle || 'text-only'),
+    status: (card?.status || 'ongoing'),
+    owner: {
+      name: owner?.name || 'Anonymous',
+      age: owner?.age ?? 25,
+      gender: owner?.gender ?? 'Non-binary',
+      role: owner?.role || 'Owner',
+      distance: owner?.distance ?? 5,
+      avatar: owner?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(owner?.name || 'user')}`,
+      tags: Array.isArray(owner?.tags) ? owner.tags : []
+    },
+    collaboratorsList: collaboratorsList.map((c: any) => ({
+      name: c?.name || 'Member',
+      role: c?.role || 'Collaborator',
+      avatar: c?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(c?.name || 'member')}`
+    })),
+    detailedDescription: card?.detailedDescription || description,
+    startTime: card?.startTime || 'Recently',
+    currentProgress: card?.currentProgress ?? 40,
+    content: card?.content || description,
+    purpose: card?.purpose || 'Building innovative solutions',
+    lookingFor: Array.isArray(lookingFor?.tags) ? lookingFor.tags : [],
+    links,
+    media: cover ? [cover, ...media] : media,
+    gradientBackground: card?.gradientBackground || getRandomGradient(),
+    background: cover,
+    videoUrl: card?.videoUrl || undefined
+  } as Project;
+}
 
 const projects: Project[] = [
   {
@@ -292,7 +354,6 @@ const projects: Project[] = [
 const projectTypes = ["AI", "Design", "Sustainability", "Mobile", "VR", "Education", "Blockchain", "Gaming", "Health", "Finance"];
 
 interface FilterState {
-  cardTypes: { project: boolean; profile: boolean };
   projectStatus: { ongoing: boolean; finished: boolean; not_started: boolean };
   projectTypes: string[];
   distance: number[];
@@ -304,32 +365,57 @@ interface FilterState {
 }
 
 function PopupButton() {
+  const [logoAspect, setLogoAspect] = useState<number | null>(null);
+  useEffect(() => {
+    const img = new Image();
+    img.onload = () => setLogoAspect((img.naturalWidth && img.naturalHeight) ? (img.naturalWidth / img.naturalHeight) : 1);
+    img.src = logo as any;
+  }, []);
   return (
-    <div className="flex flex-row gap-[3px] items-center justify-center leading-[0] px-0 py-[13px] relative">
-      <motion.div
-        className="relative"
-        animate={{ scale: [1, 1.05, 1] }}
-        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+    <motion.div
+      className="flex flex-row items-end justify-center gap-0 leading-[0] px-0 py-[13px] relative"
+      animate={{ scale: [1, 1.05, 1] }}
+      transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+    >
+      <div
+        aria-label="Ques"
+        className="inline-block"
+        style={{
+          height: '36px',
+          width: logoAspect ? `${Math.round(36 * logoAspect)}px` : 'auto',
+          backgroundColor: '#0055F7',
+          WebkitMaskImage: `url(${logo})`,
+          maskImage: `url(${logo})`,
+          WebkitMaskRepeat: 'no-repeat',
+          maskRepeat: 'no-repeat',
+          WebkitMaskPosition: 'left center',
+          maskPosition: 'left center',
+          WebkitMaskSize: 'contain',
+          maskSize: 'contain'
+        } as React.CSSProperties}
+      />
+      <p 
+        className="block text-nowrap whitespace-pre"
+        style={{
+          marginLeft: '4px',
+          color: '#0055F7',
+          fontFeatureSettings: "'liga' off, 'clig' off",
+          fontFamily: '"Instrument Sans"',
+          fontSize: '42px',
+          fontStyle: 'italic',
+          fontWeight: '700',
+          lineHeight: '36px',
+          transform: 'translateY(4px)'
+        }}
+        onLoad={() => {
+          const img = new Image();
+          img.onload = () => setLogoAspect(img.naturalWidth / img.naturalHeight);
+          img.src = logo as any;
+        }}
       >
-        <p 
-          className="block text-nowrap whitespace-pre"
-          style={{
-            color: 'var(--Accent-blue1, #0055F7)',
-            fontFeatureSettings: "'liga' off, 'clig' off",
-            fontFamily: '"Instrument Sans"',
-            fontSize: '40px',
-            fontStyle: 'italic',
-            fontWeight: '700',
-            lineHeight: '9px'
-          }}
-        >
-          Ques
-        </p>
-      </motion.div>
-      <div className="flex flex-col font-normal justify-center relative text-[#0088ff]">
-        <ChevronDown size={18} className="text-[#0088ff]" />
-      </div>
-    </div>
+        Ques
+      </p>
+    </motion.div>
   );
 }
 
@@ -597,7 +683,6 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters }: {
                   <button
                     onClick={() => {
                       setFilters({
-                        cardTypes: { project: true, profile: true },
                         projectStatus: { ongoing: true, finished: true, not_started: true },
                         projectTypes: [],
                         distance: [0, 50],
@@ -788,7 +873,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                   {project.tags.map((tag, i) => (
                     <motion.span
                       key={tag}
-                      className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium"
+                      className="px-3 py-1 bg-white/20 text-white border border-white/30 rounded-full text-xs font-medium"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.3 + i * 0.1 }}
@@ -842,7 +927,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                   {project.tags.map((tag, i) => (
                     <motion.span
                       key={tag}
-                      className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium"
+                      className="px-3 py-1 bg-white/20 text-white border border-white/30 rounded-full text-xs font-medium"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.3 + i * 0.1 }}
@@ -907,7 +992,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                   {project.tags.map((tag, i) => (
                     <motion.span
                       key={tag}
-                      className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium"
+                      className="px-3 py-1 bg-white/20 text-white border border-white/30 rounded-full text-xs font-medium"
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                       transition={{ delay: 0.3 + i * 0.1 }}
@@ -921,64 +1006,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
           </>
         );
       
-      case 'profile':
-        return (
-          <>
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600" />
-            <div className="absolute inset-0 bg-black/10" />
-            {/* Profile pattern */}
-            <div className="absolute inset-0 opacity-20">
-              <svg className="w-full h-full" viewBox="0 0 400 600">
-                <defs>
-                  <pattern id="profile-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-                    <circle cx="20" cy="20" r="2" fill="white" />
-                  </pattern>
-                </defs>
-                <rect width="100%" height="100%" fill="url(#profile-pattern)" />
-              </svg>
-            </div>
-            <div className="absolute inset-0 p-6 text-white flex flex-col items-center justify-center">
-              <motion.div
-                initial={{ y: 20, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.2 }}
-                className="text-center"
-              >
-                <div className="mb-6">
-                  <ImageWithFallback
-                    src={project.owner.avatar}
-                    alt={project.owner.name}
-                    className="w-24 h-24 rounded-full object-cover mx-auto mb-4 border-4 border-white/30"
-                  />
-                </div>
-                <h2 className="text-[32px] font-bold leading-[36px] mb-2">
-                  {project.owner.name}
-                </h2>
-                <p className="text-white/90 text-sm mb-4 leading-5">
-                  {project.description}
-                </p>
-                <div className="flex flex-wrap gap-2 justify-center mb-4">
-                  {project.tags.slice(0, 3).map((tag, i) => (
-                    <motion.span
-                      key={tag}
-                      className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ delay: 0.3 + i * 0.1 }}
-                    >
-                      {tag}
-                    </motion.span>
-                  ))}
-                </div>
-                <div className="text-white/80 text-sm">
-                  <span className="font-medium">{project.owner.role}</span>
-                  <span className="mx-2">·</span>
-                  <span>{project.owner.distance} {t('kmAway')}</span>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        );
+
       
       default:
         return null;
@@ -1033,7 +1061,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
     return lastDxRef.current >= 0 ? 'right' : 'left';
   };
 
-  const baseCardClass = `w-[357px] h-[670px] rounded-[14px] overflow-hidden relative cursor-pointer pressable`;
+  const baseCardClass = `w-[357px] h-[600px] rounded-[14px] overflow-hidden relative cursor-pointer pressable`;
   const topShadow = `shadow-[0px_18px_40px_0px_rgba(0,0,0,0.30)]`;
   const underShadow = `shadow-[0px_8px_24px_0px_rgba(0,0,0,0.18)]`;
 
@@ -1236,15 +1264,15 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false }: { pro
     >
       <div className="w-full h-full flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b">
-          <button onClick={onClose} className="p-2">
-            <ArrowLeft size={24} className="text-blue-600" />
-          </button>
-          <h1 className="font-semibold">
-            {project.type === 'profile' ? t('profileDetails') : t('projectDetails')}
-          </h1>
-          <div className="w-10" />
-        </div>
+                    <div className="h-[90px] flex items-center justify-between px-4 border-b border-[#E8EDF2] bg-[#FAFAFA]">
+              <button onClick={onClose} className="p-2">
+                <ArrowLeft size={24} className="text-blue-600" />
+              </button>
+              <h1 className="font-semibold">
+                {t('projectDetails')}
+              </h1>
+              <div className="w-10" />
+            </div>
 
         <div className="flex-1 overflow-y-auto">
           <div className="space-y-6">
@@ -1291,15 +1319,7 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false }: { pro
             ) : (
               /* Fallback for no media */
               <div className="w-full h-48 rounded-lg overflow-hidden">
-                {project.cardStyle === 'profile' ? (
-                  <div className="w-full h-full bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600 flex items-center justify-center">
-                    <ImageWithFallback
-                      src={project.owner.avatar}
-                      alt={project.owner.name}
-                      className="w-32 h-32 rounded-full object-cover border-4 border-white"
-                    />
-                  </div>
-                ) : project.background ? (
+                {project.background ? (
                   <ImageWithFallback
                     src={project.background}
                     alt={project.title}
@@ -1386,7 +1406,7 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false }: { pro
             {/* Owner Info */}
             <div className="border rounded-lg p-4">
               <h3 className="text-xl font-semibold mb-3">
-                {project.type === 'profile' ? t('about') : t('projectOwner')}
+                {t('projectOwner')}
               </h3>
               <div className="flex items-start gap-3">
                 <ImageWithFallback
@@ -1454,7 +1474,7 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false }: { pro
             {/* Purpose */}
             <div>
               <h3 className="text-xl font-semibold mb-2">
-                {project.type === 'profile' ? t('goals') : t('purpose')}
+                {t('purpose')}
               </h3>
               <p className="text-gray-700 leading-relaxed">{project.purpose}</p>
             </div>
@@ -1553,6 +1573,10 @@ export default function App() {
   const [errors, setErrors] = useState<{ phoneNumber?: string; verificationCode?: string }>({});
   const [codeSent, setCodeSent] = useState(false);
 
+  // 新增：发布功能相关状态
+  const [resumeDraft, setResumeDraft] = useState(false);
+  const [selectedDraftId, setSelectedDraftId] = useState<string | undefined>();
+
   // 原有状态管理
   const [currentProjects, setCurrentProjects] = useState(projects);
   const [leftSwipedProjects, setLeftSwipedProjects] = useState<Project[]>([]);
@@ -1561,7 +1585,6 @@ export default function App() {
   const [isHistoryMode, setIsHistoryMode] = useState(false);
   const [historyIndex, setHistoryIndex] = useState(0);
   const [filters, setFilters] = useState<FilterState>({
-    cardTypes: { project: true, profile: true },
     projectStatus: { ongoing: true, finished: true, not_started: true },
     projectTypes: [],
     distance: [0, 50],
@@ -1572,12 +1595,33 @@ export default function App() {
     typeSearch: ''
   });
 
+  // 新增：是否启用服务端数据（检测令牌）
+  const [useServerData, setUseServerData] = useState<boolean>(false);
+  useEffect(() => {
+    setUseServerData(!!getAccessToken());
+  }, []);
+
+  // 在进入主页面时拉取服务端项目卡片
+  useEffect(() => {
+    if (appState === 'main' && useServerData) {
+      fetchProjectCards()
+        .then((res: CardsResponse) => {
+          if (Array.isArray(res?.cards) && res.cards.length > 0) {
+            setCurrentProjects(res.cards.map(mapBackendCardToProject));
+          }
+        })
+        .catch(() => {
+          // 拉取失败时保持本地内置数据
+        });
+    }
+  }, [appState, useServerData]);
+
   // 新增：启动页面自动跳转逻辑
   useEffect(() => {
     if (appState === 'launch') {
       const timer = setTimeout(() => {
         setAppState('auth');
-      }, 3000);
+      }, 600);
       return () => clearTimeout(timer);
     }
   }, [appState]);
@@ -1618,8 +1662,13 @@ export default function App() {
     // try { setSuppressGreetingPopup(localStorage.getItem('suppressGreetingPopup') === '1'); } catch {}
   }, []);
 
-  // 修改handleSwipe逻辑
+  // 修改handleSwipe逻辑：上报服务端（不改变现有 UI 流程）
   const handleSwipe = (direction: 'left' | 'right') => {
+    const top = currentProjects[0];
+    if (top && useServerData) {
+      const isLike = direction === 'right';
+      void sendSwipe(top.id as any, isLike).catch(() => {});
+    }
     if (direction === 'right') {
       if (suppressGreetingPopup) {
         // 直接移除顶部卡片，不展示弹窗
@@ -1657,10 +1706,8 @@ export default function App() {
   };
 
   const filteredProjects = currentProjects.filter(project => {
-    // Card type filter
-    if (!filters.cardTypes[project.type]) return false;
     // Project status filter
-    if (project.type === 'project' && !filters.projectStatus[project.status as 'ongoing' | 'finished' | 'not_started']) return false;
+    if (!filters.projectStatus[project.status as 'ongoing' | 'finished' | 'not_started']) return false;
     // Project types filter
     if (filters.projectTypes.length > 0) {
       const hasMatchingTag = project.tags.some(tag => filters.projectTypes.includes(tag));
@@ -1750,6 +1797,88 @@ export default function App() {
     setSuppressGreetingPopup(checked);
   };
 
+  // 新增：发布功能相关处理函数
+  const handlePostNewProjectClick = () => {
+    console.log('handlePostNewProjectClick called!');
+    // Check if there are any saved drafts
+    const savedDrafts = localStorage.getItem('project_drafts');
+    let hasDrafts = false;
+    
+    if (savedDrafts) {
+      try {
+        const drafts = JSON.parse(savedDrafts);
+        hasDrafts = Array.isArray(drafts) && drafts.length > 0;
+      } catch (error) {
+        console.error('Error parsing drafts:', error);
+        localStorage.removeItem('project_drafts');
+      }
+    }
+    
+    console.log('hasDrafts:', hasDrafts);
+    if (hasDrafts) {
+      // Show draft resume dialog
+      console.log('Setting appState to resume');
+      setAppState('resume');
+    } else {
+      // No drafts, start new project directly
+      console.log('Calling handleStartNewProject');
+      handleStartNewProject();
+    }
+  };
+
+  const handleResumeLatestDraft = () => {
+    // Get the latest draft (most recently created)
+    const savedDrafts = localStorage.getItem('project_drafts');
+    if (savedDrafts) {
+      try {
+        const drafts = JSON.parse(savedDrafts);
+        if (drafts.length > 0) {
+          // Sort by createdAt and get the latest
+          const sortedDrafts = drafts.sort((a: any, b: any) => 
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          );
+          const latestDraft = sortedDrafts[0];
+          setSelectedDraftId(latestDraft.id);
+          setResumeDraft(false);
+          setAppState('posting');
+        }
+      } catch (error) {
+        console.error('Error loading latest draft:', error);
+        handleStartNewProject();
+      }
+    } else {
+      handleStartNewProject();
+    }
+  };
+
+  const handleStartNewProject = () => {
+    console.log('handleStartNewProject called!');
+    setResumeDraft(false);
+    setSelectedDraftId(undefined);
+    console.log('Setting appState to posting');
+    setAppState('posting');
+  };
+
+  const handleBackFromPosting = () => {
+    setAppState('main');
+    setResumeDraft(false);
+    setSelectedDraftId(undefined);
+  };
+
+  const handleBackFromDrafts = () => {
+    setAppState('main');
+  };
+
+  const handleOpenDrafts = () => {
+    setAppState('drafts');
+  };
+
+  const handleEditDraft = (draftId: string) => {
+    setSelectedDraftId(draftId);
+    setResumeDraft(false);
+    setAppState('posting');
+  };
+
   return (
     <div ref={containerRef} className="w-full h-screen bg-white relative overflow-hidden">
       <div
@@ -1772,8 +1901,8 @@ export default function App() {
                 className="absolute inset-0"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, ease: 'easeOut' }}
+                exit={{ opacity: 0.6, x: -40 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
               >
                 <LaunchingPage />
               </motion.div>
@@ -1782,35 +1911,50 @@ export default function App() {
               <motion.div
                 key="auth"
                 className="absolute inset-0"
-                initial={{ opacity: 1, x: 0, scale: 1 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -40, scale: 0.98 }}
-                transition={{ duration: 0.35, ease: 'easeOut' }}
+                initial={false}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -40 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
               >
-                <AuthPhoneScreen
-                  smsData={smsData}
-                  onChangePhone={(v) => {
-                    setSmsData((prev) => ({ ...prev, phoneNumber: v }));
-                    if (errors.phoneNumber) setErrors((prev) => ({ ...prev, phoneNumber: undefined }));
-                  }}
-                  onChangeCode={(v) => {
-                    setSmsData((prev) => ({ ...prev, verificationCode: v }));
-                    if (errors.verificationCode) setErrors((prev) => ({ ...prev, verificationCode: undefined }));
-                  }}
-                  errors={errors}
-                  isLoading={isLoading}
-                  codeSent={codeSent}
-                  onSendSMS={handleSendSMS}
-                  onVerifyCode={handleVerifyCode}
-                />
+                <div className="absolute inset-0">
+                  <BackgroundGradientAnimation
+                    gradientBackgroundStart="rgb(30, 144, 255)"  
+                    gradientBackgroundEnd="rgb(0, 200, 150)"    
+                    firstColor="30, 144, 255"                   
+                    secondColor="30, 200, 177"                  
+                    thirdColor="0, 200, 150"                    
+                    size="85%"
+                    blendingValue="soft-light"
+                    containerClassName="w-[393px] h-[852px] mx-auto"
+                  >
+                    <div className="relative w-[393px] h-[852px] mx-auto">
+                      <AuthPhoneScreen
+                        smsData={smsData}
+                        onChangePhone={(v) => {
+                          setSmsData((prev) => ({ ...prev, phoneNumber: v }));
+                          if (errors.phoneNumber) setErrors((prev) => ({ ...prev, phoneNumber: undefined }));
+                        }}
+                        onChangeCode={(v) => {
+                          setSmsData((prev) => ({ ...prev, verificationCode: v }));
+                          if (errors.verificationCode) setErrors((prev) => ({ ...prev, verificationCode: undefined }));
+                        }}
+                        errors={errors}
+                        isLoading={isLoading}
+                        codeSent={codeSent}
+                        onSendSMS={handleSendSMS}
+                        onVerifyCode={handleVerifyCode}
+                      />
+                    </div>
+                  </BackgroundGradientAnimation>
+                </div>
               </motion.div>
             )}
             
-            {appState === 'main' && (
+            {(appState === 'main' || appState === 'ai') && (
               <motion.div
                 key="main"
                 className="absolute inset-0"
-                initial={{ opacity: 0, x: 40, scale: 1.02 }}
+                initial={false}
                 animate={{ opacity: 1, x: 0, scale: 1 }}
                 exit={{ opacity: 0, x: 40, scale: 1.02 }}
                 transition={{ duration: 0.45, ease: 'easeOut' }}
@@ -1818,37 +1962,35 @@ export default function App() {
                 <>
                {/* 添加滑块样式 */}
                <style dangerouslySetInnerHTML={{ __html: sliderStyles }} />
-               {/* Header */}
-               <motion.div 
-                 className="pt-4 pb-2 px-[19px] z-0 relative"
-                 initial={{ y: -50, opacity: 0 }}
-                 animate={{ y: 0, opacity: 1 }}
-                 transition={{ duration: 0.5 }}
-               >
-                 <div className="flex items-center justify-between w-[354px]">
-                   <PopupButton />
-                   <div className="flex gap-2">
-                     <IconButton onClick={toggleHistoryMode}>
-                       <div className="w-6 h-6">
-                         <svg className="block size-full" fill="none" viewBox="0 0 24 24">
-                           <path d={svgPaths.history} fill={isHistoryMode ? "#0055f7" : "black"} />
-                         </svg>
-                       </div>
-                     </IconButton>
-                     <IconButton onClick={() => setShowFilter(true)}>
-                       <div className="w-6 h-6">
-                         <svg className="block size-full" fill="none" viewBox="0 0 25 24">
-                           <path d={svgPaths.filter} stroke={showFilter ? "#0088ff" : "#000000"} strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round" />
-                         </svg>
-                       </div>
-                     </IconButton>
-                   </div>
-                 </div>
-               </motion.div>
+               {appState === 'main' ? (
+               <>
+                              {/* Header */}
+               <div>
+                 <HeaderBar
+                   rightContent={(
+                     <>
+                       <IconButton onClick={toggleHistoryMode}>
+                         <div className="w-6 h-6">
+                           <svg className="block size-full" fill="none" viewBox="0 0 24 24">
+                             <path d={svgPaths.history} fill={isHistoryMode ? "#0055f7" : "black"} />
+                           </svg>
+                         </div>
+                       </IconButton>
+                       <IconButton onClick={() => setShowFilter(true)}>
+                         <div className="w-6 h-6">
+                           <svg className="block size-full" fill="none" viewBox="0 0 25 24">
+                             <path d={svgPaths.filter} stroke={showFilter ? "#0088ff" : "#000000"} strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round" />
+                           </svg>
+                         </div>
+                       </IconButton>
+                     </>
+                   )}
+                 />
+               </div>
 
            {/* Main Content - Card Stack */}
-           <div className="relative h-[580px] flex items-center justify-center px-4 mt-8">
-             <div className="relative w-[357px] h-[614px]">
+                     <div className="relative h-[540px] flex items-center justify-center px-4 mt-8">
+            <div className="relative w-[357px] h-[560px]">
                {isHistoryMode ? (
                  // History Mode - Single card with navigation
                  leftSwipedProjects.length > 0 && currentProject ? (
@@ -1958,6 +2100,15 @@ export default function App() {
              </div>
            </div>
 
+           </>
+           ) : (
+             <AISearchIntegrated
+               onBackToMain={() => setAppState('main')}
+               onOpenFilter={() => setShowFilter(true)}
+               onOpenProject={(p) => setSelectedProject(p)}
+             />
+           )}
+
            {/* Bottom Navigation */}
            <motion.div 
              className="absolute bottom-0 left-0 right-0 bg-neutral-50 h-[100px] border-t border-[#e8edf2]"
@@ -1969,17 +2120,17 @@ export default function App() {
                {/* Navigation Icons */}
                <div className="absolute left-[13px] top-[25px] flex gap-[105px]">
                  <div className="flex gap-0">
-                   <IconButton className="w-[65.2px]">
+                   <IconButton className="w-[65.2px]" onClick={() => setAppState('main')}>
                      <div className="w-6 h-6">
                        <svg className="block size-full" fill="none" viewBox="0 0 18 19">
-                         <path d={svgPaths.p11f24e80} fill="#0055F7" />
+                          <path d={svgPaths.p11f24e80} fill={appState === 'main' ? '#0055F7' : '#616C78'} />
                        </svg>
                      </div>
                    </IconButton>
-                   <IconButton className="w-[65.2px]">
+                   <IconButton className="w-[65.2px]" onClick={() => setAppState('ai')}>
                      <div className="w-6 h-6">
                        <svg className="block size-full" fill="none" viewBox="0 0 21 21">
-                         <path d={svgPaths.p11caffd0} fill="#616C78" />
+                          <path d={svgPaths.p11caffd0} fill={appState === 'ai' ? '#0055F7' : '#616C78'} />
                        </svg>
                      </div>
                    </IconButton>
@@ -2013,6 +2164,7 @@ export default function App() {
                    scale: { duration: 0.2 },
                    y: { duration: 0.2 }
                  }}
+                 onClick={handlePostNewProjectClick}
                >
                  <div className="w-6 h-6">
                  <svg className="block size-full" fill="none" viewBox="0 0 23 23">
@@ -2042,6 +2194,60 @@ export default function App() {
              )}
            </AnimatePresence>
                  </>
+               </motion.div>
+             )}
+
+
+             {appState === 'posting' && (
+                             <motion.div
+                key="posting"
+                className="absolute inset-0"
+                initial={false}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 40, scale: 1.02 }}
+                transition={{ duration: 0.45, ease: 'easeOut' }}
+               >
+                 <PostingProjectPage 
+                   onBack={handleBackFromPosting} 
+                   resumeDraft={resumeDraft}
+                   draftId={selectedDraftId}
+                 />
+               </motion.div>
+             )}
+
+             {appState === 'drafts' && (
+                             <motion.div
+                key="drafts"
+                className="absolute inset-0"
+                initial={false}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 40, scale: 1.02 }}
+                transition={{ duration: 0.45, ease: 'easeOut' }}
+               >
+                 <DraftsPage
+                   onBack={handleBackFromDrafts}
+                   onEditDraft={handleEditDraft}
+                 />
+               </motion.div>
+             )}
+
+             {appState === 'resume' && (
+                             <motion.div
+                key="resume"
+                className="absolute inset-0"
+                initial={false}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3, ease: 'easeOut' }}
+               >
+                 <div className="w-full h-full flex items-center justify-center bg-black/20">
+                   <DraftResumeDialog
+                     isOpen={true}
+                     onOpenChange={() => setAppState('main')}
+                     onResume={handleResumeLatestDraft}
+                     onStartNew={handleStartNewProject}
+                   />
+                 </div>
                </motion.div>
              )}
            </AnimatePresence>

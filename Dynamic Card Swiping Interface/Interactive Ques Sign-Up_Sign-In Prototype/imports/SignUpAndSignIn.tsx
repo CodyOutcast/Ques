@@ -1,5 +1,6 @@
 import svgPaths from "./svg-mqahwcz8hx";
-import imgBg from "figma:asset/0a896a0b08b9541d523f8e45d6b853a936c4233c.png";
+// Placeholder background image URL
+const imgBg = "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=600&fit=crop";
 
 function Time() {
   return (
