@@ -111,6 +111,15 @@ app.include_router(sms_router.router, tags=["SMS Verification"])
 app.include_router(project_ideas.router, tags=["Project Ideas"])
 if RECOMMENDATIONS_AVAILABLE:
     app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["Recommendations"])
+
+# Vector-based recommendations (always available)
+try:
+    from routers import vector_recommendations
+    app.include_router(vector_recommendations.router, tags=["Vector Recommendations"])
+    logger.info("✅ Vector recommendations router loaded")
+except ImportError as e:
+    logger.warning(f"⚠️ Vector recommendations router not available: {e}")
+
 app.include_router(matches.router, prefix="/api/v1/search", tags=["AI Search"])
 app.include_router(messages.router, prefix="/api/v1/messages", tags=["Messaging"])
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])

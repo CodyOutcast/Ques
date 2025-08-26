@@ -63,4 +63,4 @@ class UserProject(Base):
     
     # Relationships
     user = relationship("User", back_populates="user_projects")
-    project = relationship("Project", back_populates="user_projects")
+    project = relationship("ProjectCard", back_populates="user_projects")
