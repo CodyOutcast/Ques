@@ -26,7 +26,7 @@ sys.modules['db_utils'].check_quota = mock_check_quota
 sys.modules['db_utils'].deduct_quota = mock_deduct_quota
 
 # Import the agent after mocking
-from services.project_idea_agent import generate_project_ideas
+from services.project_idea_agent_adapter import generate_project_ideas
 
 def format_output(result):
     """Format the output in a readable way for manual evaluation"""
