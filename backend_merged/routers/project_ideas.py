@@ -16,7 +16,7 @@ from dependencies.db import get_db
 from dependencies.auth import get_current_user
 from models.users import User
 from models.subscriptions import SubscriptionType
-from services.project_idea_agent_factory import get_project_idea_generator, get_streaming_agent_class
+from services.project_idea_agent import generate_project_ideas
 from services.quota_service import QuotaService
 from pydantic import BaseModel, Field
 
@@ -121,8 +121,6 @@ async def generate_project_idea(
         
         # Generate project ideas using the agent
         start_time = datetime.now()
-        # 通过工厂获取当前活跃的项目创意生成器
-        generate_project_ideas = get_project_idea_generator()
         result = generate_project_ideas(request.query, user_id)
         processing_time = (datetime.now() - start_time).total_seconds()
         
@@ -228,7 +226,7 @@ async def generate_project_idea_stream(
                 return
             
             # Import the streaming version of the agent
-            ProjectIdeaAgentStreaming = get_streaming_agent_class()
+            from services.project_idea_agent import ProjectIdeaAgentStreaming
             
             # Send initial status with quota info
             initial_status = {
