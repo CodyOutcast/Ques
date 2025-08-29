@@ -121,7 +121,7 @@ async def generate_project_idea(
         
         # Generate project ideas using the agent
         start_time = datetime.now()
-        # 通过工厂获取当前活跃的项目创意生成器
+        # Get current active project idea generator through factory
         generate_project_ideas = get_project_idea_generator()
         result = generate_project_ideas(request.query, user_id)
         processing_time = (datetime.now() - start_time).total_seconds()
