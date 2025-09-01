@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 from dependencies.db import get_db, engine
 from models.base import Base
-from routers import auth, users, matches, messages, profile, chats, projects, location, user_reports, sms_router, project_ideas
+from routers import auth, users, matches, messages, profile, chats, projects, project_cards, membership, location, user_reports, sms_router, project_ideas
 from config.settings import settings
 try:
     from routers import recommendations
@@ -109,13 +109,33 @@ app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(user_reports.router, prefix="/api/v1", tags=["User Reports"])
 app.include_router(sms_router.router, tags=["SMS Verification"])
 app.include_router(project_ideas.router, tags=["Project Ideas"])
+
+# Project Ideas V2 with enhanced features
+try:
+    from routers import project_ideas_v2
+    app.include_router(project_ideas_v2.router, tags=["Project Ideas V2"])
+    logger.info("✅ Project Ideas V2 router loaded")
+except ImportError as e:
+    logger.warning(f"Project Ideas V2 router not available: {e}")
+
 if RECOMMENDATIONS_AVAILABLE:
     app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["Recommendations"])
+
+# Vector-based recommendations (always available)
+try:
+    from routers import vector_recommendations
+    app.include_router(vector_recommendations.router, tags=["Vector Recommendations"])
+    logger.info("✅ Vector recommendations router loaded")
+except ImportError as e:
+    logger.warning(f"⚠️ Vector recommendations router not available: {e}")
+
 app.include_router(matches.router, prefix="/api/v1/search", tags=["AI Search"])
 app.include_router(messages.router, prefix="/api/v1/messages", tags=["Messaging"])
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
 app.include_router(chats.router, prefix="/api/v1", tags=["Chats"])
 app.include_router(projects.router, prefix="/api/v1", tags=["Projects"])
+app.include_router(project_cards.router, tags=["Project Cards"])
+app.include_router(membership.router, tags=["Membership"])
 app.include_router(location.router, prefix="/api/v1", tags=["Location"])
 
 @app.get("/")

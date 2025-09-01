@@ -21,6 +21,7 @@ class User(Base):
     is_active = Column(Boolean, nullable=True, default=True)
     feature_tags = Column(JSON, nullable=True)
     vector_id = Column(String(255), nullable=True)
+    profile_image_url = Column(String(512), nullable=True)
     
     # Location fields
     latitude = Column(String(20), nullable=True)  # e.g., "40.7128"
@@ -53,8 +54,12 @@ class User(Base):
     # Message relationships
     sent_messages = relationship("Message", back_populates="sender")
     
-    # Project relationships - will be defined after UserProject is available
-    # user_projects = relationship("UserProject", back_populates="user")
+    # Project relationships
+    user_projects = relationship("UserProject", back_populates="user")
+    created_projects = relationship("ProjectCard", foreign_keys="ProjectCard.creator_id", back_populates="creator")
+    
+    # Membership relationship
+    membership = relationship("UserMembership", back_populates="user", uselist=False)
     
     # Report relationships
     reports_made = relationship("UserReport", foreign_keys="UserReport.reporter_id", back_populates="reporter")
@@ -83,8 +88,8 @@ class User(Base):
     
     @property
     def avatar_url(self):
-        """Avatar URL - placeholder"""
-        return None
+        """Avatar URL from profile_image_url or generate default"""
+        return getattr(self, 'profile_image_url', None) or f"https://api.dicebear.com/7.x/avataaars/svg?seed={self.name}"
     
     @property
     def location(self):

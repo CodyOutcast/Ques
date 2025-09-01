@@ -147,11 +147,18 @@ def insert_to_vector_db(text, metadata=None):
         return None
         
     coll = get_vdb_collection()
+    
+    # Support both user and project vectors
     user_id = metadata.get('user_id') if metadata else None
-    if not user_id:
-        raise ValueError("user_id required in metadata")
+    project_id = metadata.get('project_id') if metadata else None
+    
+    if user_id:
+        vector_id = str(user_id)  # Use stringified user_id as primary key/ID in VectorDB
+    elif project_id:
+        vector_id = f"project_{project_id}"  # Use project prefix for project vectors
+    else:
+        raise ValueError("Either user_id or project_id required in metadata")
 
-    vector_id = str(user_id)  # Use stringified user_id as primary key/ID in VectorDB
     doc = Document(
         id=vector_id,
         text=text  # This gets auto-embedded server-side into 'vector' field
@@ -275,8 +282,21 @@ def get_user_vector(user_id):
         if not row or not row[0]:
             return None
         
-        tags = json.loads(row[0])
-        tags_text = " ".join(tags)
+        # Handle both string (legacy) and list/dict (new) feature_tags
+        feature_tags = row[0]
+        if isinstance(feature_tags, str):
+            tags = json.loads(feature_tags)
+        else:
+            tags = feature_tags  # Already parsed as JSON
+            
+        if isinstance(tags, list):
+            tags_text = " ".join(tags)
+        elif isinstance(tags, dict):
+            # If it's a dict, extract values or keys as needed
+            tags_text = " ".join(str(v) for v in tags.values())
+        else:
+            tags_text = str(tags)
+            
         return embed_text(tags_text)
         
     except Exception as e:

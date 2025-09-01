@@ -8,6 +8,8 @@ from .chats import Chat, ChatMessage, ChatStatus
 from .user_auth import UserAuth, RefreshToken, VerificationCode, UserSession, SecurityLog
 from .user_features import UserFeature, UserLink
 from .user_reports import UserReport
+from .project_cards import ProjectCard, UserProject
+from .user_membership import UserMembership, UserUsageLog, MembershipType
 
 # Export all models
 __all__ = [
@@ -27,13 +29,10 @@ __all__ = [
     "SecurityLog",
     "UserFeature",
     "UserLink",
-    "UserReport"
-]
-
-# Export basic models
-__all__ = [
-    "Base",
-    "User", 
-    "UserSwipe",
-    "Like"
+    "UserReport",
+    "UserProject", 
+    "ProjectCard",
+    "UserMembership",
+    "UserUsageLog",
+    "MembershipType"
 ]
