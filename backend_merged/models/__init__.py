@@ -8,8 +8,8 @@ from .chats import Chat, ChatMessage, ChatStatus
 from .user_auth import UserAuth, RefreshToken, VerificationCode, UserSession, SecurityLog
 from .user_features import UserFeature, UserLink
 from .user_reports import UserReport
-from .projects import UserProject  # Only import UserProject, not Project to avoid table conflicts
-from .project_cards import ProjectCard
+from .project_cards import ProjectCard, UserProject
+from .user_membership import UserMembership, UserUsageLog, MembershipType
 
 # Export all models
 __all__ = [
@@ -31,5 +31,8 @@ __all__ = [
     "UserLink",
     "UserReport",
     "UserProject", 
-    "ProjectCard"
+    "ProjectCard",
+    "UserMembership",
+    "UserUsageLog",
+    "MembershipType"
 ]

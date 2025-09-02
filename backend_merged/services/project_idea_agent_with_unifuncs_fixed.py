@@ -74,19 +74,6 @@ Make the ideas practical, innovative, and well-detailed."""
             print(f"   Model: {response.model}")
             print(f"   Usage: {response.usage}")
             
-            # Check for API errors first
-            if hasattr(response, 'error') and response.error:
-                error_msg = response.error.get('message', 'Unknown error')
-                error_code = response.error.get('code', 'Unknown code')
-                print(f"❌ API returned error: {error_msg} (Code: {error_code})")
-                return {
-                    "ideas": [],
-                    "query": query,
-                    "processing_time": processing_time,
-                    "success": False,
-                    "error": f"API Error: {error_msg} (Code: {error_code})"
-                }
-            
             # Process the response
             if response.choices and response.choices[0].message:
                 content = response.choices[0].message.content.strip()

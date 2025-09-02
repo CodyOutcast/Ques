@@ -23,6 +23,9 @@ class Project(Base):
     # Primary key
     project_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
+    # Creator relationship
+    creator_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    
     # Project details
     short_description = Column(String(200), nullable=False)  # 20 words max (~200 chars)
     long_description = Column(Text, nullable=True)
@@ -37,6 +40,7 @@ class Project(Base):
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships
+    creator = relationship("User", foreign_keys=[creator_id])
     media_link = relationship("UserLink", foreign_keys=[media_link_id])
     user_projects = relationship("UserProject", back_populates="project")
     

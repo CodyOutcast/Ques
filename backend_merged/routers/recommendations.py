@@ -119,10 +119,26 @@ async def handle_swipe(swipe: SwipeInput, current_user: dict = Depends(get_curre
     """
     Handle user swipe action (like or dislike).
     Stores the action in the database so the card won't appear again.
+    Enforces membership-based swipe limits.
     """
     user_id = current_user["id"]
     
     try:
+        # Check membership limits before processing swipe
+        from services.membership_service import MembershipService
+        from dependencies.db import get_db
+        
+        db = next(get_db())
+        can_swipe, message, info = MembershipService.check_swipe_limit(db, user_id)
+        
+        if not can_swipe:
+            return {
+                "error": "Swipe limit reached",
+                "message": message,
+                "membership_info": info,
+                "upgrade_required": info.get("membership_type") == "free"
+            }
+        
         logger.info(f"Processing swipe for user {user_id}: card {swipe.card_id}, like: {swipe.is_like}")
         
         # Store the swipe action in likes table
@@ -133,6 +149,13 @@ async def handle_swipe(swipe: SwipeInput, current_user: dict = Depends(get_curre
             liked_item_type="profile",
             is_like=swipe.is_like
         )
+        
+        # Log the swipe for usage tracking
+        MembershipService.log_usage(db, user_id, "swipe", 1, {
+            "card_id": swipe.card_id,
+            "is_like": swipe.is_like,
+            "card_type": "profile"
+        })
         
         action = "liked" if swipe.is_like else "disliked"
         logger.info(f"User {user_id} {action} card {swipe.card_id}")
