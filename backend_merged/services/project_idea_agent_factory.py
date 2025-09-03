@@ -3,18 +3,11 @@ project_idea_agent_factory.py - Factory pattern to choose between original and U
 """
 
 import os
-from typing import Dict, Any, Callable, Type
+from typing import Callable
 
-# Default to original implementation unless environment variable specifies UniFuncs
 ACTIVE_AGENT = os.environ.get("ACTIVE_AGENT", "original").lower()
 
 def get_project_idea_generator() -> Callable:
-    """
-    Returns the appropriate project idea generator function based on environment variables
-    
-    Returns:
-        The original or adapter version of the generate_project_ideas function
-    """
     if ACTIVE_AGENT == "unifuncs":
         try:
             from services.project_idea_agent_adapter import generate_project_ideas
@@ -30,12 +23,6 @@ def get_project_idea_generator() -> Callable:
         return generate_project_ideas
 
 def get_streaming_agent_class():
-    """
-    Returns the appropriate streaming agent class based on environment variables
-    
-    Returns:
-        The original or adapter version of the ProjectIdeaAgentStreaming class
-    """
     if ACTIVE_AGENT == "unifuncs":
         try:
             from services.project_idea_agent_adapter import ProjectIdeaAgentStreaming

@@ -1,15 +1,17 @@
 # Import all models to ensure they're registered with SQLAlchemy
 from .base import Base
 from .users import User
-from .likes import UserSwipe, Like
+from .likes import UserSwipe, Like, SwipeDirection
 from .matches import Match
 from .messages import Message
 from .chats import Chat, ChatMessage, ChatStatus
 from .user_auth import UserAuth, RefreshToken, VerificationCode, UserSession, SecurityLog
 from .user_features import UserFeature, UserLink
 from .user_reports import UserReport
-from .projects import UserProject  # Only import UserProject, not Project to avoid table conflicts
-from .project_cards import ProjectCard
+from .project_cards import ProjectCard, UserProject
+from .user_membership import UserMembership, UserUsageLog, MembershipType
+from .payments import MembershipTransaction, PaymentRefund, PaymentWebhookLog, PaymentStatus, PaymentMethod
+from .subscriptions import UserSubscription, ProjectIdeaRequest, SubscriptionType
 
 # Export all models
 __all__ = [
@@ -17,6 +19,7 @@ __all__ = [
     "User", 
     "UserSwipe", 
     "Like",
+    "SwipeDirection",
     "Match",
     "Message",
     "Chat",
@@ -31,5 +34,16 @@ __all__ = [
     "UserLink",
     "UserReport",
     "UserProject", 
-    "ProjectCard"
+    "ProjectCard",
+    "UserMembership",
+    "UserUsageLog",
+    "MembershipType",
+    "MembershipTransaction",
+    "PaymentRefund", 
+    "PaymentWebhookLog",
+    "PaymentStatus",
+    "PaymentMethod",
+    "UserSubscription",
+    "ProjectIdeaRequest",
+    "SubscriptionType"
 ]

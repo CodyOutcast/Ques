@@ -10,14 +10,12 @@ from dotenv import load_dotenv
 from sqlalchemy import text
 from db_utils import query_vector_db, get_user_infos, embed_text, get_user_vector, get_user_history, get_random_unseen_users, SessionLocal
 from dependencies.auth import get_current_user
+from schemas.swipes import SwipeInput, SwipeResponse, SwipeDirectionEnum
+from models.likes import SwipeDirection
 
 load_dotenv()
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-class SwipeInput(BaseModel):
-    card_id: int  # ID of the card being swiped
-    is_like: bool  # True for like (swipe right), False for dislike (swipe left)
 
 async def get_fallback_cards(user_id: int, seen_card_ids: list, needed_count: int):
     """
@@ -114,31 +112,59 @@ async def get_recommendation_users(current_user: dict = Depends(get_current_user
             detail="Failed to get recommendation users. Please try again later."
         )
 
-@router.post("/swipe")
+@router.post("/swipe", response_model=SwipeResponse)
 async def handle_swipe(swipe: SwipeInput, current_user: dict = Depends(get_current_user)):
     """
     Handle user swipe action (like or dislike).
     Stores the action in the database so the card won't appear again.
+    Enforces membership-based swipe limits.
     """
     user_id = current_user["id"]
     
     try:
-        logger.info(f"Processing swipe for user {user_id}: card {swipe.card_id}, like: {swipe.is_like}")
+        # Check membership limits before processing swipe
+        from services.membership_service import MembershipService
+        from dependencies.db import get_db
         
-        # Store the swipe action in likes table
+        db = next(get_db())
+        can_swipe, message, info = MembershipService.check_swipe_limit(db, user_id)
+        
+        if not can_swipe:
+            return SwipeResponse(
+                message=message,
+                card_id=swipe.card_id,
+                is_match=False
+            )
+        
+        # Convert schema enum to model enum
+        is_like = swipe.direction == SwipeDirectionEnum.like
+        
+        logger.info(f"Processing swipe for user {user_id}: card {swipe.card_id}, direction: {swipe.direction}")
+        
+        # Store the swipe action in user_swipes table
         from db_utils import store_swipe_action
         store_swipe_action(
             liker_id=user_id,
             liked_item_id=swipe.card_id,
             liked_item_type="profile",
-            is_like=swipe.is_like
+            is_like=is_like
         )
         
-        action = "liked" if swipe.is_like else "disliked"
+        # Log the swipe for usage tracking
+        MembershipService.log_usage(db, user_id, "swipe", 1, {
+            "card_id": swipe.card_id,
+            "direction": swipe.direction.value,
+            "card_type": "profile"
+        })
+        
+        action = "liked" if is_like else "disliked"
         logger.info(f"User {user_id} {action} card {swipe.card_id}")
         
-        return {"message": f"Card {action} successfully", "card_id": swipe.card_id}
-        
+        return SwipeResponse(
+            message=f"Card {action} successfully", 
+            card_id=swipe.card_id,
+            is_match=False  # TODO: Implement match detection
+        )
     except Exception as e:
         logger.error(f"Error handling swipe for user {user_id}: {e}", exc_info=True)
         raise HTTPException(
@@ -149,21 +175,59 @@ async def handle_swipe(swipe: SwipeInput, current_user: dict = Depends(get_curre
 @router.get("/cards")
 async def get_recommendation_cards(current_user: dict = Depends(get_current_user)):
     """
-    Get project cards for browsing based on card.json structure.
-    Returns project cards with rich information including owner, collaborators, 
-    media, and detailed project information for the card-based interface.
+    Get enhanced project cards for browsing with improved algorithm:
+    1. Vector-based similarity search first
+    2. Fill remaining with projects from users who liked current user's projects
+    3. Exclude projects from mutual like pairs
     """
     user_id = current_user["id"]
     
     try:
-        logger.info(f"Getting project recommendation cards for user {user_id}")
+        logger.info(f"Getting enhanced project recommendation cards for user {user_id}")
         
-        # Import here to avoid circular imports
+        # Use the enhanced recommendation service
+        try:
+            from services.enhanced_recommendations import EnhancedRecommendationService
+            enhanced_cards = EnhancedRecommendationService.get_enhanced_recommendations(
+                user_id=user_id,
+                limit=20,
+                exclude_own_projects=True
+            )
+            
+            if enhanced_cards:
+                logger.info(f"Returning {len(enhanced_cards)} enhanced recommendation cards")
+                return {
+                    "cards": enhanced_cards,
+                    "algorithm": "enhanced_vector_with_mutual_likes",
+                    "total": len(enhanced_cards)
+                }
+        except ImportError:
+            logger.warning("Enhanced recommendations not available, using fallback")
+        
+        # Fallback to vector recommendations if enhanced not available
+        try:
+            from services.vector_recommendations import VectorRecommendationService
+            vector_cards = VectorRecommendationService.get_recommended_projects_for_user(
+                user_id=user_id,
+                limit=20,
+                exclude_own_projects=True
+            )
+            
+            if vector_cards:
+                logger.info(f"Returning {len(vector_cards)} vector recommendation cards")
+                return {
+                    "cards": vector_cards,
+                    "algorithm": "vector_based",
+                    "total": len(vector_cards)
+                }
+        except ImportError:
+            logger.warning("Vector recommendations not available, using basic fallback")
+        
+        # Basic fallback - get recent projects excluding user's own
         from dependencies.db import get_db
         from sqlalchemy.orm import Session
         from sqlalchemy import text
         
-        # Get database session
         db_session = next(get_db())
         
         try:

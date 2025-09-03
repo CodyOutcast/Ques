@@ -32,8 +32,8 @@ except ImportError:
 # Load environment variables
 load_dotenv()
 
-# Import quota system
-from db_utils import check_quota, deduct_quota
+# Import for unified quota management (using membership system)
+from services.membership_service import MembershipService
 
 class ProjectIdeaAgent:
     """Agent for generating creative project ideas from user queries"""
@@ -123,16 +123,14 @@ class ProjectIdeaAgent:
         
         Args:
             query: User's rough project query
-            user_id: User ID for quota checking
+            user_id: User ID for logging and tracking
             
         Returns:
             Dict containing project ideas and metadata in specified JSON format
         """
         start_time = time.time()
         
-        # Check quota first
-        if not check_quota(user_id):
-            raise ValueError("Quota exceeded")
+        # Note: Quota checking is now handled in the router via MembershipService
         
         try:
             # Step 1: Refine query into search prompts
@@ -175,8 +173,7 @@ class ProjectIdeaAgent:
                 "created_at": datetime.now().isoformat()
             }
             
-            # Deduct quota after successful completion
-            deduct_quota(user_id, cost=1)
+            # Usage logging is now handled in the router via MembershipService.log_usage()
             
             return response
             
@@ -819,20 +816,11 @@ class ProjectIdeaAgentStreaming(ProjectIdeaAgent):
         start_time = time.time()
         
         # Check quota first
+        # Note: Quota checking is now handled in the router via MembershipService
         yield {
             'type': 'progress',
-            'step': 'quota_check',
-            'message': 'Checking user quota...',
-            'timestamp': datetime.now().isoformat()
-        }
-        
-        if not check_quota(user_id):
-            raise ValueError("Quota exceeded")
-            
-        yield {
-            'type': 'progress', 
-            'step': 'quota_check',
-            'message': '✅ Quota check passed',
+            'step': 'initialization',
+            'message': '🚀 Starting project idea generation...',
             'timestamp': datetime.now().isoformat()
         }
         
@@ -968,8 +956,7 @@ class ProjectIdeaAgentStreaming(ProjectIdeaAgent):
                 'timestamp': datetime.now().isoformat()
             }
             
-            # Deduct quota after successful completion
-            deduct_quota(user_id, cost=1)
+            # Usage logging is now handled in the router via MembershipService.log_usage()
             
         except Exception as e:
             yield {

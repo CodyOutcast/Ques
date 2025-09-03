@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 from dependencies.db import get_db, engine
 from models.base import Base
-from routers import auth, users, matches, messages, profile, chats, projects, location, user_reports, sms_router, project_ideas
+from routers import auth, users, matches, messages, profile, chats, projects, project_cards, membership, location, user_reports, sms_router, project_ideas, payments, online_users, revenue_analytics
 from config.settings import settings
 try:
     from routers import recommendations
@@ -87,8 +87,12 @@ if settings.is_production:
 
 # Content moderation middleware (before CORS and other middleware)
 from middleware.content_moderation import ContentModerationMiddleware
+from middleware.session_tracking import SessionTrackingMiddleware
 moderation_enabled = getattr(settings, 'enable_content_moderation', True)
 app.add_middleware(ContentModerationMiddleware, enabled=moderation_enabled)
+
+# Session tracking middleware (should be after content moderation but before CORS)
+app.add_middleware(SessionTrackingMiddleware)
 
 # Gzip compression for all environments
 app.add_middleware(GZipMiddleware, minimum_size=1000)
@@ -109,6 +113,15 @@ app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(user_reports.router, prefix="/api/v1", tags=["User Reports"])
 app.include_router(sms_router.router, tags=["SMS Verification"])
 app.include_router(project_ideas.router, tags=["Project Ideas"])
+
+# Project Ideas V2 with enhanced features
+try:
+    from routers import project_ideas_v2
+    app.include_router(project_ideas_v2.router, tags=["Project Ideas V2"])
+    logger.info("✅ Project Ideas V2 router loaded")
+except ImportError as e:
+    logger.warning(f"Project Ideas V2 router not available: {e}")
+
 if RECOMMENDATIONS_AVAILABLE:
     app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["Recommendations"])
 
@@ -125,7 +138,12 @@ app.include_router(messages.router, prefix="/api/v1/messages", tags=["Messaging"
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
 app.include_router(chats.router, prefix="/api/v1", tags=["Chats"])
 app.include_router(projects.router, prefix="/api/v1", tags=["Projects"])
+app.include_router(project_cards.router, tags=["Project Cards"])
+app.include_router(membership.router, tags=["Membership"])
+app.include_router(payments.router, prefix="/api/v1/payments", tags=["Payments"])
+app.include_router(revenue_analytics.router, tags=["Revenue Analytics"])
 app.include_router(location.router, prefix="/api/v1", tags=["Location"])
+app.include_router(online_users.router, prefix="/api/v1/online", tags=["Online Users"])
 
 @app.get("/")
 async def root():
@@ -182,7 +200,10 @@ async def api_info():
             "Vector Similarity Matching",
             "Feature Flags",
             "Security Monitoring",
-            "Project Idea Generation Agent"
+            "Project Idea Generation Agent",
+            "Concurrent User Tracking",
+            "Online User Analytics",
+            "Session Management"
         ],
         "endpoints": {
             "auth": "/api/v1/auth",
@@ -191,7 +212,8 @@ async def api_info():
             "search": "/api/v1/search",
             "messages": "/api/v1/messages",
             "profile": "/api/v1/profile",
-            "project_ideas": "/api/v1/project-ideas"
+            "project_ideas": "/api/v1/project-ideas",
+            "online_users": "/api/v1/online"
         }
     }
 

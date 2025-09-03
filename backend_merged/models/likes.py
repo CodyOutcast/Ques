@@ -2,10 +2,16 @@
 Likes and swipes models matching actual database schema
 """
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from datetime import datetime
+import enum
 from .base import Base
+
+class SwipeDirection(enum.Enum):
+    """Swipe direction enumeration"""
+    like = "like"
+    dislike = "dislike"
 
 class UserSwipe(Base):
     """
@@ -16,7 +22,7 @@ class UserSwipe(Base):
     swipe_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     swiper_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
     target_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
-    direction = Column(String(20), nullable=False)  # "like", "dislike", "super_like"
+    direction = Column(SQLEnum(SwipeDirection, name='swipedirection'), nullable=False)
     timestamp = Column(DateTime, nullable=True, default=datetime.utcnow)
     
     # Relationships
@@ -39,7 +45,7 @@ class UserSwipe(Base):
     @property
     def action(self):
         # Map direction to action for compatibility
-        if self.direction == "like":
+        if self.direction == SwipeDirection.like:
             return "like"
         else:
             return "pass"

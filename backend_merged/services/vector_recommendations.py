@@ -180,7 +180,32 @@ class VectorRecommendationService:
         limit: int = 20,
         exclude_own_projects: bool = True
     ) -> List[Dict]:
-        """Get recommended project cards for a user based on vector similarity"""
+        """
+        Enhanced recommendation algorithm:
+        1. First search closest vector-based projects
+        2. Fill remaining with projects from users who liked current user's projects  
+        3. Exclude projects from users who already have mutual likes
+        """
+        # Use the enhanced recommendation service
+        try:
+            from services.enhanced_recommendations import EnhancedRecommendationService
+            return EnhancedRecommendationService.get_enhanced_recommendations(
+                user_id=user_id,
+                limit=limit,
+                exclude_own_projects=exclude_own_projects
+            )
+        except ImportError:
+            logger.warning("Enhanced recommendations not available, falling back to basic algorithm")
+            # Fallback to original algorithm if enhanced service not available
+            return VectorRecommendationService._get_basic_recommendations(user_id, limit, exclude_own_projects)
+    
+    @staticmethod
+    def _get_basic_recommendations(
+        user_id: int, 
+        limit: int = 20,
+        exclude_own_projects: bool = True
+    ) -> List[Dict]:
+        """Original basic recommendation algorithm as fallback"""
         
         db = SessionLocal()
         try:

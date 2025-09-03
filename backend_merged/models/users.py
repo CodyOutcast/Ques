@@ -58,6 +58,12 @@ class User(Base):
     user_projects = relationship("UserProject", back_populates="user")
     created_projects = relationship("ProjectCard", foreign_keys="ProjectCard.creator_id", back_populates="creator")
     
+    # Membership relationship
+    membership = relationship("UserMembership", back_populates="user", uselist=False)
+    
+    # Payment relationships
+    membership_transactions = relationship("MembershipTransaction", back_populates="user")
+    
     # Report relationships
     reports_made = relationship("UserReport", foreign_keys="UserReport.reporter_id", back_populates="reporter")
     reports_received = relationship("UserReport", foreign_keys="UserReport.reported_user_id", back_populates="reported_user")
