@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 from dependencies.db import get_db, engine
 from models.base import Base
-from routers import auth, users, matches, messages, profile, chats, projects, project_cards, membership, location, user_reports, sms_router, project_ideas, payments, online_users, revenue_analytics
+from routers import auth, users, matches, messages, profile, chats, projects, project_cards, membership, location, user_reports, sms_router, project_ideas, payments, online_users, revenue_analytics, quota_payments, agent_cards, project_slots, admin_project_slots, membership_webhooks
 from config.settings import settings
 try:
     from routers import recommendations
@@ -59,12 +59,28 @@ async def lifespan(app: FastAPI):
     # Setup monitoring
     setup_monitoring()
     
+    # Start background tasks
+    try:
+        from services.task_scheduler import start_background_tasks
+        await start_background_tasks()
+        logger.info("✅ Background tasks started")
+    except Exception as e:
+        logger.error(f"❌ Failed to start background tasks: {e}")
+    
     logger.info("✅ Application startup complete")
     
     yield
     
     # Shutdown
     logger.info("🛑 Shutting down application...")
+    
+    # Stop background tasks
+    try:
+        from services.task_scheduler import stop_background_tasks
+        await stop_background_tasks()
+        logger.info("✅ Background tasks stopped")
+    except Exception as e:
+        logger.error(f"❌ Error stopping background tasks: {e}")
 
 # Create FastAPI app with environment-aware configuration
 app = FastAPI(
@@ -139,11 +155,18 @@ app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
 app.include_router(chats.router, prefix="/api/v1", tags=["Chats"])
 app.include_router(projects.router, prefix="/api/v1", tags=["Projects"])
 app.include_router(project_cards.router, tags=["Project Cards"])
+app.include_router(agent_cards.router, tags=["Agent Cards"])
 app.include_router(membership.router, tags=["Membership"])
 app.include_router(payments.router, prefix="/api/v1/payments", tags=["Payments"])
+app.include_router(quota_payments.router, tags=["Quota Payments"])
 app.include_router(revenue_analytics.router, tags=["Revenue Analytics"])
 app.include_router(location.router, prefix="/api/v1", tags=["Location"])
 app.include_router(online_users.router, prefix="/api/v1/online", tags=["Online Users"])
+
+# Project Slots System
+app.include_router(project_slots.router, prefix="/api/v1", tags=["Project Slots"])
+app.include_router(admin_project_slots.router, prefix="/api/v1", tags=["Admin - Project Slots"])
+app.include_router(membership_webhooks.router, prefix="/api/v1", tags=["Webhooks - Membership"])
 
 @app.get("/")
 async def root():

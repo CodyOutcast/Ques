@@ -179,8 +179,8 @@ def get_pricing_info():
     """
     return {
         "plans": {
-            "free": {
-                "name": "Free",
+            "basic": {
+                "name": "Basic",
                 "price": 0,
                 "features": {
                     "swipes_per_day": 30,
@@ -197,9 +197,9 @@ def get_pricing_info():
                     "Limited daily messages"
                 ]
             },
-            "paid": {
-                "name": "Premium",
-                "price": 9.99,
+            "pro": {
+                "name": "Pro",
+                "price": 29.99,
                 "duration": "per month",
                 "features": {
                     "swipes_per_day": "Unlimited",
@@ -219,6 +219,36 @@ def get_pricing_info():
                     "Unlimited messages",
                     "Anti-bot protection",
                     "Priority support"
+                ]
+            },
+            "ai-powered": {
+                "name": "AI-Powered",
+                "price": 59.99,
+                "duration": "per month",
+                "features": {
+                    "swipes_per_day": "Unlimited",
+                    "swipes_per_hour": 50,  # Higher rate limiting
+                    "project_cards_max": "Unlimited",
+                    "project_cards_per_day": "Unlimited",
+                    "messages_per_day": "Unlimited",
+                    "project_ideas_per_day": 20,
+                    "project_ideas_per_month": 1000,
+                    "vector_recommendations": True,
+                    "ai_search": True,
+                    "advanced_matching": True,
+                    "priority_support": True,
+                    "early_access": True,
+                    "custom_preferences": True,
+                    "advanced_analytics": True
+                },
+                "benefits": [
+                    "Everything in Pro",
+                    "Unlimited project card creation",
+                    "20 AI project ideas per day",
+                    "1,000 AI ideas per month",
+                    "Custom matching preferences",
+                    "Advanced analytics",
+                    "Highest priority support"
                 ]
             }
         }
@@ -382,7 +412,7 @@ def get_subscription_pricing():
     """
     return {
         "pricing": {
-            "premium": {
+            "pro": {
                 "monthly": {
                     "price": 29.99,
                     "currency": "USD", 
@@ -396,7 +426,7 @@ def get_subscription_pricing():
                     "savings": "15% off monthly rate"
                 }
             },
-            "vip": {
+            "ai-powered": {
                 "monthly": {
                     "price": 59.99,
                     "currency": "USD",
@@ -412,20 +442,21 @@ def get_subscription_pricing():
             }
         },
         "features": {
-            "premium": [
+            "pro": [
                 "Unlimited daily swipes",
                 "Up to 10 project cards per day",
                 "Unlimited messages",
-                "Basic AI recommendations",
-                "Standard support"
-            ],
-            "vip": [
-                "Everything in Premium",
-                "Unlimited project cards",
                 "Advanced AI recommendations",
-                "Priority support",
-                "Early access to new features",
-                "Custom matching preferences"
+                "Priority support"
+            ],
+            "ai-powered": [
+                "Everything in Pro",
+                "Unlimited project cards",
+                "20 AI ideas per day",
+                "1,000 AI ideas per month",
+                "Custom matching preferences",
+                "Advanced analytics",
+                "Highest priority support"
             ]
         }
     }

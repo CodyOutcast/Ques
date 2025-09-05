@@ -10,9 +10,9 @@ from .base import Base
 
 class SubscriptionType(str, enum.Enum):
     """User subscription types"""
-    FREE = "free"
+    FREE = "basic"
     PRO = "pro"
-    ENTERPRISE = "enterprise"  # For future expansion
+    ENTERPRISE = "ai-powered"  # Renamed from enterprise to ai-powered
 
 class UserSubscription(Base):
     """
@@ -23,7 +23,7 @@ class UserSubscription(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, unique=True)
-    subscription_type = Column(SQLEnum('free', 'pro', 'enterprise', name='subscriptiontype'), nullable=False, default='free')
+    subscription_type = Column(SQLEnum('basic', 'pro', 'ai-powered', name='subscriptiontype'), nullable=False, default='basic')
     monthly_quota_limit = Column(Integer, nullable=False, default=30)
     current_period_start = Column(DateTime, nullable=False, default=datetime.utcnow)
     current_period_end = Column(DateTime, nullable=False)
@@ -36,7 +36,7 @@ class UserSubscription(Base):
     # Relationship to users table
     user = relationship("User", backref="subscription")
     
-    def __init__(self, user_id: int, subscription_type: str = "free"):
+    def __init__(self, user_id: int, subscription_type: str = "basic"):
         self.user_id = user_id
         self.subscription_type = subscription_type
         self.current_period_start = datetime.utcnow()

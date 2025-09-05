@@ -9,9 +9,11 @@ from .user_auth import UserAuth, RefreshToken, VerificationCode, UserSession, Se
 from .user_features import UserFeature, UserLink
 from .user_reports import UserReport
 from .project_cards import ProjectCard, UserProject
+from .agent_cards import AgentCard, AgentCardSwipe, AgentCardLike, AgentCardHistory, UserAgentCardPreferences, DifficultyLevel, ProjectScope, SwipeAction
 from .user_membership import UserMembership, UserUsageLog, MembershipType
 from .payments import MembershipTransaction, PaymentRefund, PaymentWebhookLog, PaymentStatus, PaymentMethod
 from .subscriptions import UserSubscription, ProjectIdeaRequest, SubscriptionType
+from .project_slots import ProjectCardSlot, UserSlotConfiguration, AIRecommendationSwipe, SlotStatus, SlotSource
 
 # Export all models
 __all__ = [
@@ -35,6 +37,14 @@ __all__ = [
     "UserReport",
     "UserProject", 
     "ProjectCard",
+    "AgentCard",
+    "AgentCardSwipe",
+    "AgentCardLike",
+    "AgentCardHistory",
+    "UserAgentCardPreferences",
+    "DifficultyLevel",
+    "ProjectScope",
+    "SwipeAction",
     "UserMembership",
     "UserUsageLog",
     "MembershipType",
@@ -45,5 +55,10 @@ __all__ = [
     "PaymentMethod",
     "UserSubscription",
     "ProjectIdeaRequest",
-    "SubscriptionType"
+    "SubscriptionType",
+    "ProjectCardSlot",
+    "UserSlotConfiguration", 
+    "AIRecommendationSwipe",
+    "SlotStatus",
+    "SlotSource"
 ]

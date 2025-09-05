@@ -18,33 +18,36 @@ class MembershipService:
     # Membership limits configuration
     LIMITS = {
         MembershipType.FREE: {
+            "display_name": "Basic",
             "swipes_per_day": 30,
             "project_cards_max": 2,
             "project_cards_per_day": 2,
             "messages_per_day": 50,
-            "project_ideas_per_day": 1,  # Free users: 1 AI project idea generation per day
-            "project_ideas_per_month": 30,  # Free users: 30 per month (generous monthly allowance)
+            "project_ideas_per_day": 1,  # Basic users: 1 AI project idea generation per day
+            "project_ideas_per_month": 30,  # Basic users: 30 per month (generous monthly allowance)
             "rate_limit_enabled": True
         },
         MembershipType.PAID: {
+            "display_name": "Pro",
             "swipes_per_day": -1,  # Unlimited
             "swipes_per_hour": 30,  # Rate limiting to prevent botting
             "project_cards_max": -1,  # Unlimited
             "project_cards_per_day": 10,
             "messages_per_day": -1,  # Unlimited
             "project_ideas_per_day": 10,  # Reasonable daily limit for cost control
-            "project_ideas_per_month": 300,  # Paid users: 300 per month
+            "project_ideas_per_month": 300,  # Pro users: 300 per month
             "project_ideas_per_hour": 5,  # Rate limiting to prevent abuse
             "rate_limit_enabled": True
         },
         MembershipType.PREMIUM: {
+            "display_name": "AI-Powered",
             "swipes_per_day": -1,  # Unlimited
             "swipes_per_hour": 50,  # Higher rate limit
             "project_cards_max": -1,  # Unlimited
             "project_cards_per_day": -1,  # Unlimited
             "messages_per_day": -1,  # Unlimited
             "project_ideas_per_day": 20,  # Higher daily limit
-            "project_ideas_per_month": 1000,  # Premium users: 1000 per month
+            "project_ideas_per_month": 1000,  # AI-Powered users: 1000 per month
             "project_ideas_per_hour": 10,  # Higher rate limit
             "rate_limit_enabled": True
         }

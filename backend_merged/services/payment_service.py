@@ -47,14 +47,14 @@ class MembershipPlan(Enum):
     """Membership plan types with pricing"""
     MONTHLY = {
         "name": "monthly",
-        "display_name": "Monthly Premium",
+        "display_name": "Monthly Pro",
         "price": 29.99,  # CNY
         "duration_days": 30,
         "description": "Unlimited swipes, unlimited project cards (10/day), unlimited ideas (30/hour)"
     }
     YEARLY = {
         "name": "yearly", 
-        "display_name": "Yearly Premium",
+        "display_name": "Yearly Pro",
         "price": 299.99,  # CNY (10 months price)
         "duration_days": 365,
         "description": "Same as monthly but with 2 months free!"
