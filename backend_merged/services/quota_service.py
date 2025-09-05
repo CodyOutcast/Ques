@@ -18,9 +18,9 @@ class QuotaService:
     
     # Quota limits by subscription type (per month)
     QUOTA_LIMITS = {
-        "free": 30,
+        "basic": 30,
         "pro": 300,
-        "enterprise": 1000
+        "ai-powered": 1000
     }
     
     @classmethod
@@ -38,16 +38,16 @@ class QuotaService:
                 db.commit()
                 return subscription
             
-            # Create new free subscription
+            # Create new basic subscription
             subscription = UserSubscription(
                 user_id=user_id, 
-                subscription_type="free"
+                subscription_type="basic"
             )
             db.add(subscription)
             db.commit()
             db.refresh(subscription)
             
-            logger.info(f"Created new free subscription for user {user_id}")
+            logger.info(f"Created new basic subscription for user {user_id}")
             return subscription
             
         except Exception as e:

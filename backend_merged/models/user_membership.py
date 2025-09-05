@@ -10,9 +10,9 @@ from .base import Base
 
 class MembershipType(enum.Enum):
     """Membership type enumeration"""
-    FREE = "free"
-    PAID = "paid"
-    PREMIUM = "premium"  # Future use
+    FREE = "basic"
+    PAID = "pro"
+    PREMIUM = "ai-powered"
 
 class UserMembership(Base):
     """

@@ -58,6 +58,9 @@ class User(Base):
     user_projects = relationship("UserProject", back_populates="user")
     created_projects = relationship("ProjectCard", foreign_keys="ProjectCard.creator_id", back_populates="creator")
     
+    # Agent card preferences relationship
+    agent_card_preferences = relationship("UserAgentCardPreferences", back_populates="user", uselist=False)
+    
     # Membership relationship
     membership = relationship("UserMembership", back_populates="user", uselist=False)
     
@@ -67,6 +70,11 @@ class User(Base):
     # Report relationships
     reports_made = relationship("UserReport", foreign_keys="UserReport.reporter_id", back_populates="reporter")
     reports_received = relationship("UserReport", foreign_keys="UserReport.reported_user_id", back_populates="reported_user")
+    
+    # Project Slots relationships
+    project_slots = relationship("ProjectCardSlot", back_populates="user")
+    slot_configuration = relationship("UserSlotConfiguration", back_populates="user", uselist=False)
+    ai_recommendation_swipes = relationship("AIRecommendationSwipe", back_populates="user")
     
     # Add commonly used fields for compatibility
     @property
