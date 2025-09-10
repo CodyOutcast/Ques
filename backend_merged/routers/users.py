@@ -13,7 +13,7 @@ import math
 
 from dependencies.db import get_db
 from models.users import User
-from models.likes import UserSwipe, Like
+from models.likes import UserSwipe, Like, SwipeDirection
 from services.auth_service import AuthService
 from services.monitoring import log_security_event
 from schemas.users import (
@@ -203,7 +203,7 @@ async def get_liked_profiles(
             User, UserSwipe.target_id == User.user_id
         ).filter(
             UserSwipe.swiper_id == current_user.user_id,
-            UserSwipe.direction == "like"
+            UserSwipe.direction == SwipeDirection.like
         )
         
         # Get likes from Like table (for user-to-user likes)
@@ -227,7 +227,7 @@ async def get_liked_profiles(
             mutual_like = db.query(UserSwipe).filter(
                 UserSwipe.swiper_id == user.user_id,
                 UserSwipe.target_id == current_user.user_id,
-                UserSwipe.direction == "like"
+                UserSwipe.direction == SwipeDirection.like
             ).first() is not None
             
             liked_user = LikedUserResponse(
@@ -304,13 +304,13 @@ async def get_mutual_likes(
             User, UserSwipe.target_id == User.user_id
         ).filter(
             UserSwipe.swiper_id == current_user.user_id,
-            UserSwipe.direction == "like"
+            UserSwipe.direction == SwipeDirection.like
         ).filter(
             # Check if they also liked the current user back
             db.query(UserSwipe).filter(
                 UserSwipe.swiper_id == User.user_id,
                 UserSwipe.target_id == current_user.user_id,
-                UserSwipe.direction == "like"
+                UserSwipe.direction == SwipeDirection.like
             ).exists()
         )
         

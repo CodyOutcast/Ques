@@ -9,7 +9,7 @@ from datetime import datetime
 
 from models.chats import Chat, ChatMessage, ChatStatus
 from models.users import User
-from models.likes import UserSwipe
+from models.likes import UserSwipe, Like, SwipeDirection
 from schemas.chats import (
     GreetingCreate, GreetingResponse, MessageCreate, 
     ChatResponse, MessageResponse, ChatWithMessages, ChatListResponse
@@ -40,7 +40,7 @@ class ChatService:
         like_exists = db.query(UserSwipe).filter(
             UserSwipe.swiper_id == sender_id,
             UserSwipe.target_id == greeting_data.recipient_id,
-            UserSwipe.direction == "like"
+            UserSwipe.direction == SwipeDirection.like
         ).first()
         
         if not like_exists:

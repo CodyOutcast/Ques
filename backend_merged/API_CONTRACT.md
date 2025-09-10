@@ -447,12 +447,170 @@ DELETE /api/v1/users/account
 Response: 204 No Content
 ```
 
+## Project Idea Generation (`/api/v1/project-ideas`) ⭐ **NEW**
+
+### Generate Project Ideas
+- `POST /api/v1/project-ideas/generate` - Generate project ideas from user query
+- `POST /api/v1/project-ideas/generate-stream` - Stream project idea generation with real-time progress
+
+### Quota Management
+- `GET /api/v1/project-ideas/quota` - Get current user quota status
+- `GET /api/v1/project-ideas/history` - Get project idea generation history
+- `POST /api/v1/project-ideas/quota/reset` - Admin: Reset user quota
+
+### Subscription Management
+- `POST /api/v1/project-ideas/subscription/upgrade` - Upgrade user subscription
+- `GET /api/v1/project-ideas/subscription/status` - Get subscription details
+
+### Request/Response Examples
+
+#### Generate Project Ideas
+```json
+POST /api/v1/project-ideas/generate
+{
+  "query": "Build a mobile app for fitness tracking"
+}
+
+Response:
+{
+  "search_id": 1234,
+  "original_query": "Build a mobile app for fitness tracking", 
+  "generated_prompts": [
+    {
+      "prompt": "fitness tracking mobile app development 2025",
+      "engine": "google",
+      "results_count": 10
+    }
+  ],
+  "total_sources_found": 15,
+  "total_ideas_extracted": 3,
+  "project_ideas": [
+    {
+      "title": "AI-Powered Fitness Coach App",
+      "description": "Mobile application with computer vision for exercise form correction and personalized workout plans",
+      "difficulty": "Intermediate",
+      "technologies": ["React Native", "TensorFlow Lite", "Firebase"],
+      "estimated_time": "3-4 months",
+      "relevance_score": 0.95,
+      "key_features": [
+        "Real-time exercise form analysis",
+        "Personalized workout recommendations",
+        "Progress tracking and analytics"
+      ]
+    }
+  ],
+  "processing_time_seconds": 12.5,
+  "created_at": "2025-08-14T04:30:00Z"
+}
+```
+
+#### Stream Generation (Server-Sent Events)
+```json
+POST /api/v1/project-ideas/generate-stream
+{
+  "query": "Build a web app for recipe sharing"
+}
+
+Response Stream:
+data: {"type": "progress", "step": "quota_check", "message": "Checking user quota..."}
+data: {"type": "progress", "step": "query_refinement", "message": "Refining search queries..."}
+data: {"type": "progress", "step": "web_search", "message": "Searching for relevant content..."}
+data: {"type": "progress", "step": "content_scraping", "message": "Extracting content from sources..."}
+data: {"type": "progress", "step": "idea_generation", "message": "Generating project ideas..."}
+data: {"type": "result", "step": "completion", "data": {...}}
+```
+
+#### Quota Status
+```json
+GET /api/v1/project-ideas/quota
+
+Response:
+{
+  "user_id": 123,
+  "subscription_type": "free",
+  "monthly_limit": 30,
+  "current_usage": 5,
+  "remaining_quota": 25,
+  "quota_reset_date": "2025-09-01T00:00:00Z",
+  "is_quota_exceeded": false,
+  "period_start": "2025-08-01T00:00:00Z",
+  "period_end": "2025-09-01T00:00:00Z"
+}
+```
+
+#### Generation History
+```json
+GET /api/v1/project-ideas/history?days=30&limit=10
+
+Response:
+{
+  "total_requests": 5,
+  "successful_requests": 4,
+  "failed_requests": 1,
+  "success_rate": 80.0,
+  "period_start": "2025-07-15T00:00:00Z",
+  "period_end": "2025-08-14T00:00:00Z",
+  "recent_requests": [
+    {
+      "id": 123,
+      "query": "Build a mobile app for fitness tracking",
+      "successful": true,
+      "created_at": "2025-08-14T04:30:00Z",
+      "processing_time": 12.5,
+      "sources_found": 15,
+      "ideas_extracted": 3
+    }
+  ]
+}
+```
+
+#### Subscription Upgrade
+```json
+POST /api/v1/project-ideas/subscription/upgrade
+{
+  "subscription_type": "pro"
+}
+
+Response:
+{
+  "success": true,
+  "message": "Subscription upgraded to pro",
+  "new_quota_limit": 300,
+  "upgrade_date": "2025-08-14T04:30:00Z"
+}
+```
+
+### Error Responses
+
+#### Quota Exceeded
+```json
+HTTP 429 Too Many Requests
+{
+  "error": "Monthly quota exceeded",
+  "message": "You have used 30/30 requests this month",
+  "subscription_type": "free",
+  "quota_reset_date": "2025-09-01T00:00:00Z",
+  "upgrade_message": "Upgrade to Pro for 300 requests per month"
+}
+```
+
+#### Invalid Query
+```json
+HTTP 400 Bad Request
+{
+  "error": "Invalid query",
+  "message": "Query must be between 5 and 500 characters"
+}
+```
+
 ## Database Models
 - Users and authentication
 - Messages and chats
 - Matches and likes
 - User reports
 - Projects and location data
+- **User subscriptions and quotas** ⭐ **NEW**
+- **Project idea generation requests** ⭐ **NEW**
 - Vector embeddings for AI features
 
 ## Error Handling
