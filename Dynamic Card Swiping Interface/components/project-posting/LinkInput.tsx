@@ -3,6 +3,7 @@ import { X, Plus, Link as LinkIcon } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Badge } from '../ui/badge';
+import { currentLanguage as i18nCurrentLanguage } from '../../translations';
 
 interface LinkInputProps {
   links: string[];
@@ -11,7 +12,7 @@ interface LinkInputProps {
   maxLinks?: number;
 }
 
-export function LinkInput({ links, onLinksChange, placeholder = "Add project links...", maxLinks = 10 }: LinkInputProps) {
+export function LinkInput({ links, onLinksChange, placeholder = (i18nCurrentLanguage === 'en' ? 'Add project links...' : '添加项目链接...'), maxLinks = 10 }: LinkInputProps) {
   const [inputValue, setInputValue] = useState('');
 
   const validateUrl = (url: string): boolean => {
@@ -113,7 +114,7 @@ export function LinkInput({ links, onLinksChange, placeholder = "Add project lin
       {/* Max Links Warning */}
       {links.length >= maxLinks && (
         <p className="text-sm text-muted-foreground">
-          Maximum {maxLinks} links reached
+          {i18nCurrentLanguage === 'en' ? `Maximum of ${maxLinks} links reached` : `已达到最多 ${maxLinks} 个链接`}
         </p>
       )}
     </div>

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
 import logo from '../auth-imports/no_bg.PNG';
 
 export const BrandBlock: React.FC = () => {
@@ -11,10 +10,8 @@ export const BrandBlock: React.FC = () => {
   }, []);
 
   return (
-    <motion.div
+    <div
       className="flex flex-row items-end justify-center gap-0 leading-[0] px-0 py-[13px] relative"
-      animate={{ scale: [1, 1.05, 1] }}
-      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
     >
       <div
         aria-label="Ques"
@@ -49,6 +46,6 @@ export const BrandBlock: React.FC = () => {
       >
         Ques
       </p>
-    </motion.div>
+    </div>
   );
 }; 

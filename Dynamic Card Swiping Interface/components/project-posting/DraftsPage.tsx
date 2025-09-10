@@ -3,6 +3,7 @@ import { ArrowLeft, FileText, Edit, Trash2, Calendar } from 'lucide-react';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
+import { t, currentLanguage as i18nCurrentLanguage } from '../../translations';
 
 interface Draft {
   id: string;
@@ -57,13 +58,14 @@ export function DraftsPage({ onBack, onEditDraft }: DraftsPageProps) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    const locale = (i18nCurrentLanguage === 'en') ? 'en-US' : 'zh-CN';
+    return date.toLocaleDateString(locale as any, {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
-    });
+    } as any);
   };
 
   return (
@@ -74,7 +76,7 @@ export function DraftsPage({ onBack, onEditDraft }: DraftsPageProps) {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         
-        <h1 className="text-lg font-semibold text-primary">Drafts</h1>
+        <h1 className="text-lg font-semibold text-primary">{i18nCurrentLanguage === 'en' ? 'Drafts' : '草稿箱'}</h1>
         
         <div className="w-10" />
       </div>
@@ -84,9 +86,9 @@ export function DraftsPage({ onBack, onEditDraft }: DraftsPageProps) {
         {drafts.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center">
             <FileText className="w-16 h-16 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-medium text-foreground mb-2">No drafts yet</h3>
+            <h3 className="text-xl font-medium text-foreground mb-2">{i18nCurrentLanguage === 'en' ? 'No drafts yet' : '暂无草稿'}</h3>
             <p className="text-muted-foreground">
-              Start creating a project to save drafts automatically.
+              {i18nCurrentLanguage === 'en' ? 'Drafts will be saved automatically once you start creating a project.' : '开始创建项目后，系统会自动保存草稿。'}
             </p>
           </div>
         ) : (
@@ -97,10 +99,10 @@ export function DraftsPage({ onBack, onEditDraft }: DraftsPageProps) {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <CardTitle className="text-lg mb-2">
-                        {draft.title || 'Untitled Project'}
+                        {draft.title || (i18nCurrentLanguage === 'en' ? 'Untitled Project' : '未命名项目')}
                       </CardTitle>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="w-4 h-4" />
+                      <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <Calendar className="w-4 h-4 mt-0.5" />
                         <span>{formatDate(draft.createdAt)}</span>
                       </div>
                     </div>
@@ -112,7 +114,7 @@ export function DraftsPage({ onBack, onEditDraft }: DraftsPageProps) {
                         className="hover:bg-primary/10 hover:text-primary"
                       >
                         <Edit className="w-4 h-4 mr-1" />
-                        Edit
+                        {i18nCurrentLanguage === 'en' ? 'Edit' : '编辑'}
                       </Button>
                       <Button
                         variant="outline"
@@ -121,7 +123,7 @@ export function DraftsPage({ onBack, onEditDraft }: DraftsPageProps) {
                         className="hover:bg-destructive/10 hover:text-destructive"
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
+                        {i18nCurrentLanguage === 'en' ? 'Delete' : '删除'}
                       </Button>
                     </div>
                   </div>
@@ -143,9 +145,9 @@ export function DraftsPage({ onBack, onEditDraft }: DraftsPageProps) {
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Draft?</DialogTitle>
+            <DialogTitle>{i18nCurrentLanguage === 'en' ? 'Delete draft?' : '删除草稿？'}</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this draft? This action cannot be undone.
+              {i18nCurrentLanguage === 'en' ? 'Are you sure you want to delete this draft? This action cannot be undone.' : '确定要删除该草稿吗？此操作不可恢复。'}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="flex-col gap-2">
@@ -154,14 +156,14 @@ export function DraftsPage({ onBack, onEditDraft }: DraftsPageProps) {
               onClick={confirmDelete} 
               className="w-full"
             >
-              Delete Draft
+              {i18nCurrentLanguage === 'en' ? 'Delete Draft' : '删除草稿'}
             </Button>
             <Button 
               variant="outline" 
               onClick={() => setShowDeleteDialog(false)} 
               className="w-full"
             >
-              Cancel
+              {i18nCurrentLanguage === 'en' ? 'Cancel' : '取消'}
             </Button>
           </DialogFooter>
         </DialogContent>

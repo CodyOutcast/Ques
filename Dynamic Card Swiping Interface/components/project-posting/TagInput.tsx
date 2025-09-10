@@ -11,7 +11,7 @@ interface TagInputProps {
   maxTags?: number;
 }
 
-export function TagInput({ tags, onTagsChange, placeholder = "Add tags...", maxTags = 10 }: TagInputProps) {
+export function TagInput({ tags, onTagsChange, placeholder = "添加标签...", maxTags = 10 }: TagInputProps) {
   const [inputValue, setInputValue] = useState('');
 
   const handleAddTag = () => {
@@ -81,7 +81,7 @@ export function TagInput({ tags, onTagsChange, placeholder = "Add tags...", maxT
       {/* Max Tags Warning */}
       {tags.length >= maxTags && (
         <p className="text-sm text-muted-foreground">
-          Maximum {maxTags} tags reached
+          已达到最多 {maxTags} 个标签
         </p>
       )}
     </div>

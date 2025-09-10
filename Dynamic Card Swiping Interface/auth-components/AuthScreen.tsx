@@ -36,7 +36,7 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
   const phoneErrorToShow = errors.phoneNumber ?? (phoneTouched && !isPhoneValid ? '请输入有效的手机号' : undefined);
   const codeErrorToShow = errors.verificationCode ?? (codeTouched && codeSent && smsData.verificationCode.length !== 6 ? '请输入6位验证码' : undefined);
   return (
-    <div className="absolute h-[874px] overflow-hidden w-[402px]">
+    <div className="absolute h-[822px] overflow-hidden w-[393px]">
       {/* Title section - Fixed positioning at top */}
       <div className="absolute left-1/2 top-[80px] transform -translate-x-1/2 text-center w-[350px]">
         <div className="mb-4 flex items-center justify-center gap-3">
@@ -132,7 +132,7 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
       </div>
 
       {/* Terms and Privacy */}
-      <div className="absolute bottom-[40px] left-1/2 transform -translate-x-1/2 w-[85%] max-w-[300px] text-center">
+      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[85%] max-w-[300px] text-center">
         <p className="font-['Rubik:Medium',_sans-serif] font-medium text-white text-[12px] leading-[16px]">
           <span className="text-[#bcbcbc]">继续即表示你同意我们的</span>{' '}
           <span className="font-['Rubik:SemiBold',_sans-serif] font-semibold cursor-pointer hover:underline">服务条款</span>{' '}

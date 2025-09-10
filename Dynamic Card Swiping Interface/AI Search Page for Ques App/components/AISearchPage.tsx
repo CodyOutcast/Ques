@@ -391,13 +391,12 @@ export default function AISearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [searchResults, setSearchResults] = useState<typeof mockProjects>([]);
-  const [userMessage, setUserMessage] = useState("");
+  const [lastResultsQuery, setLastResultsQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
 
   const handleSearch = async () => {
     if (!searchQuery.trim()) return;
 
-    setUserMessage(searchQuery);
     setIsLoading(true);
     setHasSearched(true);
     setSearchResults([]);
@@ -414,6 +413,9 @@ export default function AISearchPage() {
       
       // If no matches, show all projects as AI suggestions
       const results = filtered.length > 0 ? filtered : mockProjects.slice(0, 6);
+
+      // Freeze the query alongside the results so the banner does not change with typing
+      setLastResultsQuery(searchQuery);
       
       setSearchResults(results);
       setIsLoading(false);
@@ -440,7 +442,7 @@ export default function AISearchPage() {
               className="mb-6 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500"
             >
               <p className="text-gray-700">
-                <span className="text-blue-600">You searched for:</span> "{userMessage}"
+                <span className="text-blue-600">You searched for:</span> "{lastResultsQuery}"
               </p>
             </motion.div>
           )}

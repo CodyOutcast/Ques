@@ -33,19 +33,36 @@ export default {
     extend: {
       // Colors from design tokens (restored to original)
       colors: {
+        // Base semantic colors used by UI components
+        background: '#ffffff',
+        foreground: '#030213',
+        border: '#e5e7eb',
+        card: '#ffffff',
+        'card-foreground': '#030213',
+        muted: '#f5f5f5',
+        'muted-foreground': '#717182',
+        ring: '#0055F7',
+        input: '#e5e7eb',
+        destructive: '#d4183d',
+        'destructive-foreground': '#ffffff',
+        'primary-foreground': '#ffffff',
+        'secondary-foreground': '#ffffff',
+        'accent-foreground': '#030213',
+
         // Primary brand colors (restored to original)
         primary: {
-          50: '#f8fafc',
-          100: '#f1f5f9',
-          200: '#e2e8f0',
-          300: '#cbd5e1',
-          400: '#94a3b8',
-          500: '#030213', // Original primary color
-          600: '#1e293b',
-          700: '#334155',
-          800: '#475569',
-          900: '#64748b',
-          950: '#0f172a',
+          DEFAULT: '#0055F7',
+          50: '#f0f6ff',
+          100: '#d6e7ff',
+          200: '#adceff',
+          300: '#84b6ff',
+          400: '#5b9eff',
+          500: '#0055F7',
+          600: '#0043c4',
+          700: '#0032a3',
+          800: '#002382',
+          900: '#001a66',
+          950: '#00124a',
         },
         secondary: {
           50: '#f8fafc',
@@ -127,26 +144,27 @@ export default {
         },
         
         // Semantic colors (restored to original)
-        background: {
+        // Design token groups (renamed to avoid conflicting with utility color keys)
+        dsBackground: {
           primary: '#ffffff',
           secondary: '#f8fafc',
           tertiary: '#f1f5f9',
           dark: '#0f172a',
           darkSecondary: '#1e293b',
         },
-        text: {
-          primary: '#030213', // Original foreground color
+        dsText: {
+          primary: '#030213',
           secondary: '#64748b',
           tertiary: '#94a3b8',
           inverse: '#ffffff',
-          muted: '#717182', // Original muted foreground
+          muted: '#717182',
         },
-        border: {
-          light: 'rgba(0, 0, 0, 0.1)', // Original border color
+        dsBorder: {
+          light: 'rgba(0, 0, 0, 0.1)',
           medium: '#cbd5e1',
           dark: '#94a3b8',
         },
-        overlay: {
+        dsOverlay: {
           light: 'rgba(255, 255, 255, 0.8)',
           medium: 'rgba(0, 0, 0, 0.5)',
           dark: 'rgba(0, 0, 0, 0.7)',

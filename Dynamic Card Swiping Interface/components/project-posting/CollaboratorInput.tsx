@@ -4,6 +4,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card, CardContent } from '../ui/card';
 import { TagInput } from './TagInput';
+import { currentLanguage as i18nCurrentLanguage } from '../../translations';
 
 interface Collaborator {
   id: string;
@@ -57,21 +58,21 @@ export function CollaboratorInput({ collaborators, onCollaboratorsChange }: Coll
       {/* Add New Collaborator */}
       <Card>
         <CardContent className="p-4 space-y-3">
-          <h4 className="font-medium text-sm">Add New Collaborator</h4>
+          <h4 className="font-medium text-sm">{i18nCurrentLanguage === 'en' ? 'Add Collaborator' : '新增协作者'}</h4>
           
           <div className="space-y-3">
             <Input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Collaborator name"
+              placeholder={i18nCurrentLanguage === 'en' ? 'Collaborator name' : '协作者姓名'}
               className="w-full"
             />
             
             <TagInput
               tags={newRoles}
               onTagsChange={setNewRoles}
-              placeholder="Add roles..."
+              placeholder={i18nCurrentLanguage === 'en' ? 'Add roles...' : '添加角色...'}
               maxTags={5}
             />
             
@@ -82,7 +83,7 @@ export function CollaboratorInput({ collaborators, onCollaboratorsChange }: Coll
               className="w-full"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Add Collaborator
+              {i18nCurrentLanguage === 'en' ? 'Add Collaborator' : '添加协作者'}
             </Button>
           </div>
         </CardContent>
@@ -91,7 +92,7 @@ export function CollaboratorInput({ collaborators, onCollaboratorsChange }: Coll
       {/* Existing Collaborators */}
       {collaborators.length > 0 && (
         <div className="space-y-3">
-          <h4 className="font-medium text-sm">Current Collaborators</h4>
+          <h4 className="font-medium text-sm">{i18nCurrentLanguage === 'en' ? 'Current Collaborators' : '当前协作者'}</h4>
           
           {collaborators.map((collaborator) => (
             <Card key={collaborator.id}>
@@ -103,7 +104,7 @@ export function CollaboratorInput({ collaborators, onCollaboratorsChange }: Coll
                       <Input
                         value={collaborator.name}
                         onChange={(e) => handleUpdateCollaborator(collaborator.id, 'name', e.target.value)}
-                        placeholder="Name"
+                        placeholder={i18nCurrentLanguage === 'en' ? 'Name' : '姓名'}
                         className="flex-1"
                       />
                     </div>
@@ -111,7 +112,7 @@ export function CollaboratorInput({ collaborators, onCollaboratorsChange }: Coll
                     <TagInput
                       tags={collaborator.role}
                       onTagsChange={(roles) => handleUpdateCollaborator(collaborator.id, 'role', roles)}
-                      placeholder="Roles..."
+                      placeholder={i18nCurrentLanguage === 'en' ? 'Roles...' : '角色...'}
                       maxTags={5}
                     />
                   </div>

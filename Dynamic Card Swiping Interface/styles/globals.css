@@ -602,6 +602,23 @@
   color: #ffffff !important;
 }
 
+/* ===== CHAT HOME TITLE OVERRIDES ===== */
+/* Force chat page titles to be black */
+.chat-people-title,
+.chat-chats-title {
+  color: #000000 !important;
+  font-weight: 400 !important;
+  background-color: transparent !important;
+}
+
+/* Force chat page borders to be blue */
+.chat-people-border,
+.chat-chats-border {
+  background-color: #0088ff !important;
+  display: block !important;
+  height: 1px !important;
+}
+
 /* ===== ANIMATIONS ===== */
 @keyframes fadeIn {
   from {
@@ -745,3 +762,8 @@
     page-break-after: avoid;
   }
 }
+
+/* Chat Debug Styles */
+
+/* ===== 聊天组件已使用正确字体族，移除强制覆盖 ===== */
+/* 聊天组件现在直接使用 font-['Instrument_Sans:Regular',_sans-serif] 等正确的字体族 */

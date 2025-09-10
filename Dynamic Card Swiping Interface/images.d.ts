@@ -17,3 +17,5 @@ declare module '*.PNG?url' {
   const src: string;
   export default src;
 } 
+
+declare module 'html-to-image'; 
