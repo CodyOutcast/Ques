@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Images</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .image-test { margin: 20px 0; }
+        img { width: 150px; height: 150px; object-fit: cover; border-radius: 50%; margin: 10px; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Image Loading Test</h1>
+    
+    <div class="image-test">
+        <h3>Unsplash Images (New)</h3>
+        <img src="https://images.unsplash.com/photo-1494790108755-2616b9d2c1e6?w=150&h=150&fit=crop&crop=face" 
+             alt="Sarah Chen" 
+             onload="console.log('Unsplash 1 loaded'); this.nextElementSibling.className = 'success'"
+             onerror="console.log('Unsplash 1 failed'); this.nextElementSibling.className = 'error'">
+        <div>Sarah Chen - Loading...</div>
+        
+        <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face" 
+             alt="Alex Kumar"
+             onload="console.log('Unsplash 2 loaded'); this.nextElementSibling.className = 'success'"
+             onerror="console.log('Unsplash 2 failed'); this.nextElementSibling.className = 'error'">
+        <div>Alex Kumar - Loading...</div>
+        
+        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face" 
+             alt="Maria Rodriguez"
+             onload="console.log('Unsplash 3 loaded'); this.nextElementSibling.className = 'success'"
+             onerror="console.log('Unsplash 3 failed'); this.nextElementSibling.className = 'error'">
+        <div>Maria Rodriguez - Loading...</div>
+        
+        <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face" 
+             alt="David Wong"
+             onload="console.log('Unsplash 4 loaded'); this.nextElementSibling.className = 'success'"
+             onerror="console.log('Unsplash 4 failed'); this.nextElementSibling.className = 'error'">
+        <div>David Wong - Loading...</div>
+    </div>
+    
+    <div class="image-test">
+        <h3>Lorem Picsum Images (Previous)</h3>
+        <img src="https://picsum.photos/150/150?random=1" 
+             alt="Test 1"
+             onload="console.log('Picsum 1 loaded'); this.nextElementSibling.className = 'success'"
+             onerror="console.log('Picsum 1 failed'); this.nextElementSibling.className = 'error'">
+        <div>Picsum 1 - Loading...</div>
+        
+        <img src="https://picsum.photos/150/150?random=2" 
+             alt="Test 2"
+             onload="console.log('Picsum 2 loaded'); this.nextElementSibling.className = 'success'"
+             onerror="console.log('Picsum 2 failed'); this.nextElementSibling.className = 'error'">
+        <div>Picsum 2 - Loading...</div>
+    </div>
+    
+    <div class="image-test">
+        <h3>Alternative: Static Placeholder Images</h3>
+        <div style="width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(45deg, #3b82f6, #8b5cf6); display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 10px;">SC</div>
+        <div style="width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(45deg, #10b981, #06b6d4); display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 10px;">AK</div>
+        <div style="width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(45deg, #f59e0b, #ef4444); display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 10px;">MR</div>
+        <div style="width: 150px; height: 150px; border-radius: 50%; background: linear-gradient(45deg, #8b5cf6, #ec4899); display: inline-flex; align-items: center; justify-content: center; color: white; font-size: 24px; font-weight: bold; margin: 10px;">DW</div>
+    </div>
+    
+    <script>
+        console.log('Test page loaded. Check the images above and console for loading results.');
+    </script>
+</body>
+</html>
