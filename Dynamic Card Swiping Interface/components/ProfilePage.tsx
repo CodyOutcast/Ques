@@ -8,15 +8,44 @@ import { HeaderBar } from './HeaderBar';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import 'swiper/css';
 
+// 增强的图片组件，支持随机渐变作为备用
+function ImageWithRandomFallback({ 
+  src, 
+  alt, 
+  className, 
+  fallbackGradient,
+  fallbackText 
+}: { 
+  src: string; 
+  alt: string; 
+  className?: string; 
+  fallbackGradient: string;
+  fallbackText: string;
+}) {
+  const [hasError, setHasError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  return hasError || !src ? (
+    <div className={`${fallbackGradient} flex items-center justify-center ${className}`}>
+      <div className="text-white text-xl font-bold text-center px-4">
+        {fallbackText}
+      </div>
+    </div>
+  ) : (
+    <img 
+      src={src} 
+      alt={alt} 
+      className={className}
+      onError={() => setHasError(true)}
+      onLoad={() => setIsLoading(false)}
+    />
+  );
+}
+
 // 导入翻译函数
 import { t, currentLanguage as i18nCurrentLanguage } from '../translations';
-
-// SVG路径
-const svgPaths = {
-  male: "M9 12l3 3 3-3",
-  female: "M9 12l3 3 3-3",
-  like: "M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
-};
+// 导入性别图标SVG路径
+import svgPaths from '../imports/svg-fko3i96u3r';
 
 
 
@@ -67,9 +96,28 @@ const sampleImages = [
 interface ProfilePageProps {
   onBack: () => void;
   onEditProject?: (project: any) => void; // 添加编辑项目回调
+  onProjectClick?: (project: any) => void; // 新增：项目点击回调
+  onProfileUpdate?: (newData: any) => void; // 新增：用户资料更新回调
   readOnly?: boolean;
   showBackHeader?: boolean; // 紧凑模式：用于聊天跳转
   compactHero?: boolean; // 新增：紧凑头部布局
+  isOverlay?: boolean; // 新增：是否为叠加显示模式
+  // 新增：外部用户数据
+  userData?: {
+    name: string;
+    birthday: string;
+    gender: 'Male' | 'Female' | 'Non-binary';
+    location: string;
+    fullBio: string;
+    objective: string;
+    lookingFor: string;
+    typeTags: string[];
+    skills: string[];
+    media: string[];
+    avatar: string;
+    initiatedProjects: any[];
+    // 删除了合作项目：collaboratedProjects: any[];
+  };
 }
 
 // 项目卡片组件 - 使用与主页面完全一致的样式
@@ -88,6 +136,22 @@ function ProjectCard({
   onLongPressEnd?: () => void;
   overlayChild?: React.ReactNode;
 }) {
+  // 随机渐变背景作为图片加载失败时的备用
+  const gradientBackgrounds = [
+    'bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700',
+    'bg-gradient-to-br from-pink-500 via-red-500 to-purple-600',
+    'bg-gradient-to-br from-green-400 via-blue-500 to-purple-600',
+    'bg-gradient-to-br from-yellow-400 via-orange-500 to-red-500',
+    'bg-gradient-to-br from-teal-400 via-blue-500 to-indigo-600',
+    'bg-gradient-to-br from-emerald-400 via-teal-500 to-cyan-600',
+    'bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600',
+    'bg-gradient-to-br from-rose-400 via-pink-500 to-purple-600',
+    'bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600',
+    'bg-gradient-to-br from-orange-400 via-red-500 to-pink-600'
+  ];
+  
+  const randomGradient = gradientBackgrounds[Math.floor(Math.random() * gradientBackgrounds.length)];
+
   const statusColorMap = {
     '进行中': 'bg-blue-500',
     '已完成': 'bg-green-500',
@@ -152,10 +216,12 @@ function ProjectCard({
     >
       {/* 项目图片 */}
       <div className="absolute inset-0">
-        <ImageWithFallback
+        <ImageWithRandomFallback
           src={project.image}
           alt={project.title}
           className="w-full h-full object-cover"
+          fallbackGradient={randomGradient}
+          fallbackText={project.title}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
       </div>
@@ -959,7 +1025,7 @@ function ProfileEditPage({
   );
 }
 
-export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackHeader = false, compactHero = false }: ProfilePageProps) {
+export function ProfilePage({ onBack, onEditProject, onProjectClick, onProfileUpdate, readOnly = false, showBackHeader = false, compactHero = false, isOverlay = false, userData }: ProfilePageProps) {
   const [activeTab, setActiveTab] = useState<'profile' | 'project'>('profile');
   const [planLevel, setPlanLevel] = useState<'Basic' | 'Pro' | 'Ai-Powered'>('Basic');
   const [planExpiry, setPlanExpiry] = useState<number | null>(null);
@@ -968,17 +1034,17 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
   const [needsPurchase, setNeedsPurchase] = useState<boolean>(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState({
-    name: '李晨',
-    birthday: '1997-01-01',
-    gender: 'Non-binary' as 'Male' | 'Female' | 'Non-binary',
-    location: '深圳, 中国',
-    bio: '👋 大家好，我是 李晨，一名热爱技术与创意的全栈开发者.\n我擅长 React / Node.js / Python，有丰富的移动端与Web应用开发经验。\n过去三年里，我参与过多个初创团队项目，主要负责前端架构设计、后端API开发以及用户体验优化。',
-    objective: '和志同道合的伙伴一起，打造真正能解决问题、改变生活的产品。\n我特别关注教育科技与AI应用领域，如果你也对这些方向有兴趣，欢迎一起交流！',
-    lookingFor: '能够让我持续成长，并与伙伴们一起从0到1打造产品的项目机会。',
-    typeTags: ['寻找合作者', '正在寻找项目', '投资人'],
-    skills: ['全栈开发者', 'React专家', 'Python', 'AI/ML', '创业经验'],
-    media: [] as string[],
-    avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=face'
+    name: userData?.name || '李晨',
+    birthday: userData?.birthday || '1997-01-01',
+    gender: userData?.gender || 'Non-binary' as 'Male' | 'Female' | 'Non-binary',
+    location: userData?.location || '深圳, 中国',
+    bio: userData?.fullBio || '👋 大家好，我是 李晨，一名热爱技术与创意的全栈开发者.\n我擅长 React / Node.js / Python，有丰富的移动端与Web应用开发经验。\n过去三年里，我参与过多个初创团队项目，主要负责前端架构设计、后端API开发以及用户体验优化。',
+    objective: userData?.objective || '和志同道合的伙伴一起，打造真正能解决问题、改变生活的产品。\n我特别关注教育科技与AI应用领域，如果你也对这些方向有兴趣，欢迎一起交流！',
+    lookingFor: userData?.lookingFor || '能够让我持续成长，并与伙伴们一起从0到1打造产品的项目机会。',
+    typeTags: userData?.typeTags || ['寻找合作者', '正在寻找项目', '投资人'],
+    skills: userData?.skills || ['全栈开发者', 'React专家', 'Python', 'AI/ML', '创业经验'],
+    media: userData?.media || [] as string[],
+    avatar: userData?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=face'
   });
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const contentSectionRef = useRef<HTMLDivElement>(null);
@@ -994,7 +1060,7 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
   const isReadOnly = !!readOnly;
 
   // 将静态数据转换为状态变量，以便修改
-  const [initiatedProjects, setInitiatedProjects] = useState([
+  const [initiatedProjects, setInitiatedProjects] = useState(userData?.initiatedProjects || [
     {
       id: 1,
       title: "智能健康管理平台",
@@ -1030,44 +1096,13 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
     }
   ]);
 
-  const [collaboratedProjects, setCollaboratedProjects] = useState([
-    {
-      id: 4,
-      title: "区块链供应链追踪",
-      description: "利用区块链技术实现产品供应链的透明化追踪和管理",
-      status: "已完成",
-      progress: 100,
-      image: "https://images.unsplash.com/photo-1639762681485-074b7f938ba0?w=400&h=200&fit=crop",
-      tags: ["区块链", "供应链", "追踪"],
-      startDate: "2023年3月",
-      role: "前端开发"
-    },
-    {
-      id: 5,
-      title: "VR建筑设计工具",
-      description: "基于VR技术的建筑设计可视化工具，支持实时3D预览和协作",
-      status: "进行中",
-      progress: 60,
-      image: "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?w=400&h=200&fit=crop",
-      tags: ["VR", "建筑", "3D"],
-      startDate: "2023年9月",
-      role: "全栈开发"
-    },
-    {
-      id: 6,
-      title: "智能家居控制系统",
-      description: "集成多种智能设备的统一控制平台，支持语音控制和自动化场景",
-      status: "进行中",
-      progress: 80,
-      image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=200&fit=crop",
-      tags: ["IoT", "智能家居", "自动化"],
-      startDate: "2023年12月",
-      role: "后端开发"
-    }
-  ]);
+  // 删除了合作项目相关的状态
 
   // 初始化：从本地存储加载项目与归档，并消费新发布队列
   useEffect(() => {
+    // 如果是外部用户数据，不从本地存储加载
+    if (userData) return;
+    
     try {
       const savedInitiated = localStorage.getItem('profile_initiated_projects');
       const savedArchived = localStorage.getItem('profile_archived_projects');
@@ -1080,10 +1115,13 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
         if (Array.isArray(parsed)) setArchivedProjects(parsed);
       }
     } catch {}
-  }, []);
+  }, [userData]);
 
   // 消费新发布队列（根据套餐放置位置）
   useEffect(() => {
+    // 如果是外部用户数据，不处理新发布队列
+    if (userData) return;
+    
     try {
       const queueRaw = localStorage.getItem('profile_new_projects');
       if (!queueRaw) return;
@@ -1114,7 +1152,7 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
 
       localStorage.removeItem('profile_new_projects');
     } catch {}
-  }, [planLevel]);
+  }, [planLevel, userData]);
 
   // Basic 限制：不再自动裁剪已有卡片，新发布超过 2 张时已在上面的队列消费里处理
   useEffect(() => {
@@ -1123,15 +1161,23 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
 
   // 持久化 initiated 与 archived
   useEffect(() => {
+    // 如果是外部用户数据，不保存到本地存储
+    if (userData) return;
     try { localStorage.setItem('profile_initiated_projects', JSON.stringify(initiatedProjects)); } catch {}
-  }, [initiatedProjects]);
+  }, [initiatedProjects, userData]);
   useEffect(() => {
+    // 如果是外部用户数据，不保存到本地存储
+    if (userData) return;
     try { localStorage.setItem('profile_archived_projects', JSON.stringify(archivedProjects)); } catch {}
-  }, [archivedProjects]);
+  }, [archivedProjects, userData]);
 
   // 处理项目点击
   const handleProjectClick = (project: any) => {
+    if (onProjectClick) {
+      onProjectClick(project);
+    } else {
     setSelectedProject(project);
+    }
   };
 
   // 处理长按开始
@@ -1202,13 +1248,8 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
     setArchivedProjects(prev => [...prev, { ...project, archivedAt: new Date().toISOString() }]);
     
     // 从原列表中移除项目
-    if (project.role) {
-      // 合作的项目
-      setCollaboratedProjects(prev => prev.filter(p => p.id !== project.id));
-    } else {
-      // 发起的项目
-      setInitiatedProjects(prev => prev.filter(p => p.id !== project.id));
-    }
+    // 只处理发起的项目（已删除合作项目功能）
+    setInitiatedProjects(prev => prev.filter(p => p.id !== project.id));
     
     // 显示存档成功提示
     console.log('项目已存档:', project.title);
@@ -1219,14 +1260,8 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
     // 从已存档列表中移除
     setArchivedProjects(prev => prev.filter(p => p.id !== project.id));
     
-    // 根据项目类型，恢复到原列表
-    if (project.role) {
-      // 合作的项目
-      setCollaboratedProjects(prev => [...prev, { ...project }]);
-    } else {
-      // 发起的项目
-      setInitiatedProjects(prev => [...prev, { ...project }]);
-    }
+    // 只处理发起的项目（已删除合作项目功能）
+    setInitiatedProjects(prev => [...prev, { ...project }]);
     
     console.log('项目已取消存档:', project.title);
   };
@@ -1235,13 +1270,9 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
   const handleConfirmDelete = () => {
     if (!deletingProject) return;
     
-    // 直接删除项目：如果在归档中则从归档删除，否则从对应列表删除
+    // 直接删除项目：从归档和发起项目列表中删除（已删除合作项目功能）
     setArchivedProjects(prev => prev.filter(p => p.id !== deletingProject.id));
-    if (deletingProject.role) {
-      setCollaboratedProjects(prev => prev.filter(p => p.id !== deletingProject.id));
-    } else {
-      setInitiatedProjects(prev => prev.filter(p => p.id !== deletingProject.id));
-    }
+    setInitiatedProjects(prev => prev.filter(p => p.id !== deletingProject.id));
     
     // 隐藏弹窗
     setShowDeleteConfirm(false);
@@ -1393,7 +1424,28 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
     reader.onloadend = () => {
       const dataUrl = typeof reader.result === 'string' ? reader.result : '';
       if (!dataUrl) return;
-      setEditFormData(prev => ({ ...prev, avatar: dataUrl }));
+      
+      // 使用函数式更新确保获取最新状态
+      setEditFormData(prev => {
+        const updatedData = { ...prev, avatar: dataUrl };
+        
+        // 立即保存到 localStorage
+        try {
+          localStorage.setItem('profile_full_data', JSON.stringify(updatedData));
+          localStorage.setItem('user_profile_data', JSON.stringify(updatedData));
+          console.log('💾 Avatar saved to localStorage:', dataUrl.substring(0, 50) + '...');
+        } catch (e) {
+          console.error('❌ Failed to save avatar to localStorage:', e);
+        }
+        
+        // 同步到 App 组件状态管理
+        if (onProfileUpdate) {
+          console.log('📤 Syncing avatar update to App component');
+          onProfileUpdate(updatedData);
+        }
+        
+        return updatedData;
+      });
     };
     reader.readAsDataURL(f);
   };
@@ -1414,24 +1466,46 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
     return val;
   };
 
-  // 恢复完整资料（跨页面保持）
+  // 仅在查看他人资料时初始化表单数据（只在组件首次挂载时）
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('profile_full_data');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        setEditFormData(prev => ({
-          ...prev,
-          ...parsed,
-          // 防止损坏的数据覆盖为非数组
-          typeTags: Array.isArray(parsed?.typeTags) ? parsed.typeTags : prev.typeTags,
-          skills: Array.isArray(parsed?.skills) ? parsed.skills : prev.skills,
-          media: Array.isArray(parsed?.media) ? parsed.media : prev.media,
-          gender: parsed?.gender || prev.gender,
-        }));
-      }
-    } catch {}
-  }, []);
+    if (userData && readOnly) {
+      // 只有在查看他人资料时才用 userData 初始化
+      setEditFormData({
+        name: userData?.name || '李晨',
+        birthday: userData?.birthday || '1997-01-01',
+        gender: userData?.gender || 'Non-binary' as 'Male' | 'Female' | 'Non-binary',
+        location: userData?.location || '深圳, 中国',
+        bio: userData?.fullBio || '👋 大家好，我是 李晨，一名热爱技术与创意的全栈开发者.\n我擅长 React / Node.js / Python，有丰富的移动端与Web应用开发经验。\n过去三年里，我参与过多个初创团队项目，主要负责前端架构设计、后端API开发以及用户体验优化。',
+        objective: userData?.objective || '和志同道合的伙伴一起，打造真正能解决问题、改变生活的产品。\n我特别关注教育科技与AI应用领域，如果你也对这些方向有兴趣，欢迎一起交流！',
+        lookingFor: userData?.lookingFor || '能够让我持续成长，并与伙伴们一起从0到1打造产品的项目机会。',
+        typeTags: userData?.typeTags || ['寻找合作者', '正在寻找项目', '投资人'],
+        skills: userData?.skills || ['全栈开发者', 'React专家', 'Python', 'AI/ML', '创业经验'],
+        media: userData?.media || [] as string[],
+        avatar: userData?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=120&h=120&fit=crop&crop=face',
+      });
+    }
+  }, []); // 移除 userData 依赖，只在组件挂载时执行一次
+
+  // 恢复完整资料（跨页面保持）- 仅在用户自己的页面时
+  useEffect(() => {
+    if (!readOnly && !userData) {
+      try {
+        const saved = localStorage.getItem('profile_full_data');
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          setEditFormData(prev => ({
+            ...prev,
+            ...parsed,
+            // 防止损坏的数据覆盖为非数组
+            typeTags: Array.isArray(parsed?.typeTags) ? parsed.typeTags : prev.typeTags,
+            skills: Array.isArray(parsed?.skills) ? parsed.skills : prev.skills,
+            media: Array.isArray(parsed?.media) ? parsed.media : prev.media,
+            gender: parsed?.gender || prev.gender,
+          }));
+        }
+      } catch {}
+    }
+  }, [readOnly, userData]);
 
   // 保存完整资料
   useEffect(() => {
@@ -1480,7 +1554,7 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
           className="overflow-y-auto overflow-x-hidden scrollbar-hide" 
           style={{ 
             scrollBehavior: 'smooth',
-            height: showBackHeader ? '572px' : '662px',
+            height: isOverlay ? '100%' : (showBackHeader ? '572px' : '662px'),
             marginTop: showBackHeader ? '90px' : '0px'
           }}
         >
@@ -1528,13 +1602,19 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
                 onChange={(e) => { handleAvatarAddTop(e.target.files); try { if (e.target) (e.target as HTMLInputElement).value = ''; } catch {} }}
                 className="hidden"
               />
-              <label
-                htmlFor="profile-avatar-input"
-                className="hidden"
-                title={i18nCurrentLanguage === 'en' ? 'Change avatar' : '更换头像'}
-              >
-                {/* Camera button hidden */}
-              </label>
+              {/* Camera button - only show for non-readonly mode (user's own profile) */}
+              {!isReadOnly && (
+                <label
+                  htmlFor="profile-avatar-input"
+                  className="absolute bottom-0 right-0 w-10 h-10 bg-[#0055F7] active:bg-[#0043C4] rounded-full flex items-center justify-center cursor-pointer shadow-lg transition-all duration-150 border-2 border-white group"
+                  title={i18nCurrentLanguage === 'en' ? 'Change avatar' : '更换头像'}
+                >
+                  <Camera 
+                    size={18} 
+                    className="text-white transition-transform group-active:scale-95" 
+                  />
+                </label>
+              )}
             </div>
 
             {/* Profile Info */}
@@ -1543,17 +1623,20 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
                 {/* Name and Gender */}
                 <div className={`flex items-center justify-center gap-2 mb-1`}>
                   <h1 className="text-white text-3xl font-bold" style={{ fontFamily: 'Instrument Sans, sans-serif' }}>{editFormData.name}{typeof displayAge === 'number' ? `, ${displayAge}` : ''}</h1>
-                  <button
-                    type="button"
-                    onClick={() => setShowPlanModal(true)}
-                    className={`inline-flex items-center h-6 px-2 rounded-full text-xs font-semibold ${planLevel === 'Basic' ? 'bg-white/20 text-white' : planLevel === 'Pro' ? 'bg-amber-400 text-white' : 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-white'} hover:opacity-90 transition`}
-                  >
-                    {planLevel}
-                  </button>
+                  {/* 只在查看自己资料时显示购买计划标签 */}
+                  {!userData && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPlanModal(true)}
+                      className={`inline-flex items-center h-6 px-2 rounded-full text-xs font-semibold ${planLevel === 'Basic' ? 'bg-white/20 text-white' : planLevel === 'Pro' ? 'bg-amber-400 text-white' : 'bg-gradient-to-r from-cyan-500 to-emerald-500 text-white'} hover:opacity-90 transition`}
+                    >
+                      {planLevel}
+                    </button>
+                  )}
                   {editFormData.gender !== 'Non-binary' && (
                     <div className="w-6 h-6">
                       <svg viewBox="0 0 24 24" fill="none">
-                        <path d={svgPaths.male} stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d={editFormData.gender === 'Male' ? svgPaths.male : svgPaths.female} stroke="#FFFFFF" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" fill="none" />
                       </svg>
                     </div>
                   )}
@@ -1774,39 +1857,10 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
                     </div>
                   </div>
 
-                  {/* 合作的项目 */}
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 mb-4" style={{ fontFamily: 'Instrument Sans, sans-serif' }}>
-                      {t('collaboratedProjects') || '合作的项目'} ({collaboratedProjects.length})
-                    </h3>
-                    <div className="relative">
-                      <Swiper
-                        spaceBetween={24}
-                        slidesPerView="auto"
-                        className="project-swiper"
-                        style={{ paddingLeft: '0', paddingRight: '0' }}
-                        allowTouchMove={true}
-                        grabCursor={true}
-                        slidesPerGroup={1}
-                        watchSlidesProgress={true}
-                      >
-                        {collaboratedProjects.map((project) => (
-                          <SwiperSlide key={project.id} style={{ width: '357px' }}>
-                            <ProjectCard 
-                              project={project} 
-                              isCollaboration={true}
-                              onClick={() => handleProjectClick(project)}
-                              onLongPressStart={undefined} 
-                              onLongPressEnd={undefined}
-                            />
-                          </SwiperSlide>
-                        ))}
-                      </Swiper>
-                    </div>
-                  </div>
+
 
                   {/* 归档卡槽：展示已存档的卡片（灰色蒙版），自动归档的显示锁图标 */}
-                  {archivedProjects.length > 0 && (
+                  {!isReadOnly && archivedProjects.length > 0 && (
                     <div>
                       <h3 className="text-lg font-bold text-gray-900 mb-4" style={{ fontFamily: 'Instrument Sans, sans-serif' }}>
                         {i18nCurrentLanguage === 'en' ? 'Card Slot(archived)' : '卡槽(归档的卡片)'} ({archivedProjects.length})
@@ -1981,34 +2035,38 @@ export function ProfilePage({ onBack, onEditProject, readOnly = false, showBackH
           <ProfileEditPage
             formData={editFormData}
             onSave={(data) => {
-              setEditFormData({
+              const updatedData = {
                 ...editFormData,
                 name: String(data.name || '').trim(),
                 birthday: data.birthday || '',
                 gender: data.gender || editFormData.gender,
                 location: data.location || '',
-                bio: data.bio || '',
+                fullBio: data.bio || '', // 注意这里是 fullBio
                 objective: data.objective || '',
                 lookingFor: data.lookingFor || '',
                 typeTags: Array.isArray(data.typeTags) ? data.typeTags : [],
                 skills: Array.isArray(data.skills) ? data.skills : [],
                 media: Array.isArray(data.media) ? data.media : [],
                 avatar: data.avatar || editFormData.avatar
-              });
-              try { localStorage.setItem('profile_full_data', JSON.stringify({
-                ...editFormData,
-                name: String(data.name || '').trim(),
-                birthday: data.birthday || '',
-                gender: data.gender || editFormData.gender,
-                location: data.location || '',
-                bio: data.bio || '',
-                objective: data.objective || '',
-                lookingFor: data.lookingFor || '',
-                typeTags: Array.isArray(data.typeTags) ? data.typeTags : [],
-                skills: Array.isArray(data.skills) ? data.skills : [],
-                media: Array.isArray(data.media) ? data.media : [],
-                avatar: data.avatar || editFormData.avatar
-              })); } catch {}
+              };
+              
+              setEditFormData(updatedData);
+              
+              // 保存到 localStorage
+              try { 
+                localStorage.setItem('profile_full_data', JSON.stringify(updatedData));
+                // 同时保存到用户资料数据中（用于状态管理）
+                localStorage.setItem('user_profile_data', JSON.stringify(updatedData));
+              } catch {}
+              
+              // 调用父组件的更新回调，同步更新 App 组件的状态
+              if (onProfileUpdate) {
+                console.log('📤 Calling onProfileUpdate with data:', updatedData);
+                onProfileUpdate(updatedData);
+              } else {
+                console.warn('⚠️  onProfileUpdate callback not provided');
+              }
+              
               setIsEditing(false);
             }}
             onCancel={() => setIsEditing(false)}

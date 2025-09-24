@@ -134,22 +134,26 @@ export default function ChatMessage({ message, time, isOwn, isNew = false, statu
           ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}
         `}
       >
-        <div className="content-stretch flex items-end justify-start relative shrink-0">
-          {/* 消息状态图标 - 只在自己的消息上显示 */}
-          <MessageStatusIcon status={status} />
-          {/* 我方气泡：#0055F7背景，白色文字 - 使用!important强制覆盖 */}
-          <div className="bg-[#0055f7] box-border content-stretch flex gap-2.5 items-center justify-start overflow-clip p-[12px] relative rounded-bl-[30px] rounded-tl-[30px] rounded-tr-[30px] shrink-0">
-            <div 
-              className="font-['Instrument_Sans:Regular',_sans-serif] font-normal leading-[0] relative shrink-0 text-[16px] text-white" 
-              style={{ fontVariationSettings: "'wdth' 100" }}
-              data-chat-message-own
-            >
-              <p 
-                className="leading-[normal] whitespace-pre-wrap"
-                data-chat-message-own-text
+        <div className="content-stretch flex items-end justify-end relative shrink-0">
+          {/* 状态图标和气泡的组合容器 - 作为整体右对齐 */}
+          <div className="flex items-end gap-1">
+            {/* 消息状态图标 - 只在自己的消息上显示 */}
+            <MessageStatusIcon status={status} />
+            {/* 我方气泡：#0055F7背景，白色文字 - 添加最大宽度限制以支持自动换行 */}
+            <div className="bg-[#0055f7] box-border flex gap-2.5 items-center justify-start overflow-clip p-[12px] relative rounded-bl-[30px] rounded-tl-[30px] rounded-tr-[30px]" style={{ maxWidth: 'calc(90vw - 80px)' }}>
+              <div 
+                className="font-['Instrument_Sans:Regular',_sans-serif] font-normal leading-[0] relative text-[16px] text-white" 
+                style={{ fontVariationSettings: "'wdth' 100", wordBreak: 'break-word' }}
+                data-chat-message-own
               >
-                {message}
-              </p>
+                <p 
+                  className="leading-[normal] whitespace-pre-wrap"
+                  data-chat-message-own-text
+                  style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                >
+                  {message}
+                </p>
+              </div>
             </div>
           </div>
         </div>

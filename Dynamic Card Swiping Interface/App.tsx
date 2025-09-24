@@ -14,7 +14,7 @@ import { AuthPhoneScreen } from './auth-components/AuthScreen';
 import logo from './auth-imports/no_bg.PNG';
 import BackgroundGradientAnimation from './components/ui/BackgroundGradientAnimation';
 import { HeaderBar } from './components/HeaderBar';
-import { fetchProjectCards, sendSwipe, CardsResponse } from './src/api/recommendations';
+import { fetchProjectCards, sendSwipe, CardsResponse, fetchFavorites, fetchHistory, LocalStorageManager, sendAgentCardSwipe } from './src/api/recommendations';
 import { getAccessToken } from './src/api/client';
 
 // 新增：导入启动页面组件
@@ -60,7 +60,7 @@ type AppState = 'launch' | 'auth' | 'main' | 'ai' | 'posting' | 'drafts' | 'resu
 
 // 可调滑动参数（集中配置）
 export const SWIPE_REQUIREMENT: 'position' | 'velocity' = 'position';
-export const SWIPE_THRESHOLD_PX: number = 100; // 位置阈值，像素越大越难滑走
+export const SWIPE_THRESHOLD_PX: number = 90; // 位置阈值，像素越大越难滑走
 export const TAP_MAX_MOVEMENT_PX: number = 8;  // 点击判定的最大移动距离
 export const TAP_MAX_DURATION_MS: number = 220; // 点击判定的最大按下时长
 
@@ -145,12 +145,6 @@ const sliderStyles = `
   }
 `;
 
-interface Collaborator {
-  name: string;
-  role: string;
-  avatar: string;
-}
-
 interface Owner {
   name: string;
   age: number;
@@ -165,7 +159,6 @@ export interface Project {
   id: number;
   title: string;
   author: string;
-  collaborators: number;
   background?: string;
   videoUrl?: string;
   description: string;
@@ -174,7 +167,6 @@ export interface Project {
   cardStyle: 'image' | 'video' | 'text-only';
   status: 'ongoing' | 'finished' | 'not_started';
   owner: Owner;
-  collaboratorsList: Collaborator[];
   detailedDescription: string;
   startTime: string;
   currentProgress: number;
@@ -204,8 +196,114 @@ const gradientBackgrounds = [
   'bg-gradient-to-br from-indigo-400 via-purple-500 to-pink-600'
 ];
 
+// 项目负责人详细资料数据
+const projectOwnersProfiles = {
+  'Cody': {
+    name: 'Cody',
+    birthday: '2005-08-15',
+    gender: 'Male',
+    location: 'Shenzhen, China',
+    fullBio: `I'm Cody, a passionate 20-year-old entrepreneur and CEO of Ques, a revolutionary project-based social platform. I believe in the power of connecting like-minded individuals to create innovative solutions that can change the world.
+
+My journey began with a simple observation: talented people often struggle to find the right collaborators for their ideas. This led me to envision Ques, where vision meets action and builders find their tribe.
+
+I'm deeply committed to fostering a collaborative ecosystem where creators can exchange value, resources, and expertise. Through Ques, we're not just building an app - we're creating a movement that helps people bring their ideas to life faster and more effectively.
+
+When I'm not working on Ques, I enjoy exploring new technologies, reading about innovative startups, and connecting with fellow entrepreneurs. I believe that the future belongs to those who dare to dream big and take action.`,
+    objective: 'Building the next generation social platform that connects innovative minds and revolutionary ideas',
+    lookingFor: 'Talented developers, designers, and entrepreneurs who share our vision of creating meaningful connections through project collaboration',
+    typeTags: ['寻找合作者', '招聘伙伴'],
+    skills: ['Entrepreneur', 'Product Strategy', 'Team Leadership', 'Startup Development', 'User Experience', 'Business Development', 'Fundraising', 'Social Platforms', 'AI Integration', 'Visionary', 'Tech Leader', 'Innovation'],
+    media: [
+      '/sample/cody.jpg',
+      '/sample/background.webp',
+      '/sample/cody_avatar.jpg'
+    ],
+    avatar: '/sample/cody_avatar.jpg',
+    initiatedProjects: [
+      {
+        id: 1,
+        title: 'Ques · Change the world',
+        description: 'Build a revolutionary project partner matching platform',
+        status: 'ongoing',
+        progress: 50,
+        collaborators: 3,
+        tags: ['AI', 'Start Up', 'App'],
+        startDate: 'August 2025',
+        image: '/sample/cody.jpg'
+      },
+      {
+        id: 2,
+        title: 'AI-Powered Campus Network',
+        description: 'University social platform for academic collaboration',
+        status: 'finished',
+        progress: 100,
+        collaborators: 5,
+        tags: ['AI', 'Education', 'Social'],
+        startDate: 'March 2025',
+        image: '/sample/background.webp'
+      },
+      {
+        id: 3,
+        title: 'Sustainable Tech Initiative',
+        description: 'Green technology incubator program',
+        status: 'not_started',
+        progress: 0,
+        collaborators: 0,
+        tags: ['Sustainability', 'Innovation', 'Environment'],
+        startDate: 'Planning Phase',
+        image: 'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=200&fit=crop'
+      }
+    ],
+    // 删除了合作项目功能
+    // collaboratedProjects: [...]
+  }
+};
+
 const getRandomGradient = () => {
-  return gradientBackgrounds[Math.floor(Math.random() * gradientBackgrounds.length)];
+  return 'bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700';
+};
+
+// 获取项目负责人详细资料的函数
+const getProjectOwnerProfile = (ownerName: string) => {
+  // 首先检查是否有完整的用户资料数据
+  if (projectOwnersProfiles[ownerName as keyof typeof projectOwnersProfiles]) {
+    return projectOwnersProfiles[ownerName as keyof typeof projectOwnersProfiles];
+  }
+  
+  // 如果没有完整资料，返回默认的用户资料（复用Cody的数据作为模板）
+  const defaultProfile = projectOwnersProfiles['Cody'];
+  return {
+    ...defaultProfile,
+    name: ownerName,
+    fullBio: `Hello! I'm ${ownerName}, a passionate project creator and collaborator. I believe in the power of working together to bring innovative ideas to life.
+
+I'm always excited to connect with like-minded individuals who share a vision for creating meaningful solutions. Whether you're a developer, designer, entrepreneur, or simply someone with great ideas, I'd love to explore potential collaborations.
+
+My approach is hands-on and collaborative, focusing on building products that can make a real difference. I enjoy the entire journey from ideation to execution, and I'm always looking for talented people to join forces with.
+
+Feel free to reach out if you're interested in working together or if you have any questions about my projects!`,
+    objective: `Creating impactful projects and building meaningful collaborations in the tech industry`,
+    avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(ownerName)}`,
+    media: [
+      `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(ownerName)}`,
+    ],
+    initiatedProjects: [
+      {
+        id: Math.floor(Math.random() * 10000),
+        title: 'Various innovative projects',
+        description: 'Working on multiple exciting projects in technology and innovation',
+        status: 'ongoing',
+        progress: Math.floor(Math.random() * 80) + 20,
+        collaborators: Math.floor(Math.random() * 5) + 1,
+        tags: ['Innovation', 'Technology', 'Collaboration'],
+        startDate: 'Recent',
+        image: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=200&fit=crop'
+      }
+    ],
+    // 删除了合作项目功能
+    // collaboratedProjects: [...]
+  };
 };
 
 // 新增：后端卡片到本地 Project 类型的映射（使用新版字段 cover、lookingFor 对象）
@@ -215,7 +313,6 @@ function mapBackendCardToProject(card: any): Project {
   const description: string = card?.description || 'No description available';
   const tags: string[] = Array.isArray(card?.tags) ? card.tags : [];
   const owner = card?.owner || {};
-  const collaboratorsList = Array.isArray(card?.collaboratorsList) ? card.collaboratorsList : [];
   const links: string[] = Array.isArray(card?.links) ? card.links : [];
   const media: string[] = Array.isArray(card?.media) ? card.media : [];
   const cover: string | undefined = card?.cover || undefined;
@@ -225,7 +322,6 @@ function mapBackendCardToProject(card: any): Project {
     id: Number.isFinite(idNum) ? idNum : Math.floor(Math.random() * 1000000),
     title,
     author: owner?.name || title,
-    collaborators: Number(card?.collaborators ?? collaboratorsList.length ?? 0),
     description,
     tags,
     type: 'project',
@@ -240,11 +336,6 @@ function mapBackendCardToProject(card: any): Project {
       avatar: owner?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(owner?.name || 'user')}`,
       tags: Array.isArray(owner?.tags) ? owner.tags : []
     },
-    collaboratorsList: collaboratorsList.map((c: any) => ({
-      name: c?.name || 'Member',
-      role: c?.role || 'Collaborator',
-      avatar: c?.avatar || '' // 设置为空字符串，不显示头像
-    })),
     detailedDescription: card?.detailedDescription || description,
     startTime: card?.startTime || 'Recently',
     currentProgress: card?.currentProgress ?? 40,
@@ -264,7 +355,6 @@ const projects: Project[] = [
     id: 10001, // 确保唯一
     title: "Ques · Change the world",
     author: "Cody",
-    collaborators: 3, // 与下方 collaboratorsList 长度保持一致
     // cardStyle 可选: 'image' | 'video' | 'text-only'
     cardStyle: 'image',
     // 如果是 image 卡片，提供背景图（建议竖图）：
@@ -288,12 +378,6 @@ const projects: Project[] = [
       avatar: "/sample/cody_avatar.jpg", // 或放 public 里："/sample/avatar.png"
       tags: []
     },
-  
-    collaboratorsList: [
-      { name: "William", role: "Backend", avatar: "" },
-      { name: "Jimmy", role: "AI and algorithm", avatar: "" },
-      { name: "Rhys", role: "UI and frontendd", avatar: "" }
-    ],
   
     detailedDescription: `Ques is a project based social app that's reinventing the way people exchange value.
 We connect ideas, resources, talent, and outcomes to build a collaborative network that helps creators change the world faster.
@@ -322,7 +406,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 1,
     title: "The Greatest Project In the World",
     author: "Alex",
-    collaborators: 3,
     background: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=400&h=600&fit=crop&crop=center",
     description: "Revolutionary AI-powered platform for creative collaboration",
     tags: ["AI", "Design", "Collaboration"],
@@ -338,11 +421,6 @@ Where vision meets action, and builders find their tribe.`,
       avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
       tags: ["UI/UX", "AI", "Leadership"]
     },
-    collaboratorsList: [
-      { name: "Sarah Kim", role: "Frontend Developer", avatar: "" },
-      { name: "Mike Johnson", role: "AI Engineer", avatar: "" },
-      { name: "Emma Davis", role: "Product Manager", avatar: "" }
-    ],
     detailedDescription: "An innovative AI-powered platform designed to revolutionize how creative teams collaborate. Using machine learning algorithms to match collaborators, suggest improvements, and streamline workflows.",
     startTime: "March 2024",
     currentProgress: 75,
@@ -360,7 +438,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 2,
     title: "Sustainable Future App",
     author: "Sarah",
-    collaborators: 5,
     videoUrl: "https://player.vimeo.com/external/458436864.mp4?s=20c7547e3e7b85c9f6c5d7c8b4a9c62a2e8a3cf9&profile_id=174",
     description: "Track and reduce your carbon footprint with gamification",
     tags: ["Sustainability", "Mobile", "Gamification"],
@@ -377,13 +454,6 @@ Where vision meets action, and builders find their tribe.`,
       avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
       tags: ["Sustainability", "Mobile Dev", "Environment"]
     },
-    collaboratorsList: [
-      { name: "David Park", role: "Mobile Developer", avatar: "" },
-      { name: "Lisa Zhang", role: "UX Designer", avatar: "" },
-      { name: "Tom Brown", role: "Data Analyst", avatar: "" },
-      { name: "Maya Patel", role: "Backend Developer", avatar: "" },
-      { name: "James Wilson", role: "Marketing", avatar: "" }
-    ],
     detailedDescription: "A gamified mobile application that helps users track, understand, and reduce their carbon footprint through daily challenges, community competitions, and educational content.",
     startTime: "January 2024",
     currentProgress: 60,
@@ -400,7 +470,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 3,
     title: "Innovative Blockchain Solution",
     author: "Maya",
-    collaborators: 4,
     description: "Building the next generation of decentralized applications with a focus on user experience and scalability. Our platform combines the security of blockchain with the simplicity of traditional apps, making Web3 accessible to everyone.",
     tags: ["Blockchain", "Web3", "DeFi"],
     type: 'project',
@@ -416,12 +485,6 @@ Where vision meets action, and builders find their tribe.`,
       avatar: "https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face",
       tags: ["Blockchain", "Web3", "Smart Contracts"]
     },
-    collaboratorsList: [
-      { name: "Alex Thompson", role: "Smart Contract Developer", avatar: "" },
-      { name: "Zoe Chen", role: "Frontend Developer", avatar: "" },
-      { name: "Ryan Kim", role: "Backend Developer", avatar: "" },
-      { name: "Sofia Rodriguez", role: "UI/UX Designer", avatar: "" }
-    ],
     detailedDescription: "A comprehensive blockchain platform that bridges the gap between traditional applications and decentralized technology.",
     startTime: "February 2024",
     currentProgress: 45,
@@ -435,7 +498,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 4,
     title: "VR Education Platform",
     author: "David",
-    collaborators: 6,
     background: "https://images.unsplash.com/photo-1593508512255-86ab42a8e620?w=400&h=600&fit=crop&crop=center",
     description: "Immersive virtual reality learning experiences for students worldwide",
     tags: ["VR", "Education", "Technology"],
@@ -451,14 +513,6 @@ Where vision meets action, and builders find their tribe.`,
       avatar: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
       tags: ["VR/AR", "Education", "Unity"]
     },
-    collaboratorsList: [
-      { name: "Emma Wilson", role: "3D Artist", avatar: "" },
-      { name: "Michael Brown", role: "Educational Content Creator", avatar: "" },
-      { name: "Sophie Lee", role: "UX Designer", avatar: "" },
-      { name: "Kevin Zhang", role: "Backend Developer", avatar: "" },
-      { name: "Rachel Green", role: "Marketing Specialist", avatar: "" },
-      { name: "Daniel Kim", role: "Quality Assurance", avatar: "" }
-    ],
     detailedDescription: "A revolutionary VR platform that transforms traditional education into immersive, interactive experiences. Students can explore historical events, conduct virtual science experiments, and visit distant locations without leaving their classroom.",
     startTime: "December 2023",
     currentProgress: 85,
@@ -475,7 +529,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 5,
     title: "Smart Home IoT Hub",
     author: "Lisa",
-    collaborators: 3,
     description: "Centralized control system for all your smart home devices with AI-powered automation and energy optimization. Create the perfect living environment with intelligent scheduling and predictive maintenance.",
     tags: ["IoT", "Smart Home", "AI"],
     type: 'project',
@@ -491,11 +544,6 @@ Where vision meets action, and builders find their tribe.`,
       avatar: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=150&h=150&fit=crop&crop=face",
       tags: ["IoT", "Embedded Systems", "AI"]
     },
-    collaboratorsList: [
-      { name: "Chris Martinez", role: "Hardware Engineer", avatar: "" },
-      { name: "Anna Thompson", role: "Software Developer", avatar: "" },
-      { name: "Robert Johnson", role: "Security Specialist", avatar: "" }
-    ],
     detailedDescription: "A comprehensive IoT hub that connects and controls all smart home devices through a single, intuitive interface. Features include AI-powered automation, energy usage optimization, and advanced security protocols.",
     startTime: "October 2023",
     currentProgress: 100,
@@ -509,7 +557,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 6,
     title: "Fitness Tracking AI",
     author: "Ryan",
-    collaborators: 4,
     videoUrl: "https://player.vimeo.com/external/434045526.mp4?s=c27eecc69a27dbc4ff2b87d38afc35f1a9e7c02d&profile_id=174",
     description: "AI-powered fitness tracking with personalized workout recommendations",
     tags: ["Health", "AI", "Mobile"],
@@ -526,12 +573,6 @@ Where vision meets action, and builders find their tribe.`,
       avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face",
       tags: ["Machine Learning", "Health Tech", "Mobile Dev"]
     },
-    collaboratorsList: [
-      { name: "Jessica Wang", role: "Data Scientist", avatar: "" },
-      { name: "Marcus Davis", role: "Mobile Developer", avatar: "" },
-      { name: "Nina Patel", role: "UI/UX Designer", avatar: "" },
-      { name: "Thomas Lee", role: "Backend Developer", avatar: "" }
-    ],
     detailedDescription: "An intelligent fitness tracking application that uses computer vision and machine learning to analyze workout form, provide real-time feedback, and generate personalized training programs.",
     startTime: "November 2023",
     currentProgress: 70,
@@ -548,7 +589,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 7,
     title: "Eco-Friendly Delivery Network",
     author: "Sophie",
-    collaborators: 5,
     description: "Sustainable last-mile delivery solution using electric vehicles and AI route optimization. Reducing carbon emissions while improving delivery efficiency and customer satisfaction.",
     tags: ["Sustainability", "Logistics", "AI"],
     type: 'project',
@@ -564,13 +604,6 @@ Where vision meets action, and builders find their tribe.`,
       avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face",
       tags: ["Logistics", "Sustainability", "Operations"]
     },
-    collaboratorsList: [
-      { name: "James Wilson", role: "AI Engineer", avatar: "" },
-      { name: "Maria Garcia", role: "Operations Manager", avatar: "" },
-      { name: "Alex Turner", role: "Fleet Coordinator", avatar: "" },
-      { name: "Sarah Miller", role: "Customer Success", avatar: "" },
-      { name: "David Clark", role: "Data Analyst", avatar: "" }
-    ],
     detailedDescription: "A comprehensive delivery network that prioritizes environmental sustainability through electric vehicle fleets, optimized routing algorithms, and carbon-neutral packaging solutions.",
     startTime: "Planning Phase",
     currentProgress: 15,
@@ -584,7 +617,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 8,
     title: "Mental Health Support App",
     author: "Emma",
-    collaborators: 4,
     background: "https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=600&fit=crop&crop=center",
     description: "AI-powered mental health support with 24/7 availability and personalized care",
     tags: ["Health", "AI", "Mental Health"],
@@ -600,12 +632,6 @@ Where vision meets action, and builders find their tribe.`,
       avatar: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
       tags: ["Mental Health", "AI", "Psychology"]
     },
-    collaboratorsList: [
-      { name: "Dr. Michael Chen", role: "Psychiatrist", avatar: "" },
-      { name: "Jennifer Park", role: "AI Developer", avatar: "" },
-      { name: "Robert Smith", role: "UX Researcher", avatar: "" },
-      { name: "Amanda Johnson", role: "Content Creator", avatar: "" }
-    ],
     detailedDescription: "A comprehensive mental health support application that provides immediate access to AI-powered therapy, mood tracking, crisis intervention, and connection to licensed professionals.",
     startTime: "September 2023",
     currentProgress: 90,
@@ -622,7 +648,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 9,
     title: "Crypto Trading Bot",
     author: "Kevin",
-    collaborators: 3,
     description: "Automated cryptocurrency trading system with advanced risk management and portfolio optimization. Using machine learning algorithms to analyze market trends and execute trades with precision.",
     tags: ["Cryptocurrency", "Trading", "AI"],
     type: 'project',
@@ -656,7 +681,6 @@ Where vision meets action, and builders find their tribe.`,
     id: 10,
     title: "Language Learning VR",
     author: "Maria",
-    collaborators: 6,
     videoUrl: "https://player.vimeo.com/external/434045526.mp4?s=c27eecc69a27dbc4ff2b87d38afc35f1a9e7c02d&profile_id=174",
     description: "Immersive language learning through virtual reality conversations and cultural experiences",
     tags: ["VR", "Education", "Language"],
@@ -795,7 +819,7 @@ function FilterSidebar({ isOpen, onClose, filters, setFilters, suppressMatchIndi
           onClick={onClose}
         >
           <motion.div
-            className="absolute bottom-0 left-0 right-0 w-[393px] h-[852px] mx-auto bg-white rounded-t-[32px] shadow-2xl"
+            className="absolute bottom-0 left-0 right-0 w-[393px] h-[762px] mx-auto bg-white rounded-t-[32px] shadow-2xl"
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
@@ -1129,7 +1153,7 @@ function MatchIndicator({ project, onClose, onSuppress }: { project: Project; on
       onClick={onClose}
     >
       <motion.div
-        className="bg-white rounded-2xl p-6 mx-4 max-w-sm shadow-2xl"
+        className="bg-white rounded-2xl p-5 mx-4 w-[320px] max-w-[320px] shadow-2xl"
         initial={{ scale: 0.8, y: 50 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.8, y: 50 }}
@@ -1164,21 +1188,21 @@ function MatchIndicator({ project, onClose, onSuppress }: { project: Project; on
           </div>
           
           {/* 说明文字 */}
-          <p className="text-gray-600 text-sm leading-relaxed mb-4">
+          <p className="text-gray-600 text-sm leading-relaxed mb-4 px-1">
             {i18nCurrentLanguage === 'en' ? 'Waiting for the other party to like your project as well to start a chat' : '等待对方也右滑你的项目来开启对话'}
           </p>
           
           {/* 提示图标 */}
-          <div className="flex items-center justify-center gap-2 text-blue-600 text-sm mb-4">
+          <div className="flex items-center justify-center gap-2 text-blue-600 text-xs mb-4 px-1">
             <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-            <span>{i18nCurrentLanguage === 'en' ? 'Both sides must like to chat' : '双向匹配才能聊天'}</span>
+            <span className="text-center">{i18nCurrentLanguage === 'en' ? 'Both sides must like to chat' : '双向匹配才能聊天'}</span>
             <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
           </div>
           
           {/* 不再显示选项 */}
           <button
             onClick={onSuppress}
-            className="text-gray-500 text-xs hover:text-gray-700 transition-colors underline"
+            className="text-gray-500 text-xs hover:text-gray-700 transition-colors underline px-1"
           >
             {i18nCurrentLanguage === 'en' ? "Don't show this hint again" : '不再显示此提示'}
           </button>
@@ -1222,21 +1246,142 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
 }) {
   const [exitX, setExitX] = useState(0);
   const [exitY, setExitY] = useState(0);
+  const [exitRotate, setExitRotate] = useState(0);
+  const [isExiting, setIsExiting] = useState(false);
   const [dragging, setDragging] = useState(false);
   const [pointerDownTime, setPointerDownTime] = useState<number | null>(null);
   const [pointerDownPos, setPointerDownPos] = useState<{x: number, y: number} | null>(null);
   const x = useMotionValue(0);
   const y = useMotionValue(0);
+  const rotateTransform = useTransform(x, [-200, 0, 200], [-20, 0, 20]);
   const rotate = useSpring(
-    useTransform(x, [-200, 0, 200], [-20, 0, 20]),
+    isExiting ? exitRotate : rotateTransform,
     { stiffness: 300, damping: 20 }
   );
+  const [dragDx, setDragDx] = useState(0);
+  
+  // 重置卡片状态的函数
+  const resetCardState = () => {
+    setIsExiting(false);
+    setExitX(0);
+    setExitY(0);
+    setExitRotate(0);
+    x.set(0);
+    y.set(0);
+  };
+  
+  // DOM-driven overlays to avoid React re-render during drag
+  const badgeStartRef = useRef<{ x: number; y: number } | null>(null);
+  const badgeRafRef = useRef<number | null>(null);
+  const pickRef = useRef<HTMLDivElement | null>(null);
+  const passRef = useRef<HTMLDivElement | null>(null);
+  const glowRef = useRef<HTMLDivElement | null>(null);
+  const overlaysVisibleRef = useRef<boolean>(false);
+  const initialCardTransformRef = useRef<string>('');
+
+  // Capture initial inline transform of the inner card once
+  useEffect(() => {
+    const el = (captureRef as any)?.current as HTMLElement | null;
+    if (el && !initialCardTransformRef.current) {
+      initialCardTransformRef.current = el.style.transform || '';
+    }
+  }, []);
+  
+  // 重置卡片状态当项目ID变化时
+  useEffect(() => {
+    resetCardState();
+  }, [project.id]);
+
+  const updateBadgeStyles = (dx: number) => {
+    const pick = pickRef.current;
+    const pass = passRef.current;
+    const glow = glowRef.current;
+    const cardEl = (captureRef as any)?.current as HTMLElement | null;
+    if (!pick || !pass || !glow) return;
+    const show = Math.abs(dx) > 8;
+    if (!show) {
+      pick.style.opacity = '0';
+      pass.style.opacity = '0';
+      glow.style.boxShadow = 'none';
+      if (cardEl) cardEl.style.transform = initialCardTransformRef.current || '';
+      return;
+    }
+    const rightIntensity = Math.max(0, Math.min(1, (dx - 8) / 28));
+    const leftIntensity = Math.max(0, Math.min(1, (-dx - 8) / 28));
+    pick.style.opacity = String(rightIntensity);
+    pick.style.transform = `rotate(-12deg) scale(${1 + Math.max(0, Math.min(1, dx / 70)) * 0.06})`;
+    pass.style.opacity = String(leftIntensity);
+    pass.style.transform = `rotate(12deg) scale(${1 + Math.max(0, Math.min(1, -dx / 70)) * 0.06})`;
+    glow.style.boxShadow = dx > 10
+      ? `inset 24px 0 96px -36px rgba(34,197,94,${Math.max(0, Math.min(0.70, (dx - 10) / 110))}), inset -24px 0 96px -36px rgba(59,130,246,${Math.max(0, Math.min(0.55, (dx - 10) / 110))})`
+      : dx < -10
+      ? `inset -24px 0 96px -36px rgba(244,63,94,${Math.max(0, Math.min(0.70, (-dx - 10) / 110))}), inset 24px 0 96px -36px rgba(168,85,247,${Math.max(0, Math.min(0.55, (-dx - 10) / 110))})`
+      : 'none';
+
+    // Dynamic tilt of the inner card (rotate with drag direction)
+    if (cardEl) {
+      const clamped = Math.max(-14, Math.min(14, dx / 8));
+      const base = initialCardTransformRef.current || '';
+      const baseTrimmed = base.trim();
+      const sep = baseTrimmed && !baseTrimmed.endsWith(')') ? ' ' : baseTrimmed ? ' ' : '';
+      cardEl.style.transform = `${baseTrimmed}${sep}rotate(${clamped}deg)`;
+    }
+  };
+
+  // Passive, global listeners to drive badge only (no React state, no swipe interference)
+  useEffect(() => {
+    const getXY = (e: any) => ({
+      x: e?.clientX ?? e?.touches?.[0]?.clientX ?? e?.changedTouches?.[0]?.clientX,
+      y: e?.clientY ?? e?.touches?.[0]?.clientY ?? e?.changedTouches?.[0]?.clientY,
+    });
+    const onDown = (e: any) => {
+      const cardEl = (captureRef as any)?.current as HTMLElement | null;
+      if (!cardEl) return;
+      if (!cardEl.contains(e.target as Node)) return;
+      const p = getXY(e);
+      if (typeof p.x !== 'number') return;
+      badgeStartRef.current = { x: p.x, y: p.y };
+      overlaysVisibleRef.current = true;
+      // reset styles immediate
+      updateBadgeStyles(0);
+    };
+    const onMove = (e: any) => {
+      if (!badgeStartRef.current || !overlaysVisibleRef.current) return;
+      const p = getXY(e);
+      if (typeof p.x !== 'number') return;
+      const bdx = p.x - badgeStartRef.current.x;
+      if (badgeRafRef.current) cancelAnimationFrame(badgeRafRef.current!);
+      badgeRafRef.current = requestAnimationFrame(() => updateBadgeStyles(bdx));
+    };
+    const onUp = () => {
+      badgeStartRef.current = null;
+      if (badgeRafRef.current) cancelAnimationFrame(badgeRafRef.current);
+      badgeRafRef.current = null;
+      overlaysVisibleRef.current = false;
+      updateBadgeStyles(0);
+    };
+    window.addEventListener('pointerdown', onDown, { passive: true, capture: true } as any);
+    window.addEventListener('pointermove', onMove, { passive: true, capture: true } as any);
+    window.addEventListener('pointerup', onUp, { passive: true, capture: true } as any);
+    window.addEventListener('touchstart', onDown as any, { passive: true, capture: true } as any);
+    window.addEventListener('touchmove', onMove as any, { passive: true, capture: true } as any);
+    window.addEventListener('touchend', onUp as any, { passive: true, capture: true } as any);
+    return () => {
+      window.removeEventListener('pointerdown', onDown as any, true);
+      window.removeEventListener('pointermove', onMove as any, true);
+      window.removeEventListener('pointerup', onUp as any, true);
+      window.removeEventListener('touchstart', onDown as any, true);
+      window.removeEventListener('touchmove', onMove as any, true);
+      window.removeEventListener('touchend', onUp as any, true);
+    };
+  }, []);
 
   // 拖动开始
   const handlePointerDown = (e: React.PointerEvent) => {
     setPointerDownTime(Date.now());
     setPointerDownPos({ x: e.clientX, y: e.clientY });
     setDragging(false);
+    setDragDx(0);
   };
 
   // 拖动中
@@ -1244,6 +1389,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
     if (pointerDownPos) {
       const dx = e.clientX - pointerDownPos.x;
       const dy = e.clientY - pointerDownPos.y;
+      setDragDx(dx);
       if (!dragging && (Math.abs(dx) > 8 || Math.abs(dy) > 8)) {
         setDragging(true);
       }
@@ -1263,6 +1409,7 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
     setPointerDownTime(null);
     setPointerDownPos(null);
     setDragging(false);
+    setDragDx(0);
   };
 
   // 拖动松手后判断卡片中心位置
@@ -1273,17 +1420,20 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
     const threshold = 80; // 圆形阈值半径
     if (distance < threshold) {
       // 归位动画：更平滑的spring
-      setExitX(0);
-      setExitY(0);
-      x.set(0);
-      y.set(0);
+      resetCardState();
     } else {
-      // 飞出动画：带旋转和速度，方向与拖动方向一致
+      // 飞出动画：保持当前旋转角度，方向与拖动方向一致
       const direction = info.offset.x > 0 ? 1 : -1;
       const velocity = Math.max(Math.abs(info.velocity.x), 800);
+      
+      // 获取当前的旋转角度并固定它
+      const currentRotation = rotateTransform.get();
+      setExitRotate(currentRotation);
+      setIsExiting(true);
+      
       setExitX(direction * 1200);
       setExitY(info.offset.y * 2 + info.velocity.y * 0.5);
-      // 旋转角度与拖动方向相关
+      
       // 右滑弹窗逻辑
       if (direction > 0) {
         onSwipe('right');
@@ -1319,9 +1469,6 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                 <div className="flex items-center mb-4">
                   <span className="font-medium">{t('cardBy')}&nbsp;</span>
                   <span className="font-semibold">{project.author}</span>
-                  <span className="mx-2">·</span>
-                  <span className="font-semibold">{project.collaborators}</span>
-                  <span className="font-medium">&nbsp;{t('cardCollaborators')}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {project.tags.map((tag, i) => (
@@ -1373,9 +1520,6 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                 <div className="flex items-center mb-4">
                   <span className="font-medium">{t('cardBy')}&nbsp;</span>
                   <span className="font-semibold">{project.author}</span>
-                  <span className="mx-2">·</span>
-                  <span className="font-semibold">{project.collaborators}</span>
-                  <span className="font-medium">&nbsp;{t('cardCollaborators')}</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {project.tags.map((tag, i) => (
@@ -1438,9 +1582,6 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
                 <div className="flex items-center justify-center mb-4">
                   <span className="font-medium">{t('cardBy')}&nbsp;</span>
                   <span className="font-semibold">{project.author}</span>
-                  <span className="mx-2">·</span>
-                  <span className="font-semibold">{project.collaborators}</span>
-                  <span className="font-medium">&nbsp;{t('cardCollaborators')}</span>
                 </div>
                 <div className="flex flex-wrap gap-2 justify-center">
                   {project.tags.map((tag, i) => (
@@ -1479,15 +1620,25 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
     return { x: e.clientX, y: e.clientY };
   };
 
-  const handleDown = (e: any) => {
+  const onCardPointerDown = (e: any) => {
     const p = getPoint(e);
     tapStartRef.current = { x: p.x, y: p.y, t: Date.now() };
     isDraggingRef.current = false;
     lastDxRef.current = 0;
     handledRef.current = false;
+    
+    // 开始新的拖动时，确保不在退出状态
+    if (isExiting) {
+      setIsExiting(false);
+    }
+    
+    // for badges only
+    badgeStartRef.current = { x: p.x, y: p.y };
+    overlaysVisibleRef.current = true;
+    updateBadgeStyles(0);
   };
 
-  const handleMove = (e: any) => {
+  const onCardPointerMove = (e: any) => {
     if (!tapStartRef.current) return;
     const p = getPoint(e);
     const dx = p.x - tapStartRef.current.x;
@@ -1496,9 +1647,15 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
     if (Math.abs(dx) > TAP_MAX_MOVEMENT_PX || Math.abs(dy) > TAP_MAX_MOVEMENT_PX) {
       isDraggingRef.current = true;
     }
+    // rAF-throttled badge dx update (read-only, no preventDefault)
+    if (badgeStartRef.current) {
+      const bdx = p.x - badgeStartRef.current.x;
+      if (badgeRafRef.current) cancelAnimationFrame(badgeRafRef.current);
+      badgeRafRef.current = requestAnimationFrame(() => updateBadgeStyles(bdx));
+    }
   };
 
-  const handleUp = (e: any) => {
+  const onCardPointerUp = (e: any) => {
     if (!tapStartRef.current) return;
     const p = getPoint(e);
     const dt = Date.now() - tapStartRef.current.t;
@@ -1507,6 +1664,11 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
     const isTap = !isDraggingRef.current && dt <= TAP_MAX_DURATION_MS && dx <= TAP_MAX_MOVEMENT_PX && dy <= TAP_MAX_MOVEMENT_PX;
     tapStartRef.current = null;
     isDraggingRef.current = false;
+    // reset badges
+    if (badgeRafRef.current) cancelAnimationFrame(badgeRafRef.current);
+    badgeRafRef.current = null;
+    overlaysVisibleRef.current = false;
+    updateBadgeStyles(0);
     if (isTap) onClick();
   };
 
@@ -1521,18 +1683,33 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
 
   return (
     <TinderCard
-       className="absolute inset-0"
+      className="absolute inset-0"
       key={project.id}
       onSwipe={(dir: string) => {
         if (isHistory) return; // disable swipe handling for preview/history cards
         const mapped = resolveDir(dir);
+        console.log('🏠 Main Page Card - onSwipe triggered', { 
+          isHistory, 
+          project: project.title, 
+          originalDir: dir, 
+          mappedDir: mapped,
+          lastDx: lastDxRef.current,
+          swipeRequirementType: SWIPE_REQUIREMENT,
+          swipeThreshold: SWIPE_THRESHOLD_PX
+        });
         handledRef.current = true;
         onSwipe(mapped);
       }}
       onCardLeftScreen={() => {
         if (isHistory) return; // disable for preview/history cards
+        console.log('👋 Main Page Card - onCardLeftScreen triggered', { 
+          isHistory, 
+          project: project.title, 
+          wasHandled: handledRef.current 
+        });
         if (!handledRef.current) {
           const mapped = lastDxRef.current >= 0 ? 'right' : 'left';
+          console.log('🔄 Main Page Card - handling missed swipe', { mapped, lastDx: lastDxRef.current });
           onSwipe(mapped);
         }
         handledRef.current = false;
@@ -1542,24 +1719,79 @@ function ProjectCard({ project, index, onSwipe, isTop, onClick, isHistory = fals
       swipeRequirementType={SWIPE_REQUIREMENT}
       swipeThreshold={SWIPE_THRESHOLD_PX}
     >
-      <div
-        className="absolute inset-0"
-        style={{ zIndex: 999 }}
+      <motion.div
+        className={`${baseCardClass} ${isTop ? topShadow : underShadow}`}
+        ref={captureRef}
+        style={{
+          x: x,
+          y: y,
+          rotate: rotate,
+          ...(isTop && PROMO_TILT ? { 
+            transform: 'translate(-50px, -16px) rotate(-6deg)', 
+            transformOrigin: 'center', 
+            boxShadow: '0px 18px 40px rgba(0,0,0,0.30)' 
+          } : {})
+        }}
+        onMouseDown={onCardPointerDown}
+        onMouseMove={onCardPointerMove}
+        onMouseUp={onCardPointerUp}
+        onTouchStart={onCardPointerDown}
+        onTouchMove={onCardPointerMove}
+        onTouchEnd={onCardPointerUp}
       >
-                  <div
-            className={`${baseCardClass} ${isTop ? topShadow : underShadow} ${isTop ? 'hover:scale-[1.02] transition-transform duration-150 will-change-transform' : ''}`}
-            onMouseDown={handleDown}
-            onMouseMove={handleMove}
-            onMouseUp={handleUp}
-            onTouchStart={handleDown}
-            onTouchMove={handleMove}
-            onTouchEnd={handleUp}
-            ref={captureRef}
-            style={isTop && PROMO_TILT ? { transform: 'translate(-50px, -16px) rotate(-6deg)', transformOrigin: 'center', boxShadow: '0px 18px 40px rgba(0,0,0,0.30)' } : undefined}
-          >
           {renderCardContent()}
-        </div>
-      </div>
+          {/* Swipe overlays (DOM refs, pointer-events none) */}
+          {!isHistory && (
+            <>
+              {/* PICK (right) */}
+              <div
+                ref={pickRef}
+                className="absolute top-6 left-6 z-[1000] select-none pointer-events-none"
+                style={{
+                  opacity: 0,
+                  transform: 'rotate(-12deg) scale(1)',
+                  filter: 'drop-shadow(0 0 12px rgba(16,185,129,0.55)) drop-shadow(0 0 24px rgba(59,130,246,0.35))',
+                }}
+              >
+                <div className="px-4 py-2 rounded-xl border-4 text-white font-extrabold tracking-widest uppercase backdrop-blur-sm pointer-events-none"
+                     style={{
+                       background: 'linear-gradient(135deg, rgba(34,197,94,0.42) 0%, rgba(59,130,246,0.42) 100%)',
+                       borderColor: 'rgba(34,197,94,1)',
+                     }}
+                >
+                  Pick
+                </div>
+              </div>
+
+              {/* PASS (left) */}
+              <div
+                ref={passRef}
+                className="absolute top-6 right-6 z-[1000] select-none pointer-events-none"
+                style={{
+                  opacity: 0,
+                  transform: 'rotate(12deg) scale(1)',
+                  filter: 'drop-shadow(0 0 12px rgba(244,63,94,0.55)) drop-shadow(0 0 24px rgba(168,85,247,0.35))',
+                }}
+              >
+                <div className="px-4 py-2 rounded-xl border-4 text-white font-extrabold tracking-widest uppercase backdrop-blur-sm pointer-events-none"
+                     style={{
+                       background: 'linear-gradient(135deg, rgba(244,63,94,0.42) 0%, rgba(168,85,247,0.42) 100%)',
+                       borderColor: 'rgba(244,63,94,1)',
+                     }}
+                >
+                  Pass
+                </div>
+              </div>
+
+              {/* dynamic edge glow */}
+              <div
+                ref={glowRef}
+                className="pointer-events-none absolute inset-0 z-[900]"
+                style={{ boxShadow: 'none', transition: 'box-shadow 80ms linear' }}
+              />
+            </>
+          )}
+        </motion.div>
     </TinderCard>
   );
 }
@@ -1663,7 +1895,7 @@ function MediaViewer({ media, onClose, initialIndex = 0 }: { media: string[]; on
   );
 }
 
-function ProjectDetailView({ project, onClose, suppressFirstTap = false, isFavorite = false, onLikeChange }: { project: Project; onClose: () => void; suppressFirstTap?: boolean, isFavorite?: boolean, onLikeChange?: (project: Project, liked: boolean) => void }) {
+function ProjectDetailView({ project, onClose, suppressFirstTap = false, isFavorite = false, onLikeChange, onOwnerClick, disableOwnerClick = false }: { project: Project; onClose: () => void; suppressFirstTap?: boolean, isFavorite?: boolean, onLikeChange?: (project: Project, liked: boolean) => void, onOwnerClick?: (owner: any) => void, disableOwnerClick?: boolean }) {
   const [showMediaViewer, setShowMediaViewer] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showNavButtons, setShowNavButtons] = useState(false);
@@ -1872,14 +2104,16 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false, isFavor
                  {t('projectDetails')}
                </h1>
                <div className="w-10 flex items-center justify-end">
-                <IconButton onClick={exportDetailAsImage} data-export-ignore="true">
-                   <div className="w-6 h-6">
-                     <svg className="block size-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                       <path d="M9 3l-1.5 2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 002-2V7a2 2 0 00-2-2h-2.5L15 3H9z" stroke="#0055F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                       <circle cx="12" cy="12" r="3.5" stroke="#0055F7" strokeWidth="2"/>
-                     </svg>
-                   </div>
-                 </IconButton>
+                {ENABLE_EXPORT && (
+                  <IconButton onClick={exportDetailAsImage} data-export-ignore="true">
+                     <div className="w-6 h-6">
+                       <svg className="block size-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                         <path d="M9 3l-1.5 2H5a2 2 0 00-2 2v10a2 2 0 002 2h14a2 2 0 00-2-2h-2.5L15 3H9z" stroke="#0055F7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                         <circle cx="12" cy="12" r="3.5" stroke="#0055F7" strokeWidth="2"/>
+                       </svg>
+                     </div>
+                   </IconButton>
+                )}
                </div>
              </div>
 
@@ -2032,7 +2266,18 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false, isFavor
               <h3 className="text-xl font-semibold mb-3">
                 {t('projectOwner')}
               </h3>
-              <div className="flex items-start gap-3">
+              <div 
+                className={`flex items-start gap-3 ${disableOwnerClick ? '' : 'cursor-pointer hover:bg-gray-50'} rounded-lg p-2 -m-2 transition-colors`}
+                onClick={disableOwnerClick ? undefined : () => {
+                  if (onOwnerClick) {
+                    const ownerProfile = getProjectOwnerProfile(project.owner.name);
+                    onOwnerClick({
+                      ...project.owner,
+                      profileData: ownerProfile
+                    });
+                  }
+                }}
+              >
                 <ImageWithFallback
                   src={project.owner.avatar}
                   alt={project.owner.name}
@@ -2061,41 +2306,16 @@ function ProjectDetailView({ project, onClose, suppressFirstTap = false, isFavor
                     ))}
                   </div>
                 </div>
+                {/* 点击指示图标 */}
+                <div className="mt-2">
+                  <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </div>
               </div>
             </div>
 
-            {/* Collaborators - only for projects */}
-            {project.type === 'project' && project.collaboratorsList.length > 0 && (
-              <div className="border rounded-lg p-4">
-                <h3 className="text-xl font-semibold mb-3 flex items-center gap-2">
-                  <Users size={20} />
-                  {t('collaborators')} ({project.collaboratorsList.length})
-                </h3>
-                <div className="space-y-3">
-                  {project.collaboratorsList.map((collaborator, index) => (
-                    <div key={index} className="flex items-center gap-3">
-                      {collaborator.avatar ? (
-                      <ImageWithFallback
-                        src={collaborator.avatar}
-                        alt={collaborator.name}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          <span className="text-gray-500 text-xs font-medium">
-                            {collaborator.name.charAt(0).toUpperCase()}
-                          </span>
-                        </div>
-                      )}
-                      <div>
-                        <p className="font-medium text-sm">{collaborator.name}</p>
-                        <p className="text-xs text-gray-600">{collaborator.role}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+
 
             {/* Description */}
             <div>
@@ -2226,6 +2446,10 @@ export default function App() {
 
   // 新增：聊天功能相关状态
   const [selectedChatId, setSelectedChatId] = useState<number | null>(null);
+  const [viewingUserProfile, setViewingUserProfile] = useState<any>(null);
+  const [isViewingFromChat, setIsViewingFromChat] = useState<boolean>(false); // 新增：标记是否从聊天跳转的个人主页
+  const [isViewingFromProjectDetail, setIsViewingFromProjectDetail] = useState<boolean>(false); // 新增：标记是否从项目详情页跳转的个人主页
+  const [nestedProjectDetail, setNestedProjectDetail] = useState<Project | null>(null); // 新增：嵌套项目详情页面
   
   // 新增：通知和设置页面导航
   const handleNavigateToNotification = () => {
@@ -2248,6 +2472,160 @@ export default function App() {
   const [favorites, setFavorites] = useState<Project[]>([]);
   const [isFavoritesMode, setIsFavoritesMode] = useState(false);
   const [favoritesIndex, setFavoritesIndex] = useState(0);
+  
+  // Backend data loading states
+  const [isLoadingFavorites, setIsLoadingFavorites] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  
+  // Helper function to convert AgentCard to Project format
+  const convertAgentCardToProject = (card: any, isHistory = false): Project => ({
+    id: card.card_id,
+    title: card.project_idea_title,
+    author: 'AI Generated',
+    description: card.description,
+    tags: card.key_features,
+    type: 'project' as const,
+    cardStyle: 'text-only' as const,
+    status: 'not_started' as const,
+    owner: {
+      name: 'AI Generated',
+      age: 25,
+      gender: 'AI',
+      role: 'Agent',
+      distance: 0,
+      avatar: '',
+      tags: []
+    },
+    collaboratorsList: [],
+    detailedDescription: card.description,
+    startTime: new Date().toISOString().split('T')[0],
+    currentProgress: 0,
+    content: card.description,
+    purpose: 'AI generated project idea',
+    lookingFor: card.required_skills,
+    links: card.similar_examples || [],
+    media: [],
+    gradientBackground: isHistory 
+      ? 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)'
+      : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+  });
+
+  // Load favorites and history from backend on app start
+  useEffect(() => {
+    const loadBackendData = async () => {
+      if (!useServerData || !getAccessToken()) return;
+      
+      try {
+        // Load favorites
+        setIsLoadingFavorites(true);
+        const favoritesResponse = await fetchFavorites(50);
+        const serverFavorites = favoritesResponse.likes;
+        
+                 // Convert agent cards to project cards format for display
+         const convertedFavorites = serverFavorites.map(fav => convertAgentCardToProject(fav.card, false));
+        
+        // Sync with local storage
+        const mergedFavorites = LocalStorageManager.syncFavorites(serverFavorites);
+        setFavorites(convertedFavorites);
+        
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+                 // Load from local storage if backend fails
+         const localData = LocalStorageManager.getFromLocal();
+         const localFavorites = localData.favorites.map(fav => convertAgentCardToProject(fav.card, false));
+        setFavorites(localFavorites);
+      } finally {
+        setIsLoadingFavorites(false);
+      }
+      
+      try {
+        // Load history
+        setIsLoadingHistory(true);
+        const historyResponse = await fetchHistory(50);
+        const serverHistory = historyResponse.history;
+        
+        // Convert agent cards to project cards format for display
+        const convertedHistory = serverHistory.map(hist => ({
+          id: hist.card.card_id,
+          title: hist.card.project_idea_title,
+          author: 'AI Generated',
+          description: hist.card.description,
+          tags: hist.card.key_features,
+          type: 'project' as const,
+          cardStyle: 'text-only' as const,
+          status: 'not_started' as const,
+          owner: {
+            name: 'AI Generated',
+            age: 25,
+            gender: 'AI',
+            role: 'Agent',
+            distance: 0,
+            avatar: '',
+            tags: []
+          },
+          collaborators: 0,
+          collaboratorsList: [],
+          detailedDescription: hist.card.description,
+          startTime: new Date().toISOString().split('T')[0],
+          currentProgress: 0,
+          content: hist.card.description,
+          purpose: 'AI generated project idea',
+          lookingFor: hist.card.required_skills || [],
+          links: [],
+          media: [],
+          gradientBackground: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)'
+        }));
+        
+        // Sync with local storage
+        const mergedHistory = LocalStorageManager.syncHistory(serverHistory);
+        setLeftSwipedProjects(convertedHistory);
+        
+      } catch (error) {
+        console.error('Error loading history:', error);
+        // Load from local storage if backend fails
+        const localData = LocalStorageManager.getFromLocal();
+        const localHistory = localData.history.map(hist => ({
+          id: hist.card.card_id,
+          title: hist.card.project_idea_title,
+          author: 'AI Generated',
+          description: hist.card.description,
+          tags: hist.card.key_features,
+          type: 'project' as const,
+          cardStyle: 'text-only' as const,
+          status: 'not_started' as const,
+          owner: {
+            name: 'AI Generated',
+            age: 25,
+            gender: 'AI',
+            role: 'Agent',
+            distance: 0,
+            avatar: '',
+            tags: []
+          },
+          collaborators: 0,
+          collaboratorsList: [],
+          detailedDescription: hist.card.description,
+          startTime: new Date().toISOString().split('T')[0],
+          currentProgress: 0,
+          content: hist.card.description,
+          purpose: 'AI generated project idea',
+          lookingFor: hist.card.required_skills || [],
+          links: [],
+          media: [],
+          gradientBackground: 'linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%)'
+        }));
+        setLeftSwipedProjects(localHistory);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    
+    // Only load when app state is main and user is authenticated
+    if (appState === 'main') {
+      loadBackendData();
+    }
+  }, [appState]);
+
   const [filters, setFilters] = useState<FilterState>({
     projectStatus: { ongoing: true, finished: true, not_started: true },
     projectTypes: [],
@@ -2341,11 +2719,28 @@ export default function App() {
   }, []);
 
     // 修改handleSwipe逻辑：移除弹窗，添加新的指示方法
-  const handleSwipe = (direction: 'left' | 'right') => {
+  const handleSwipe = async (direction: 'left' | 'right') => {
     const top = currentProjects[0];
     if (top && useServerData) {
       const isLike = direction === 'right';
-      void sendSwipe(top.id as any, isLike).catch(() => {});
+      
+      try {
+        // Send swipe to regular cards API
+        await sendSwipe(top.id as any, isLike);
+        
+        // Also try to send to agent cards API if applicable
+        // This assumes the card might be an agent-generated card
+        if (top.id) {
+          try {
+            await sendAgentCardSwipe(top.id as number, isLike ? 'right' : 'left');
+          } catch (agentError) {
+            // Ignore error if it's not an agent card
+            console.log('Not an agent card, skipping agent API call');
+          }
+        }
+      } catch (error) {
+        console.error('Error sending swipe:', error);
+      }
     }
     
     if (direction === 'right') {
@@ -2369,14 +2764,15 @@ export default function App() {
           setLastLikedProject(null);
         }, 3000);
       }
-      // Add to favorites on right swipe
+      // Add to favorites on right swipe using unified function
       if (top) {
-        setFavorites(prev => (prev.find(p => p.id === top.id) ? prev : [top, ...prev]));
+        handleProjectLike(top, true);
       }
     }
     
     if (direction === 'left' && currentProjects.length > 0) {
-      setLeftSwipedProjects(prev => [currentProjects[0], ...prev]);
+      // Add to history using unified function
+      handleProjectReject(currentProjects[0]);
     }
     
     // 统一处理卡片移除
@@ -2417,6 +2813,7 @@ export default function App() {
   const filteredProjects = currentProjects.filter(project => {
     // Project status filter
     if (!filters.projectStatus[project.status as 'ongoing' | 'finished' | 'not_started']) return false;
+    
     // Project types filter
     if (filters.projectTypes.length > 0) {
       const hasMatchingTag = project.tags.some(tag => filters.projectTypes.includes(tag));
@@ -2424,12 +2821,24 @@ export default function App() {
     }
     
     // Distance filter
-    if (project.owner.distance < filters.distance[0] || project.owner.distance > filters.distance[1]) {
+    const userDistance = project.owner.distance || 0;
+    
+    // Same city filter - if enabled, only show projects from same city (distance = 0 or very close)
+    if (filters.sameCity && userDistance > 5) {
       return false;
     }
     
+    // Normal distance range filter (unless showOutOfDistance is enabled)
+    if (!filters.showOutOfDistance) {
+      if (userDistance < filters.distance[0] || userDistance > filters.distance[1]) {
+        return false;
+      }
+    }
+    // If showOutOfDistance is enabled, we don't filter by distance range
+    
     // Age filter
-    if (project.owner.age < filters.age[0] || project.owner.age > filters.age[1]) {
+    const userAge = project.owner.age || 25; // default age if not specified
+    if (userAge < filters.age[0] || userAge > filters.age[1]) {
       return false;
     }
     
@@ -2471,26 +2880,17 @@ export default function App() {
   };
 
   const handleVerifyCode = async () => {
-    if (!smsData.verificationCode) {
-      setErrors({ verificationCode: '请输入验证码' });
-      return;
-    }
-
-    if (smsData.verificationCode.length !== 6) {
-      setErrors({ verificationCode: '请输入6位验证码' });
-      return;
-    }
-
+    // 原型版本：直接跳转到主页面，不进行任何验证
     setIsLoading(true);
     setErrors({});
     
-    // Simulate verification API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    // 模拟一个短暂的加载过程，让用户感受到操作反馈
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     setIsLoading(false);
-    // 认证成功后跳转到主页面
+    // 直接跳转到主页面
     setAppState('main');
-    console.log('SMS Authentication successful:', smsData);
+    console.log('Prototype: Direct login without verification');
   };
 
   // 移除弹窗相关函数，因为不再需要
@@ -2609,6 +3009,44 @@ export default function App() {
   const handleBackToChat = () => {
     setSelectedChatId(null);
     setAppState('chat');
+  };
+
+  // 新增：处理从个人资料页面点击项目的函数
+  const handleNestedProjectClick = (profileProject: any) => {
+    // 将个人资料项目数据转换为 Project 类型
+    const convertedProject: Project = {
+      id: profileProject.id || Math.floor(Math.random() * 1000000),
+      title: profileProject.title || 'Untitled Project',
+      author: viewingUserProfile?.name || 'Unknown',
+      collaborators: profileProject.collaborators || 0,
+      description: profileProject.description || 'No description available',
+      tags: profileProject.tags || [],
+      type: 'project',
+      cardStyle: profileProject.image ? 'image' : 'text-only',
+      status: profileProject.status || 'ongoing',
+      owner: {
+        name: viewingUserProfile?.name || 'Unknown',
+        age: 25,
+        gender: viewingUserProfile?.gender || 'Non-binary',
+        role: profileProject.role || 'Owner',
+        distance: 0,
+        avatar: viewingUserProfile?.avatar || '',
+        tags: viewingUserProfile?.skills || []
+      },
+      collaboratorsList: [],
+      detailedDescription: profileProject.description || 'No detailed description available',
+      startTime: profileProject.startDate || 'Recently',
+      currentProgress: profileProject.progress || 0,
+      content: profileProject.description || 'Project content not available',
+      purpose: 'Project from user profile',
+      lookingFor: [],
+      links: [],
+      media: profileProject.image ? [profileProject.image] : [],
+      gradientBackground: 'bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700',
+      background: profileProject.image
+    };
+    
+    setNestedProjectDetail(convertedProject);
   };
 
   const exportTopCardAsImage = async () => {
@@ -2773,20 +3211,183 @@ export default function App() {
     }
   };
 
+  // 新增：搜索页面状态持久化
+  const [aiSearchQuery, setAiSearchQuery] = useState('');
+  const [aiSearchMode, setAiSearchMode] = useState<'basic' | 'multi-resources'>('basic');
+  const [aiSearchResults, setAiSearchResults] = useState<Project[]>([]);
+  const [aiIdeaResults, setAiIdeaResults] = useState<any[]>([]);
+  const [aiHasSearched, setAiHasSearched] = useState(false);
+  const [aiLastResultsQuery, setAiLastResultsQuery] = useState('');
+
+  // 新增：思考流状态持久化
+  const [aiShowThinkingStream, setAiShowThinkingStream] = useState(false);
+  const [aiThinkingStreamCollapsed, setAiThinkingStreamCollapsed] = useState(false);
+  const [aiThinkingQuery, setAiThinkingQuery] = useState('');
+  const [aiThinkingSteps, setAiThinkingSteps] = useState<any[]>([]);
+  const [aiCurrentStepIndex, setAiCurrentStepIndex] = useState(0);
+
+  // 新增：用户个人资料状态管理
+  const [userProfileData, setUserProfileData] = useState(() => {
+    // 初始化时从 localStorage 读取保存的用户数据，如果没有则使用默认数据
+    try {
+      const savedUserData = localStorage.getItem('user_profile_data');
+      if (savedUserData) {
+        const parsed = JSON.parse(savedUserData);
+        console.log('📂 Loaded user profile data from localStorage:', parsed);
+        return parsed;
+      } else {
+        console.log('📂 No saved user profile data found, using default Cody data');
+      }
+    } catch (error) {
+      console.error('❌ Failed to load user profile data from localStorage:', error);
+    }
+    // 如果没有保存的数据，返回默认的 Cody 数据
+    console.log('📂 Using default Cody profile data');
+    return projectOwnersProfiles['Cody'];
+  });
+
+  // 新增：更新用户资料数据的函数
+  const updateUserProfileData = (newData: any) => {
+    console.log('🔄 Updating user profile data:', newData);
+    setUserProfileData(newData);
+    // 同时保存到 localStorage
+    try {
+      localStorage.setItem('user_profile_data', JSON.stringify(newData));
+      console.log('✅ User profile data saved to localStorage successfully');
+    } catch (error) {
+      console.error('❌ Failed to save user profile data to localStorage:', error);
+    }
+  };
+
+  // 新增：统一的点赞处理函数
+  const handleProjectLike = async (proj: Project, liked: boolean) => {
+    // Update local state - 更新收藏列表
+    setFavorites(prev => {
+      const exists = prev.find(p => p.id === proj.id);
+      if (liked) {
+        return exists ? prev : [proj, ...prev];
+      }
+      return prev.filter(p => p.id !== proj.id);
+    });
+
+    // 如果是点赞操作，并且该项目在历史记录中，将其从历史记录移除
+    if (liked) {
+      setLeftSwipedProjects(prev => {
+        const updatedHistory = prev.filter(p => p.id !== proj.id);
+        // 同时更新本地存储中的历史记录
+        const localData = LocalStorageManager.getFromLocal();
+        const updatedLocalHistory = localData.history.filter(hist => hist.card.card_id !== proj.id);
+        LocalStorageManager.saveToLocal({ history: updatedLocalHistory });
+        return updatedHistory;
+      });
+    }
+
+    // Send to backend API
+    if (useServerData && proj.id) {
+      try {
+        // Send like/unlike to regular cards API
+        await sendSwipe(proj.id as any, liked);
+        
+        // Also try agent cards API
+        try {
+          await sendAgentCardSwipe(proj.id as number, liked ? 'right' : 'left', {
+            interest_level: liked ? 5 : undefined,
+            notes: liked ? 'Liked via heart button' : 'Unliked via heart button',
+            rejection_reason: liked ? undefined : 'Unliked via heart button',
+            feedback: liked ? undefined : 'User changed mind and unliked'
+          });
+        } catch (agentError) {
+          console.log('Not an agent card, skipping agent API call');
+        }
+      } catch (error) {
+        console.error('Error sending like/unlike:', error);
+      }
+    }
+
+    // Update local storage
+    if (liked) {
+      const favoriteCard = {
+        like_id: Date.now(),
+        liked_at: new Date().toISOString(),
+        interest_level: 5,
+        notes: 'Liked via heart button',
+        card: {
+          card_id: proj.id,
+          project_idea_title: proj.title,
+          project_scope: 'Unknown',
+          description: proj.description,
+          key_features: proj.tags,
+          estimated_timeline: 'Unknown',
+          difficulty_level: 'Unknown',
+          required_skills: proj.tags,
+          relevance_score: 0.8
+        }
+      };
+      LocalStorageManager.addToFavorites(favoriteCard);
+    } else {
+      // Remove from local storage when unliked
+      const localData = LocalStorageManager.getFromLocal();
+      const updatedFavorites = localData.favorites.filter(fav => fav.card.card_id !== proj.id);
+      LocalStorageManager.saveToLocal({ favorites: updatedFavorites });
+    }
+  };
+
+  // 新增：统一的历史记录处理函数
+  const handleProjectReject = (proj: Project) => {
+    // 添加到历史记录
+    setLeftSwipedProjects(prev => {
+      // 检查是否已存在，避免重复添加
+      const exists = prev.find(p => p.id === proj.id);
+      return exists ? prev : [proj, ...prev];
+    });
+    
+    // 保存到本地存储
+    const historyCard = {
+      history_id: Date.now(),
+      added_at: new Date().toISOString(),
+      rejection_reason: 'Left swipe - not interested',
+      feedback: undefined,
+      card: {
+        card_id: proj.id,
+        project_idea_title: proj.title,
+        project_scope: 'Unknown',
+        description: proj.description,
+        key_features: proj.tags,
+        estimated_timeline: 'Unknown',
+        difficulty_level: 'Unknown',
+        required_skills: proj.tags,
+        relevance_score: 0.5
+      }
+    };
+    LocalStorageManager.addToHistory(historyCard);
+
+    // 如果该项目在收藏中，将其移除
+    setFavorites(prev => {
+      const updatedFavorites = prev.filter(p => p.id !== proj.id);
+      // 同时更新本地存储中的收藏
+      if (updatedFavorites.length !== prev.length) {
+        const localData = LocalStorageManager.getFromLocal();
+        const updatedLocalFavorites = localData.favorites.filter(fav => fav.card.card_id !== proj.id);
+        LocalStorageManager.saveToLocal({ favorites: updatedLocalFavorites });
+      }
+      return updatedFavorites;
+    });
+  };
+
   return (
     <div ref={containerRef} className={`w-full h-[100dvh] bg-white relative overflow-hidden`}>
       <div
         style={{
           position: 'absolute',
-          left: appState === 'auth' ? 0 : offset.left,
-          top: appState === 'auth' ? 0 : offset.top,
-          width: appState === 'auth' ? '100vw' : BASE_WIDTH,
-          height: appState === 'auth' ? '100vh' : BASE_HEIGHT,
-          transform: appState === 'auth' ? 'none' : `scale(${scale})`,
-           transformOrigin: appState === 'auth' ? undefined as any : 'top left',
+          left: offset.left,
+          top: offset.top,
+          width: BASE_WIDTH,
+          height: BASE_HEIGHT,
+          transform: `scale(${scale})`,
+          transformOrigin: 'top left',
         }}
       >
-                 <div data-screen-root="true" className={`w-[393px] h-[822px] ${appState === 'auth' ? 'bg-transparent' : 'bg-white'} relative overflow-hidden mx-auto`} style={{ touchAction: appState === 'auth' ? 'manipulation' : undefined }}>
+                 <div data-screen-root="true" className="w-[393px] h-[822px] bg-white relative overflow-hidden mx-auto">
           <style>{`::-webkit-scrollbar{display:none;width:0;height:0;} *{scrollbar-width:none; -ms-overflow-style:none;}`} </style>
           {/* 新增：应用状态切换逻辑 */}
           <AnimatePresence initial={true}>
@@ -2821,7 +3422,7 @@ export default function App() {
                     thirdColor="0, 200, 150"                    
                     size="85%"
                     blendingValue="soft-light"
-                    containerClassName={appState === 'auth' ? 'w-full h-screen' : 'w-[393px] h-[822px] mx-auto'}
+                    containerClassName="w-[393px] h-[822px] mx-auto"
                   >
                     <div className="relative w-[393px] h-[822px] mx-auto">
                       <AuthPhoneScreen
@@ -2904,9 +3505,12 @@ export default function App() {
                          </>
                                              ) : appState === 'profile' ? (
                         <>
-                          <IconButton onClick={() => setAppState('profile-settings')}>
-                            <Settings className="w-6 h-6 text-black" />
-                          </IconButton>
+                          {/* 只在查看用户自己的个人资料时显示设置按钮，查看他人资料时不显示 */}
+                          {!viewingUserProfile && (
+                            <IconButton onClick={() => setAppState('profile-settings')}>
+                              <Settings className="w-6 h-6 text-black" />
+                            </IconButton>
+                          )}
                         </>
                       ) : (
                         // AI页面的按钮  
@@ -2956,7 +3560,7 @@ export default function App() {
                      
                                          {/* Navigation Controls */}
                     {!selectedProject && (
-                      <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 flex gap-4 z-[999]">
+                      <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex gap-4 z-[999]">
                         <motion.button
                           onClick={() => handleHistorySlide('left')}
                           disabled={historyIndex === 0}
@@ -3020,7 +3624,7 @@ export default function App() {
                      
                      {/* Navigation Controls */}
                      {!selectedProject && (
-                       <div className="absolute -bottom-16 left-1/2 transform -translate-x-1/2 flex gap-4 z-[999]">
+                       <div className="absolute -bottom-12 left-1/2 transform -translate-x-1/2 flex gap-4 z-[999]">
                          <motion.button
                            onClick={() => handleFavoriteSlide('left')}
                            disabled={favoritesIndex === 0}
@@ -3120,36 +3724,160 @@ export default function App() {
                onBackToMain={() => setAppState('main')}
                onOpenFilter={() => setShowFilter(true)}
                onOpenProject={(p) => setSelectedProject(p)}
-               onRecordLeftSwipe={(p) => setLeftSwipedProjects(prev => [p, ...prev])}
-               onRecordRightSwipe={(p) => setFavorites(prev => (prev.find(x => x.id === p.id) ? prev : [p, ...prev]))}
+               onRecordLeftSwipe={handleProjectReject}
+               onRecordRightSwipe={(p) => handleProjectLike(p, true)}
                suppressMatchIndicator={suppressMatchIndicator}
+               // 新增：搜索状态持久化
+               searchQuery={aiSearchQuery}
+               setSearchQuery={setAiSearchQuery}
+               searchMode={aiSearchMode}
+               setSearchMode={setAiSearchMode}
+               results={aiSearchResults}
+               setResults={setAiSearchResults}
+               ideaResults={aiIdeaResults}
+               setIdeaResults={setAiIdeaResults}
+               hasSearched={aiHasSearched}
+               setHasSearched={setAiHasSearched}
+               lastResultsQuery={aiLastResultsQuery}
+               setLastResultsQuery={setAiLastResultsQuery}
+               // 思考流状态持久化
+               showThinkingStream={aiShowThinkingStream}
+               setShowThinkingStream={setAiShowThinkingStream}
+               thinkingStreamCollapsed={aiThinkingStreamCollapsed}
+               setThinkingStreamCollapsed={setAiThinkingStreamCollapsed}
+               thinkingQuery={aiThinkingQuery}
+               setThinkingQuery={setAiThinkingQuery}
+               thinkingSteps={aiThinkingSteps}
+               setThinkingSteps={setAiThinkingSteps}
+               currentStepIndex={aiCurrentStepIndex}
+               setCurrentStepIndex={setAiCurrentStepIndex}
              />
            ) : appState === 'chat' ? (
-             <div className="h-[662px]">
+             <div className="relative h-[632px]">
                <ChatHome
                  onNavigateToNotification={handleNavigateToNotification}
                  onNavigateToSettings={handleNavigateToSettings}
                  onChatSelect={handleChatSelect}
                />
+               {/* 聊天个人资料页面叠加显示 */}
+               {viewingUserProfile && isViewingFromChat && (
+                 <div className="absolute top-0 left-0 right-0 h-[632px] z-[60] bg-white">
+                   <div className="h-full overflow-y-auto">
+                     <ProfilePage 
+                       onBack={() => {
+                         setViewingUserProfile(null);
+                         setIsViewingFromChat(false);
+                         // 返回到聊天页面，不改变 appState
+                       }} 
+                       onProjectClick={handleNestedProjectClick}
+                       readOnly={true}
+                       showBackHeader={false}
+                       compactHero={true}
+                       isOverlay={true}
+                       userData={{
+                         name: viewingUserProfile.name,
+                         birthday: viewingUserProfile.profileData?.birthday || '1990-01-01',
+                         gender: viewingUserProfile.gender,
+                         location: viewingUserProfile.profileData?.location || 'Unknown',
+                         fullBio: viewingUserProfile.profileData?.fullBio || viewingUserProfile.bio || '',
+                         objective: viewingUserProfile.profileData?.objective || '',
+                         lookingFor: viewingUserProfile.profileData?.lookingFor || '',
+                         typeTags: viewingUserProfile.profileData?.typeTags || [],
+                         skills: viewingUserProfile.profileData?.skills || viewingUserProfile.tags || [],
+                         media: viewingUserProfile.profileData?.media || [],
+                         avatar: viewingUserProfile.avatar,
+                         initiatedProjects: viewingUserProfile.profileData?.initiatedProjects || []
+                         // 删除了合作项目功能
+                         // collaboratedProjects: viewingUserProfile.profileData?.collaboratedProjects || []
+                       }}
+                     />
+                   </div>
+                 </div>
+               )}
              </div>
            ) : appState === 'chat-detail' ? (
-             <div className="h-[662px]">
+             <div className="relative h-[632px]">
                <ChatChatPage
+                 chatId={selectedChatId}
                  onNavigateBack={handleBackToChat}
-               />
-             </div>
-           ) : appState === 'profile' ? (
-             <div className="h-[662px] overflow-y-auto" ref={profileScrollRef}>
-               <ProfilePage 
-                 onBack={() => setAppState('main')} 
-                 onEditProject={(project) => {
-                   // 跳转到项目编辑页面
-                   console.log('跳转到编辑页面:', project.title);
-                   setAppState('posting');
-                   // 这里可以传递项目数据到编辑页面
+                 onUserClick={(user) => {
+                   setViewingUserProfile(user);
+                   setIsViewingFromChat(true); // 标记从聊天跳转
+                   // 不切换 appState，让个人资料页面在聊天页面内叠加显示
                  }}
                />
+               {/* 聊天个人资料页面叠加显示 */}
+               {viewingUserProfile && isViewingFromChat && (
+                 <div className="absolute top-0 left-0 right-0 h-[632px] z-[60] bg-white">
+                   <div className="h-full overflow-y-auto">
+                     <ProfilePage 
+                       onBack={() => {
+                         setViewingUserProfile(null);
+                         setIsViewingFromChat(false);
+                         // 返回到聊天详情页面，不改变 appState
+                       }} 
+                       onProjectClick={handleNestedProjectClick}
+                       readOnly={true}
+                       showBackHeader={false}
+                       compactHero={true}
+                       isOverlay={true}
+                       userData={{
+                         name: viewingUserProfile.name,
+                         birthday: viewingUserProfile.profileData?.birthday || '1990-01-01',
+                         gender: viewingUserProfile.gender,
+                         location: viewingUserProfile.profileData?.location || 'Unknown',
+                         fullBio: viewingUserProfile.profileData?.fullBio || viewingUserProfile.bio || '',
+                         objective: viewingUserProfile.profileData?.objective || '',
+                         lookingFor: viewingUserProfile.profileData?.lookingFor || '',
+                         typeTags: viewingUserProfile.profileData?.typeTags || [],
+                         skills: viewingUserProfile.profileData?.skills || viewingUserProfile.tags || [],
+                         media: viewingUserProfile.profileData?.media || [],
+                         avatar: viewingUserProfile.avatar,
+                         initiatedProjects: viewingUserProfile.profileData?.initiatedProjects || []
+                         // 删除了合作项目功能
+                         // collaboratedProjects: viewingUserProfile.profileData?.collaboratedProjects || []
+                       }}
+                     />
+                   </div>
+                 </div>
+               )}
              </div>
+                                                                                 ) : appState === 'profile' ? (
+          <div className="h-[632px] overflow-y-auto" ref={profileScrollRef}>
+            <ProfilePage 
+              onBack={() => {
+                // 用户自己的个人页面，直接返回主页面
+                setAppState('main');
+              }} 
+              onEditProject={(project) => {
+                // 跳转到项目编辑页面
+                console.log('跳转到编辑页面:', project.title);
+                setAppState('posting');
+                // 这里可以传递项目数据到编辑页面
+              }}
+              onProfileUpdate={updateUserProfileData} // 传递更新函数给 ProfilePage 组件
+              readOnly={false}  // 用户自己的个人页面可以编辑
+              showBackHeader={false}  // 不显示顶部栏，返回按钮在背景上
+              compactHero={false}  // 用户自己的个人页面使用完整布局
+              // 使用状态管理的用户资料数据
+              userData={{
+                name: userProfileData.name,
+                birthday: userProfileData.birthday,
+                gender: userProfileData.gender as 'Male' | 'Female' | 'Non-binary',
+                location: userProfileData.location,
+                fullBio: userProfileData.fullBio,
+                objective: userProfileData.objective,
+                lookingFor: userProfileData.lookingFor,
+                typeTags: userProfileData.typeTags,
+                skills: userProfileData.skills,
+                media: userProfileData.media,
+                avatar: userProfileData.avatar,
+                initiatedProjects: userProfileData.initiatedProjects
+                // 删除了合作项目功能
+                // collaboratedProjects: userProfileData.collaboratedProjects
+              }}
+            />
+          </div>
            ) : null}
 
 
@@ -3167,21 +3895,73 @@ export default function App() {
            {/* Project Detail View */}
            <AnimatePresence>
              {selectedProject && (
-               <ProjectDetailView
-                 project={selectedProject}
-                 onClose={() => setSelectedProject(null)}
-                 suppressFirstTap={true}
-                 isFavorite={!!favorites.find(p => p.id === selectedProject.id)}
-                 onLikeChange={(proj, liked) => {
-                   setFavorites(prev => {
-                     const exists = prev.find(p => p.id === proj.id);
-                     if (liked) {
-                       return exists ? prev : [proj, ...prev];
-                     }
-                     return prev.filter(p => p.id !== proj.id);
-                   });
-                 }}
+                             <ProjectDetailView
+                project={selectedProject}
+                onClose={() => setSelectedProject(null)}
+                suppressFirstTap={true}
+                isFavorite={!!favorites.find(p => p.id === selectedProject.id)}
+                onOwnerClick={(owner) => {
+                  // 跳转到项目负责人的个人资料页面
+                  setViewingUserProfile(owner);
+                  setIsViewingFromProjectDetail(true);
+                  // 不切换 appState，保持 'main' 状态，让个人资料页面叠加显示
+                }}
+                                onLikeChange={handleProjectLike}
                />
+             )}
+           </AnimatePresence>
+
+                      {/* 嵌套项目详情页面 - 用于从个人资料页面查看项目详情 */}
+           <AnimatePresence>
+             {nestedProjectDetail && (
+               <div className="absolute inset-0 z-[70]">
+                 <ProjectDetailView
+                   project={nestedProjectDetail}
+                   onClose={() => setNestedProjectDetail(null)}
+                   suppressFirstTap={true}
+                   isFavorite={!!favorites.find(p => p.id === nestedProjectDetail.id)}
+                   disableOwnerClick={true}
+                                     onLikeChange={handleProjectLike}
+                 />
+               </div>
+             )}
+           </AnimatePresence>
+           
+           {/* 个人资料页面叠加显示 - 用于项目负责人资料查看 */}
+           <AnimatePresence>
+             {viewingUserProfile && isViewingFromProjectDetail && (
+               <div className="absolute inset-0 z-[60] bg-white">
+                 <div className="h-full overflow-y-auto">
+                   <ProfilePage 
+                   onBack={() => {
+                     setViewingUserProfile(null);
+                     setIsViewingFromProjectDetail(false);
+                     // 返回到项目详情页面，不改变 appState
+                   }} 
+                   onProjectClick={handleNestedProjectClick}
+                   readOnly={true}
+                   showBackHeader={false}
+                   compactHero={true}
+                   isOverlay={true}
+                   userData={{
+                     name: viewingUserProfile.name,
+                     birthday: viewingUserProfile.profileData?.birthday || '1990-01-01',
+                     gender: viewingUserProfile.gender,
+                     location: viewingUserProfile.profileData?.location || 'Unknown',
+                     fullBio: viewingUserProfile.profileData?.fullBio || viewingUserProfile.bio || '',
+                     objective: viewingUserProfile.profileData?.objective || '',
+                     lookingFor: viewingUserProfile.profileData?.lookingFor || '',
+                     typeTags: viewingUserProfile.profileData?.typeTags || [],
+                     skills: viewingUserProfile.profileData?.skills || viewingUserProfile.tags || [],
+                     media: viewingUserProfile.profileData?.media || [],
+                     avatar: viewingUserProfile.avatar,
+                     initiatedProjects: viewingUserProfile.profileData?.initiatedProjects || []
+                     // 删除了合作项目功能
+                     // collaboratedProjects: viewingUserProfile.profileData?.collaboratedProjects || []
+                   }}
+                 />
+                 </div>
+               </div>
              )}
            </AnimatePresence>
                  </>
@@ -3316,7 +4096,10 @@ export default function App() {
                     <IconButton className="w-[65.2px]" onClick={() => setAppState('main')}>
                       <div className="w-6 h-6">
                         <svg className="block size-full" fill="none" viewBox="0 0 18 19">
-                           <path d={svgPaths.p11f24e80} fill={appState === 'main' ? '#0055F7' : '#616C78'} />
+                           <path d={svgPaths.p11f24e80} fill={
+                             appState === 'main' || (appState === 'profile' && isViewingFromProjectDetail) 
+                             ? '#0055F7' : '#616C78'
+                           } />
                         </svg>
                       </div>
                     </IconButton>
@@ -3332,14 +4115,34 @@ export default function App() {
                     <IconButton className="w-[65.2px]" onClick={() => setAppState('chat')}>
                       <div className="w-6 h-6">
                         <svg className="block size-full" fill="none" viewBox="0 0 20 20">
-                          <path d={svgPaths.p19a90780} fill={appState === 'chat' || appState === 'chat-detail' || appState === 'notification' || appState === 'settings' ? '#0055F7' : '#616C78'} />
+                          <path d={svgPaths.p19a90780} fill={
+                            appState === 'chat' || 
+                            appState === 'chat-detail' || 
+                            appState === 'notification' || 
+                            appState === 'settings' ||
+                            (appState === 'profile' && isViewingFromChat) // 从聊天跳转的个人主页时保持聊天图标高亮
+                            ? '#0055F7' : '#616C78'
+                          } />
                         </svg>
                       </div>
                     </IconButton>
-                    <IconButton className="w-[65.2px]" onClick={() => setAppState('profile')}>
+                    <IconButton className="w-[65.2px]" onClick={() => {
+                      // 直接点击个人页时，清除所有他人资料相关的状态，跳转到用户自己的个人页面
+                      setIsViewingFromChat(false);
+                      setIsViewingFromProjectDetail(false);
+                      setViewingUserProfile(null);
+                      setNestedProjectDetail(null);
+                      // 强制重置所有相关状态
+                      setTimeout(() => {
+                        setAppState('profile');
+                      }, 50);
+                    }}>
                       <div className="w-6 h-6">
                         <svg className="block size-full" fill="none" viewBox="0 0 20 20">
-                          <path d={svgPaths.p3d54cd00} fill={appState === 'profile' ? '#0055F7' : '#616C78'} />
+                          <path d={svgPaths.p3d54cd00} fill={
+                            appState === 'profile' && !isViewingFromChat && !isViewingFromProjectDetail // 只有直接访问的个人主页才高亮
+                            ? '#0055F7' : '#616C78'
+                          } />
                         </svg>
                       </div>
                     </IconButton>
@@ -3545,14 +4348,16 @@ export default function App() {
           exit={{ opacity: 0, x: 40, scale: 1 }}
           transition={{ duration: 0.2, ease: 'linear' }}
         >
-          <SettingsPage 
-            onBack={() => setAppState('profile')}
-            onOpenTerms={() => setAppState('terms')}
-            onOpenSupport={() => setAppState('support')}
-            onFeedbackSubmit={(text: string) => { if (text) console.log('用户反馈:', text); }}
-            onLogout={() => { try { localStorage.removeItem('access_token'); } catch{} setAppState('auth'); }}
-            onDeactivate={() => { if (window.confirm('确定要注销账号吗？此操作不可恢复。')) { try { localStorage.clear(); } catch{} setAppState('auth'); } }}
-          />
+          <div className="h-[722px] overflow-y-auto pb-8">
+            <SettingsPage 
+              onBack={() => setAppState('profile')}
+              onOpenTerms={() => setAppState('terms')}
+              onOpenSupport={() => setAppState('support')}
+              onFeedbackSubmit={(text: string) => { if (text) console.log('用户反馈:', text); }}
+              onLogout={() => { try { localStorage.removeItem('access_token'); } catch{} setAppState('auth'); }}
+              onDeactivate={() => { if (window.confirm('确定要注销账号吗？此操作不可恢复。')) { try { localStorage.clear(); } catch{} setAppState('auth'); } }}
+            />
+          </div>
         </motion.div>
       )}
 

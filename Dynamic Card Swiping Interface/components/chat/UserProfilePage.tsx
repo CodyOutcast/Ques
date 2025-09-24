@@ -38,7 +38,7 @@ export function UserProfilePage({ onBack, user }: UserProfilePageProps) {
   };
 
   return (
-    <div className="h-[662px] flex flex-col relative bg-white">
+    <div className="h-[632px] flex flex-col relative bg-white">
       {/* Header */}
       <div className="h-[90px] flex items-center justify-between px-4 border-b border-[#E8EDF2] bg-[#FAFAFA]">
         <button onClick={onBack} className="p-2">

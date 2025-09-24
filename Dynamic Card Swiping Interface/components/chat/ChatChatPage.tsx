@@ -6,61 +6,13 @@ import { ImageWithFallback } from '../figma/ImageWithFallback';
 // Remove custom UserProfilePage and use the full ProfilePage instead
 import { ProfilePage } from '../ProfilePage';
 import { t } from '../../translations';
+import { getChatData, getUserProfile, type Message, type UserProfile, type ChatData } from './chatData';
 
 interface ChatChatPageProps {
+  chatId: number | null;
   onNavigateBack: () => void;
+  onUserClick?: (user: UserProfile) => void;
 }
-
-interface Message {
-  id: number;
-  text: string;
-  time: string;
-  isOwn: boolean;
-  isNew?: boolean;
-  status?: 'sending' | 'sent' | 'read' | 'failed';
-}
-
-// 示例用户数据
-const sampleUser = {
-  id: 1,
-  name: 'Cody',
-  age: 28,
-  gender: 'Male',
-  role: 'Blockchain Developer',
-  distance: 2.5,
-  avatar: '/sample/cody_avatar.jpg',
-  tags: ['Blockchain', 'Web3', 'Smart Contracts', 'DeFi'],
-  bio: 'Passionate blockchain developer with 5+ years of experience in building decentralized applications. Love working on innovative projects that push the boundaries of technology.',
-  projects: [
-    {
-      id: 1,
-      title: 'DeFi Yield Farming Platform',
-      description: 'A comprehensive yield farming platform with automated strategies and risk management.',
-      status: 'ongoing' as const,
-      tags: ['DeFi', 'Yield Farming', 'Smart Contracts'],
-      collaborators: 4
-    },
-    {
-      id: 2,
-      title: 'NFT Marketplace',
-      description: 'A decentralized NFT marketplace with low fees and high performance.',
-      status: 'finished' as const,
-      tags: ['NFT', 'Marketplace', 'Ethereum'],
-      collaborators: 6
-    }
-  ]
-};
-
-// Initial messages data
-const initialMessages: Message[] = [
-  {
-    id: 1,
-    text: "Hey, I'm interested in your project😎",
-    time: "10:28",
-    isOwn: false,
-    status: 'read'
-  }
-];
 
 function VuesaxLinearArrowLeft({ onClick }: { onClick?: () => void }) {
   return (
@@ -83,14 +35,14 @@ function VuesaxLinearArrowLeft1({ onClick }: { onClick?: () => void }) {
   );
 }
 
-function Group8() {
+function Group8({ user }: { user: UserProfile }) {
   return (
     <div className="grid-cols-[max-content] grid-rows-[max-content] inline-grid leading-[0] place-items-start relative shrink-0">
       <div className="[grid-area:1_/_1] ml-0 mt-0 relative size-10">
         <ImageWithFallback
           className="block max-w-none size-full rounded-full object-cover"
-          src={sampleUser.avatar}
-          alt={sampleUser.name}
+          src={user.avatar}
+          alt={user.name}
         />
       </div>
       <div className="[grid-area:1_/_1] ml-[29px] mt-0 relative size-2">
@@ -102,47 +54,53 @@ function Group8() {
   );
 }
 
-function Frame60({ isNewMatch = false, onUserClick }: { isNewMatch?: boolean; onUserClick: () => void }) {
-  // 固定在线状态用于演示
-  const isOnline = true;
-  const lastSeenTime = null;
-
+function Frame60({ user, isNewMatch = false, onUserClick }: { user: UserProfile; isNewMatch?: boolean; onUserClick: (user: UserProfile) => void }) {
   useEffect(() => {
     try {
       const nameEl = document.querySelector('[data-chat-username]') as HTMLElement | null;
       const nameText = document.querySelector('[data-chat-username-text]') as HTMLElement | null;
+      const statusEl = document.querySelector('[data-chat-status]') as HTMLElement | null;
+      const statusText = document.querySelector('[data-chat-status-text]') as HTMLElement | null;
+      
       if (nameEl) {
         nameEl.style.setProperty('color', '#000000', 'important');
         nameEl.style.setProperty('font-weight', '700', 'important');
-        // do not force font-size here to respect user adjustments
+        nameEl.style.setProperty('font-size', '36px', 'important');
         nameEl.style.setProperty('line-height', '1.1', 'important');
         nameEl.style.setProperty('opacity', '1', 'important');
       }
       if (nameText) {
         nameText.style.setProperty('color', '#000000', 'important');
+        nameText.style.setProperty('font-size', '18px', 'important');
         nameText.style.setProperty('opacity', '1', 'important');
       }
+      if (statusEl) {
+        statusEl.style.setProperty('font-size', '12px', 'important');
+      }
+      if (statusText) {
+        statusText.style.setProperty('font-size', '12px', 'important');
+      }
     } catch {}
-  }, []);
+  }, [isNewMatch, user.name]); // 添加依赖项以确保样式在数据变化时重新应用
 
   return (
     <div 
       className="content-stretch flex flex-col items-start justify-start leading-[0] relative shrink-0 text-nowrap"
     >
       {/* 用户名 - Bold 放大并使用黑色 */}
-      <div className="font-['Instrument_Sans:SemiBold',_sans-serif] font-bold relative shrink-0 text-black text-[32px]" style={{ fontVariationSettings: "'wdth' 100" }} data-chat-username>
-        <p className="leading-[normal] text-nowrap whitespace-pre" data-chat-username-text>{sampleUser.name}</p>
+      <div className="font-['Instrument_Sans:SemiBold',_sans-serif] font-bold relative shrink-0 text-black text-[36px]" style={{ fontVariationSettings: "'wdth' 100" }} data-chat-username>
+        <p className="leading-[normal] text-nowrap whitespace-pre" data-chat-username-text>{user.name}</p>
       </div>
       
       {/* 状态显示 - 新匹配优先，其次在线状态 */}
       {isNewMatch ? (
-        <div className="font-['Instrument_Sans:Italic',_sans-serif] font-normal italic relative shrink-0 text-[#0055f7] text-[14px]" style={{ fontVariationSettings: "'wdth' 100" }}>
-          <p className="leading-[normal] text-nowrap whitespace-pre">{t('newMatch') || '新匹配'}</p>
+        <div className="font-['Instrument_Sans:Italic',_sans-serif] font-normal italic relative shrink-0 text-[#0055f7] text-[12px]" style={{ fontVariationSettings: "'wdth' 100" }} data-chat-status>
+          <p className="leading-[normal] text-nowrap whitespace-pre" data-chat-status-text>{t('newMatch') || '新匹配'}</p>
         </div>
       ) : (
-        <div className="font-['Instrument_Sans:Regular',_sans-serif] font-normal relative shrink-0 text-[#8593a8] text-[14px]" style={{ fontVariationSettings: "'wdth' 100" }}>
-          <p className="leading-[normal] text-nowrap whitespace-pre">
-            {isOnline ? (t('online') || '在线') : `${lastSeenTime}${t('ago') || '前在线'}`}
+        <div className="font-['Instrument_Sans:Regular',_sans-serif] font-normal relative shrink-0 text-[#8593a8] text-[12px]" style={{ fontVariationSettings: "'wdth' 100" }} data-chat-status>
+          <p className="leading-[normal] text-nowrap whitespace-pre" data-chat-status-text>
+            {user.isOnline ? (t('online') || '在线') : `${user.lastSeen}${t('ago') || '前在线'}`}
           </p>
         </div>
       )}
@@ -150,7 +108,7 @@ function Frame60({ isNewMatch = false, onUserClick }: { isNewMatch?: boolean; on
   );
 }
 
-function Frame61({ onNavigateBack, isNewMatch, onUserClick }: { onNavigateBack: () => void; isNewMatch?: boolean; onUserClick: () => void }) {
+function Frame61({ user, onNavigateBack, isNewMatch, onUserClick }: { user: UserProfile; onNavigateBack: () => void; isNewMatch?: boolean; onUserClick: (user: UserProfile) => void }) {
   return (
     <div className="content-stretch flex gap-2.5 items-center justify-start relative shrink-0 w-[185px]">
       <div className="flex items-center" onClick={(e) => e.stopPropagation()}>
@@ -158,8 +116,8 @@ function Frame61({ onNavigateBack, isNewMatch, onUserClick }: { onNavigateBack: 
       </div>
       {/* 头像与文字区域，不再单独绑定点击，交由父级头部统一处理 */}
       <div className="flex items-center gap-2">
-        <Group8 />
-        <Frame60 isNewMatch={isNewMatch} onUserClick={onUserClick} />
+        <Group8 user={user} />
+        <Frame60 user={user} isNewMatch={isNewMatch} onUserClick={onUserClick} />
       </div>
     </div>
   );
@@ -177,12 +135,12 @@ function RiMoreFill() {
   );
 }
 
-function Frame62({ onNavigateBack, isNewMatch, onUserClick }: { onNavigateBack: () => void; isNewMatch?: boolean; onUserClick: () => void }) {
+function Frame62({ user, onNavigateBack, isNewMatch, onUserClick }: { user: UserProfile; onNavigateBack: () => void; isNewMatch?: boolean; onUserClick: (user: UserProfile) => void }) {
   return (
-    <div className="content-stretch flex justify-between h-[52px] items-center relative shrink-0 cursor-pointer" onClick={onUserClick}>
+    <div className="content-stretch flex justify-between h-[52px] items-center relative shrink-0 cursor-pointer" onClick={() => onUserClick(user)}>
       {/* 左侧：返回+用户信息，整块可点击（返回按钮除外） */}
       <div className="flex items-center gap-2 flex-1 min-w-0">
-        <Frame61 onNavigateBack={onNavigateBack} isNewMatch={isNewMatch} onUserClick={onUserClick} />
+        <Frame61 user={user} onNavigateBack={onNavigateBack} isNewMatch={isNewMatch} onUserClick={onUserClick} />
       </div>
       {/* 右侧更多按钮（同属可点击区域，不单独处理） */}
       <div className="relative shrink-0 size-6" data-name="ri:more-fill">
@@ -222,25 +180,30 @@ function Frame247({ messages }: { messages: Message[] }) {
   );
 }
 
-export default function ChatChatPage({ onNavigateBack }: ChatChatPageProps) {
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [isNewMatch, setIsNewMatch] = useState(false); // 可以通过props传入或根据逻辑判断
+export default function ChatChatPage({ chatId, onNavigateBack, onUserClick }: ChatChatPageProps) {
+  // 获取聊天数据
+  const chatData = getChatData(chatId);
+  const [messages, setMessages] = useState<Message[]>(chatData?.messages || []);
   const [showUserProfile, setShowUserProfile] = useState(false);
 
-  // 清理：移除调试 mount 日志与边框
-  // useEffect(() => {
-  //   try { 
-  //     console.log('[ChatChatPage] mounted'); 
-  //     const el = document.getElementById('chat-detail-root');
-  //     if (el) {
-  //       el.style.outline = '3px dashed magenta';
-  //       el.style.outlineOffset = '2px';
-  //       console.log('[ChatChatPage] debug outline applied to #chat-detail-root');
-  //     } else {
-  //       console.warn('[ChatChatPage] #chat-detail-root not found at mount');
-  //     }
-  //   } catch {}
-  // }, []);
+  // 如果没有找到聊天数据，显示错误状态
+  if (!chatData) {
+    return (
+      <div className="h-[632px] flex items-center justify-center bg-white">
+        <div className="text-center">
+          <p className="text-gray-600 text-lg mb-4">{t('chatNotFound') || '聊天不存在'}</p>
+          <button 
+            onClick={onNavigateBack}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            {t('goBack') || '返回'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const { user, isNewMatch } = chatData;
 
   const getCurrentTime = () => {
     const now = new Date();
@@ -274,19 +237,6 @@ export default function ChatChatPage({ onNavigateBack }: ChatChatPageProps) {
         msg.id === newMessage.id ? { ...msg, status: 'read' } : msg
       ));
     }, 3000);
-
-    // 移除自动回复
-    // setTimeout(() => {
-    //   const responseMessage: Message = {
-    //     id: messages.length + 2,
-    //     text: "Thanks for your message! I'll get back to you soon.",
-    //     time: getCurrentTime(),
-    //     isOwn: false,
-    //     isNew: true,
-    //     status: 'read'
-    //   };
-    //   setMessages(prev => [...prev, responseMessage]);
-    // }, 2000);
   };
 
   const handleUploadFiles = (files: FileList) => {
@@ -305,8 +255,12 @@ export default function ChatChatPage({ onNavigateBack }: ChatChatPageProps) {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  const handleUserClick = () => {
-    setShowUserProfile(true);
+  const handleUserClick = (user: UserProfile) => {
+    if (onUserClick) {
+      onUserClick(user);
+    } else {
+      setShowUserProfile(true);
+    }
   };
 
   const handleBackFromProfile = () => {
@@ -320,12 +274,27 @@ export default function ChatChatPage({ onNavigateBack }: ChatChatPageProps) {
         readOnly={true}
         showBackHeader={false}
         compactHero={true}
+        userData={{
+          name: user.name,
+          birthday: user.profileData.birthday,
+          gender: user.gender,
+          location: user.profileData.location,
+          fullBio: user.profileData.fullBio,
+          objective: user.profileData.objective,
+          lookingFor: user.profileData.lookingFor,
+          typeTags: user.profileData.typeTags,
+          skills: user.profileData.skills,
+          media: user.profileData.media,
+          avatar: user.avatar,
+          initiatedProjects: user.profileData.initiatedProjects,
+          collaboratedProjects: user.profileData.collaboratedProjects
+        }}
       />
     );
   }
 
   return (
-    <div className="h-[662px] flex flex-col relative bg-white pb-[100px]" data-name="chat-chat page">
+    <div className="h-[632px] flex flex-col relative bg-white pb-[80px]" data-name="chat-chat page">
       {/* Scoped style to enforce sizes/colors */}
       <style>
         {`
@@ -352,7 +321,7 @@ export default function ChatChatPage({ onNavigateBack }: ChatChatPageProps) {
       </style>
       {/* 聊天头部 - 用户信息 */}
       <div className="px-[7px] pt-[11px] pb-4 shrink-0">
-        <Frame62 onNavigateBack={onNavigateBack} isNewMatch={isNewMatch} onUserClick={handleUserClick} />
+        <Frame62 user={user} onNavigateBack={onNavigateBack} isNewMatch={isNewMatch} onUserClick={handleUserClick} />
       </div>
       
       {/* 聊天内容区域 - 确保可以滚动 */}
@@ -361,7 +330,7 @@ export default function ChatChatPage({ onNavigateBack }: ChatChatPageProps) {
       </div>
       
       {/* 输入框：固定在底部栏上方 */}
-      <div className="px-[23px] pb-[16px] pt-2 absolute left-0 right-0 bottom-[50px]">
+      <div className="px-[23px] pb-[16px] pt-2 absolute left-0 right-0 bottom-[30px]">
         <div className="bg-white rounded-[30px] h-[46px] shadow-md">
           <MessageInput onSendMessage={handleSendMessage} onUploadFiles={handleUploadFiles} />
         </div>

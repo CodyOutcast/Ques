@@ -27,6 +27,13 @@ from services.monitoring import setup_monitoring
 
 # Load environment variables
 load_dotenv()
+# Additionally load .env.production if present so that production configs are picked up locally
+try:
+    env_prod_path = os.path.join(os.path.dirname(__file__), '.env.production')
+    if os.path.exists(env_prod_path):
+        load_dotenv(env_prod_path, override=True)
+except Exception:
+    pass
 
 # Configure logging with environment-aware settings
 log_config = settings.logging

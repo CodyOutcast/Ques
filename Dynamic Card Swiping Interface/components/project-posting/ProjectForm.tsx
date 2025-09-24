@@ -6,7 +6,6 @@ import { Textarea } from '../ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Slider } from '../ui/slider';
 import { TagInput } from './TagInput';
-import { CollaboratorInput } from './CollaboratorInput';
 import { LinkInput } from './LinkInput';
 import { ImageWithFallback } from '../figma/ImageWithFallback';
 import { MediaUpload } from './MediaUpload';
@@ -20,11 +19,6 @@ interface ProjectData {
   media: File[];
   projectTags: string[];
   ownRole: string[];
-  collaborators: Array<{
-    id: string;
-    name: string;
-    role: string[];
-  }>;
   startTime: string;
   currentProgress: number;
   detailedDescription: string;
@@ -72,7 +66,7 @@ export function ProjectForm({ projectData, onProjectDataChange, onSubmit, isSubm
   };
 
   return (
-    <div className="p-4 space-y-6 pb-24">
+    <div className="p-4 space-y-6 pb-36">
       {/* Title */}
       <div className="space-y-2">
         <Label htmlFor="title" className="text-lg font-bold">{i18nCurrentLanguage === 'en' ? 'Project Title *' : '项目标题 *'}</Label>
@@ -100,18 +94,7 @@ export function ProjectForm({ projectData, onProjectDataChange, onSubmit, isSubm
         />
       </div>
 
-      {/* Collaborators */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-bold">{i18nCurrentLanguage === 'en' ? 'Collaborators' : '协作者'}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <CollaboratorInput
-            collaborators={projectData.collaborators}
-            onCollaboratorsChange={(collaborators) => updateProjectData('collaborators', collaborators)}
-          />
-        </CardContent>
-      </Card>
+
 
       {/* Media Upload */}
       <div className="space-y-2">
@@ -241,7 +224,7 @@ export function ProjectForm({ projectData, onProjectDataChange, onSubmit, isSubm
           id="peopleLookingFor"
           value={projectData.peopleLookingFor}
           onChange={(e) => updateProjectData('peopleLookingFor', e.target.value)}
-          placeholder={i18nCurrentLanguage === 'en' ? 'Describe the type of collaborator you are looking for' : '描述你在寻找的合作者类型'}
+          placeholder={i18nCurrentLanguage === 'en' ? 'Describe the type of people you are looking for' : '描述你在寻找的人员类型'}
           rows={3}
         />
       </div>

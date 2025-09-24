@@ -50,8 +50,20 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
         </div>
       </div>
 
+      {/* 原型版本提示 - 新增 */}
+      <div className="absolute left-1/2 top-[200px] transform -translate-x-1/2 w-[340px] text-center">
+        <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 border border-white/20">
+          <div className="font-['Manrope:SemiBold',_sans-serif] font-semibold text-white text-[16px] mb-2">
+            原型版本，请直接点击"确认"登录
+          </div>
+          <div className="font-['Manrope:Regular',_sans-serif] text-white/80 text-[14px]">
+            Prototype, please click "confirm" button to log in directly
+          </div>
+        </div>
+      </div>
+
       {/* SMS Authentication Form - Single page layout */}
-      <div className="absolute left-[27px] top-[320px] w-[348px] space-y-6">
+      <div className="absolute left-[27px] top-[350px] w-[348px] space-y-6">
         <div className="flex flex-col gap-6">
           {/* Phone Number Input */}
           <div className="flex flex-col">
@@ -106,11 +118,11 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
                 {(isLoading && !codeSent) ? '发送中...' : countdown > 0 ? `${countdown}s` : '发送'}
               </button>
             </div>
-            {/* Confirm button below */}
+            {/* Confirm button below - 修改为始终可点击 */}
             <button
               type="button"
               onClick={onVerifyCode}
-              disabled={isLoading || smsData.verificationCode.length !== 6}
+              disabled={isLoading}
               className="mt-3 bg-[#0055f7] h-[50px] w-full rounded-2xl font-['Rubik:Bold',_sans-serif] font-bold text-white text-[16px] hover:bg-[#0045d7] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               确认
@@ -132,7 +144,7 @@ export function AuthPhoneScreen(props: AuthPhoneScreenProps) {
       </div>
 
       {/* Terms and Privacy */}
-      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[85%] max-w-[300px] text-center">
+      <div className="absolute bottom-[40px] left-1/2 transform -translate-x-1/2 w-[85%] max-w-[300px] text-center">
         <p className="font-['Rubik:Medium',_sans-serif] font-medium text-white text-[12px] leading-[16px]">
           <span className="text-[#bcbcbc]">继续即表示你同意我们的</span>{' '}
           <span className="font-['Rubik:SemiBold',_sans-serif] font-semibold cursor-pointer hover:underline">服务条款</span>{' '}

@@ -24,12 +24,29 @@ except ImportError:
     class User:
         id = 1
 
+import os
 from services.project_idea_agent import ProjectIdeaAgent, generate_project_ideas
 
 router = APIRouter(prefix="/api/v1/project-ideas", tags=["project-ideas"])
 
-# Initialize the agent
-agent = ProjectIdeaAgent()
+# Lazy initialization of the agent
+agent = None
+
+def get_agent():
+    """Get or initialize the project idea agent with proper error handling"""
+    global agent
+    if agent is None:
+        try:
+            # Check if required environment variables are set
+            if not os.environ.get("SEARCHAPI_KEY") or not os.environ.get("DEEPSEEK_API_KEY_AGENT"):
+                print("⚠️ Warning: SEARCHAPI_KEY and/or DEEPSEEK_API_KEY_AGENT not set. Project ideas service will be disabled.")
+                return None
+            agent = ProjectIdeaAgent()
+            print("✅ Project Ideas Agent initialized successfully")
+        except Exception as e:
+            print(f"❌ Failed to initialize Project Ideas Agent: {e}")
+            agent = None
+    return agent
 
 @router.post("/generate")
 async def generate_ideas_endpoint(
@@ -39,6 +56,14 @@ async def generate_ideas_endpoint(
 ):
     """Generate project ideas based on user query with membership limits"""
     try:
+        # Check if agent is available
+        current_agent = get_agent()
+        if current_agent is None:
+            raise HTTPException(
+                status_code=503, 
+                detail="Project ideas service is currently unavailable. Please contact administrator to configure SEARCHAPI_KEY and DEEPSEEK_API_KEY_AGENT environment variables."
+            )
+        
         if not query or len(query.strip()) < 3:
             raise HTTPException(status_code=400, detail="Query must be at least 3 characters long")
         
@@ -67,7 +92,6 @@ async def generate_ideas_endpoint(
         
         if "error" in result:
             raise HTTPException(status_code=400, detail=result["message"])
-            raise HTTPException(status_code=400, detail=result["message"])
         
         return result
         
@@ -78,6 +102,13 @@ async def generate_ideas_endpoint(
 async def test_scraping_endpoint():
     """Test endpoint to verify scraping functionality"""
     try:
+        current_agent = get_agent()
+        if current_agent is None:
+            raise HTTPException(
+                status_code=503, 
+                detail="Project ideas service is currently unavailable. Cannot run scraping test."
+            )
+        
         from services.project_idea_agent import test_scraping_anti_block
         
         # Run the test
@@ -96,15 +127,28 @@ async def test_scraping_endpoint():
 async def health_check():
     """Health check for the project ideas service"""
     try:
+        current_agent = get_agent()
+        if current_agent is None:
+            return {
+                "status": "service_disabled",
+                "message": "Project ideas service is disabled due to missing environment variables",
+                "services": {
+                    "deepseek_api": "not_configured",
+                    "search_api": "not_configured",
+                    "crawl4ai": "not_available"
+                },
+                "timestamp": datetime.now().isoformat()
+            }
+        
         # Test API connections
-        deepseek_ok = agent._test_deepseek_connection()
+        deepseek_ok = current_agent._test_deepseek_connection()
         
         return {
             "status": "healthy",
             "services": {
                 "deepseek_api": "connected" if deepseek_ok else "disconnected",
-                "search_api": "configured" if agent.searchapi_key else "not_configured",
-                "crawl4ai": "available" if agent.config else "not_available"
+                "search_api": "configured" if current_agent.searchapi_key else "not_configured",
+                "crawl4ai": "available" if hasattr(current_agent, 'config') and current_agent.config else "not_available"
             },
             "timestamp": datetime.now().isoformat()
         }

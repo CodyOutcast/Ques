@@ -1,0 +1,44 @@
+# Development Environment Configuration
+ENVIRONMENT=development
+
+DATABASE_URL=gz-postgres-7aqk65fn.sql.tencentcdb.com
+
+PG_HOST=gz-postgres-7aqk65fn.sql.tencentcdb.com #Public IP
+PG_PORT=29158 #Port
+PG_USER=PostgreSQL #Username
+PG_PASSWORD=Startup-Project-42069 #password
+PG_DATABASE=postgres #Database Name
+
+VECTORDB_ENDPOINT=http://gz-vdb-ccj83iw2.sql.tencentcdb.com:8100  #URL
+VECTORDB_USERNAME=root  #username
+VECTORDB_KEY=56Nw7FeOPhlUF0E7F8BtveusjnzlG3DEMCyOFyRm  # API Key
+VECTORDB_COLLECTION=user_vectors  #collection name
+VECTORDB_DIMENSION=768  # Adjust based on your embedding model in VectorDB
+
+DEEPSEEK_API_KEY=sk-90635abfb1bc4c3fbc52d42edfebf8c1 #DS API Key
+
+TENCENT_SECRET_ID=AKIDiKlz0sXyFJ9lANRM8ucDkMyYJzTpyteG
+TENCENT_SECRET_KEY=UntmSxFKC1f7MOCpEQOBk6FAxYzDF3Oe
+
+SECRET_KEY=30707ccaac4ff6b6699fdeb4283318a61bcb938f9e2f38189c66e3d2ee2625ed #for connection authentication
+JWT_SECRET_KEY=30707ccaac4ff6b6699fdeb4283318a61bcb938f9e2f38189c66e3d2ee2625ed #JWT token signing key
+
+TENCENT_EMAIL_TEMPLATE_ID=33594
+TENCENT_EMAIL_TEMPLATE_ID_EN=33594
+TENCENT_EMAIL_TEMPLATE_ID_CN=33595
+TENCENT_SENDER_EMAIL=ques@ques.site
+TENCENT_SENDER_EMAIL_ALT=ques@ques.chat
+TENCENT_SES_REGION=ap-guangzhou
+
+# WeChat OAuth Configuration (required for WeChat login)
+WECHAT_APP_ID=your_wechat_app_id_here
+WECHAT_SECRET=your_wechat_app_secret_here
+
+# Tencent COS (Cloud Object Storage) Configuration
+COS_REGION=ap-guangzhou
+COS_BUCKET_NAME=userfiles-1327071745
+COS_DOMAIN=userfiles-1327071745.cos.ap-guangzhou.myqcloud.com
+
+# Optional: Logging and Environment Settings
+LOG_LEVEL=DEBUG
+ENVIRONMENT=development

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring, PanInfo } from 'framer-motion';
-import { Send, Search, Settings, ArrowLeft, ExternalLink, Check } from 'lucide-react';
+import { Send, Search, Settings, ArrowLeft, ExternalLink, Check, ChevronDown, ChevronUp } from 'lucide-react';
 import svgPaths from '../imports/svg-fko3i96u3r';
 import { Input } from './ui/input';
 import { Badge } from './ui/badge';
@@ -13,7 +13,7 @@ import { sendSwipe } from '../src/api/recommendations';
 import { Button } from './ui/button';
 import { Star } from 'lucide-react';
 import { createPortal } from 'react-dom';
-import { t } from '../translations';
+import { t, currentLanguage as i18nCurrentLanguage } from '../translations';
 
 // New interface for AI-generated project ideas
 interface ProjectIdea {
@@ -37,6 +37,32 @@ interface AISearchIntegratedProps {
 	onRecordRightSwipe: (project: Project) => void;
 	// New: global filter settings for right-swipe feedback
 	suppressMatchIndicator: boolean;
+	
+	// 新增：搜索状态持久化
+	searchQuery: string;
+	setSearchQuery: (query: string) => void;
+	searchMode: 'basic' | 'multi-resources';
+	setSearchMode: (mode: 'basic' | 'multi-resources') => void;
+	results: Project[];
+	setResults: (results: Project[]) => void;
+	ideaResults: any[];
+	setIdeaResults: (results: any[]) => void;
+	hasSearched: boolean;
+	setHasSearched: (searched: boolean) => void;
+	lastResultsQuery: string;
+	setLastResultsQuery: (query: string) => void;
+	
+	// 思考流状态持久化
+	showThinkingStream: boolean;
+	setShowThinkingStream: (show: boolean) => void;
+	thinkingStreamCollapsed: boolean;
+	setThinkingStreamCollapsed: (collapsed: boolean) => void;
+	thinkingQuery: string;
+	setThinkingQuery: (query: string) => void;
+	thinkingSteps: any[];
+	setThinkingSteps: (steps: any[]) => void;
+	currentStepIndex: number;
+	setCurrentStepIndex: (index: number) => void;
 }
 
 const positiveEmojis = ['😊', '😍', '🥰', '😘', '🤩', '😎', '🙌', '👍', '💖', '✨', '🎉', '🔥'];
@@ -218,25 +244,101 @@ function buildMockProjectIdeas(query: string): ProjectIdea[] {
 	}));
 }
 
+// 新增：思考步骤接口
+interface ThinkingStep {
+	id: string;
+	content: string;
+	timestamp: number;
+	completed: boolean;
+}
 
 
-export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenProject, onRecordLeftSwipe, onRecordRightSwipe, suppressMatchIndicator }: AISearchIntegratedProps) {
-	const [searchQuery, setSearchQuery] = useState('');
-	const [isLoading, setIsLoading] = useState(false);
-	const [results, setResults] = useState<Project[]>([]);
-	const [ideaResults, setIdeaResults] = useState<ProjectIdea[]>([]);
-	const [hasSearched, setHasSearched] = useState(false);
-	const [showSettings, setShowSettings] = useState(false);
-	const [searchMode, setSearchMode] = useState<'basic' | 'multi-resources'>('basic');
+
+export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenProject, onRecordLeftSwipe, onRecordRightSwipe, suppressMatchIndicator, searchQuery, setSearchQuery, searchMode, setSearchMode, results, setResults, ideaResults, setIdeaResults, hasSearched, setHasSearched, lastResultsQuery, setLastResultsQuery, showThinkingStream, setShowThinkingStream, thinkingStreamCollapsed, setThinkingStreamCollapsed, thinkingQuery, setThinkingQuery, thinkingSteps, setThinkingSteps, currentStepIndex, setCurrentStepIndex }: AISearchIntegratedProps) {
+	// 本地状态（不需要持久化）
+	const [isSearching, setIsSearching] = useState(false);
+	const [selectedProject, setSelectedProject] = useState<Project | null>(null);
 	const [selectedIdea, setSelectedIdea] = useState<ProjectIdea | null>(null);
-	// Swipe and grouping state (local visual state only)
-	const [useServerData, setUseServerData] = useState<boolean>(false);
-	// Right-swipe feedback state
-	const [showSwipeAnimation, setShowSwipeAnimation] = useState(false);
+	const [useServerData] = useState(!!getAccessToken());
+	const [showSettings, setShowSettings] = useState(false);
+
+	// 生成思考步骤的函数
+	const generateThinkingSteps = (query: string): ThinkingStep[] => {
+		return [
+			{
+				id: '1',
+				content: `正在分析你的搜索关键词："${query}"...`,
+				timestamp: Date.now(),
+				completed: false
+			},
+			{
+				id: '2',
+				content: '识别项目领域和技术栈需求...',
+				timestamp: Date.now() + 800,
+				completed: false
+			},
+			{
+				id: '3', 
+				content: '搜索相关的开源项目和案例...',
+				timestamp: Date.now() + 1600,
+				completed: false
+			},
+			{
+				id: '4',
+				content: '分析技术可行性和难度等级...',
+				timestamp: Date.now() + 2400,
+				completed: false
+			},
+			{
+				id: '5',
+				content: '生成个性化项目建议...',
+				timestamp: Date.now() + 3200,
+				completed: false
+			}
+		];
+	};
+
+	// 修复：使用ref而不是state来跟踪处理状态，避免竞争条件
+	const isSwipeHandledRef = useRef(false);
+	
+	// 右滑反馈状态
 	const [showMatchIndicator, setShowMatchIndicator] = useState(false);
 	const [lastLikedProject, setLastLikedProject] = useState<Project | null>(null);
-	const [lastResultsQuery, setLastResultsQuery] = useState('');
-	useEffect(() => { setUseServerData(!!getAccessToken()); }, []);
+	const [showSwipeAnimation, setShowSwipeAnimation] = useState(false);
+
+	useEffect(() => {
+		isSwipeHandledRef.current = false;
+		// 同时清除任何正在进行的弹窗状态
+		setShowMatchIndicator(false);
+		setShowSwipeAnimation(false);
+		setLastLikedProject(null);
+	}, [results, ideaResults, searchMode]);
+
+	// 思考流逻辑
+	useEffect(() => {
+		if (showThinkingStream && !thinkingStreamCollapsed && thinkingQuery && thinkingSteps.length === 0) {
+			const steps = generateThinkingSteps(thinkingQuery);
+			setThinkingSteps(steps);
+			setCurrentStepIndex(0);
+
+			// 逐步显示每个思考步骤
+			let currentIndex = 0;
+			const timer = setInterval(() => {
+				currentIndex++;
+				if (currentIndex >= steps.length) {
+					clearInterval(timer);
+					// 标记所有步骤为已完成
+					const completedSteps = steps.map(step => ({ ...step, completed: true }));
+					setThinkingSteps(completedSteps);
+					setCurrentStepIndex(currentIndex - 1);
+				} else {
+					setCurrentStepIndex(currentIndex);
+				}
+			}, 800);
+
+			return () => clearInterval(timer);
+		}
+	}, [showThinkingStream, thinkingStreamCollapsed, thinkingQuery, thinkingSteps.length]);
 
 	// 处理模式切换，清除搜索内容
 	const handleModeChange = (mode: 'basic' | 'multi-resources') => {
@@ -246,17 +348,37 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 		setResults([]);
 		setIdeaResults([]);
 		setHasSearched(false);
+		setSelectedProject(null);
 		setSelectedIdea(null);
+		// 新增：清除思考流状态
+		setShowThinkingStream(false);
+		setThinkingStreamCollapsed(false);
+		setThinkingQuery('');
+		setThinkingSteps([]);
+		setCurrentStepIndex(0);
 	};
 
 	const handleSearch = async () => {
 		if (!searchQuery.trim()) return;
 		// Snapshot the current query so banner and results are tied to this search
 		const q = searchQuery;
-		setIsLoading(true);
+		setIsSearching(true);
 		setHasSearched(true);
 		setResults([]);
 		setIdeaResults([]);
+		
+		// 清除滑动相关状态
+		isSwipeHandledRef.current = false;
+		setShowMatchIndicator(false);
+		setShowSwipeAnimation(false);
+		setLastLikedProject(null);
+		
+		// 新增：在agent模式下显示思考流
+		if (searchMode === 'multi-resources') {
+			setThinkingQuery(q);
+			setShowThinkingStream(true);
+			setThinkingStreamCollapsed(false);
+		}
 		
 		setTimeout(() => {
 			if (searchMode === 'basic') {
@@ -267,11 +389,18 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 				// Agent mode: return 3 idea cards
 				const generatedIdeas = buildMockProjectIdeas(q);
 				setIdeaResults(generatedIdeas);
+				// 新增：当结果返回时，确保所有思考流步骤都标记为完成
+				const completedSteps = thinkingSteps.map(step => ({ ...step, completed: true }));
+				setThinkingSteps(completedSteps);
+				// 设置currentStepIndex为步骤总数，表示全部完成
+				setCurrentStepIndex(completedSteps.length);
+				// 自动折叠思考流
+				setThinkingStreamCollapsed(true);
 			}
 			// Update banner with the query tied to these results
 			setLastResultsQuery(q);
-			setIsLoading(false);
-		}, 1200);
+			setIsSearching(false);
+		}, 1200); // 恢复原本的搜索时间
 	};
 
 	const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -306,11 +435,35 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 
 	// 修复的handleSwipe函数 - 与主页面保持一致的逻辑
 	const handleSwipe = (direction: 'left' | 'right') => {
+		console.log('📱 AI Search handleSwipe - called', { 
+			direction, 
+			isSwipeHandled: isSwipeHandledRef.current, 
+			searchMode, 
+			basicResultsCount: results.length,
+			ideaResultsCount: ideaResults.length 
+		});
+
+		// 防止重复处理同一次滑动
+		if (isSwipeHandledRef.current) {
+			console.log('⚠️ AI Search handleSwipe - already handled, skipping');
+			return;
+		}
+		isSwipeHandledRef.current = true;
+		
 		const isBasic = searchMode === 'basic';
 		const topItem = isBasic ? results[0] : ideaResults[0];
-		if (!topItem) return;
+		if (!topItem) {
+			console.log('❌ AI Search handleSwipe - no top item found');
+			isSwipeHandledRef.current = false;
+			return;
+		}
 		
 		const projectToRecord: Project = isBasic ? (topItem as Project) : mapIdeaToProject(topItem as ProjectIdea, 0);
+		console.log('📋 AI Search handleSwipe - processing item', { 
+			isBasic, 
+			itemTitle: isBasic ? (topItem as Project).title : (topItem as ProjectIdea).project_idea_title,
+			direction 
+		});
 		
 		// 只发送一次到后端（仅basic模式）
 		if (isBasic && useServerData && direction === 'right') {
@@ -343,14 +496,36 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 			onRecordLeftSwipe(projectToRecord);
 		}
 		
-		// 关键修复：与主页面保持一致的600ms延迟移除卡片
+		// 🎯 关键修复：与主页面一致，在handleSwipe中延迟移除卡片
 		setTimeout(() => {
 			if (isBasic) {
-				setResults(prev => prev.slice(1));
+				const prevCount = results.length;
+				const newResults = results.length > 0 ? results.slice(1) : results;
+				setResults(newResults);
+				console.log('📝 AI Search handleSwipe - removed basic card (600ms delay)', { prevCount, newCount: prevCount - 1 });
 			} else {
-				setIdeaResults(prev => prev.slice(1));
+				const prevCount = ideaResults.length;
+				const newIdeaResults = ideaResults.length > 0 ? ideaResults.slice(1) : ideaResults;
+				setIdeaResults(newIdeaResults);
+				console.log('💡 AI Search handleSwipe - removed idea card (600ms delay)', { prevCount, newCount: prevCount - 1 });
 			}
+			// 重置防抖状态，允许下一张卡片的滑动
+			isSwipeHandledRef.current = false;
+			console.log('🔄 AI Search handleSwipe - reset isSwipeHandled to false (delayed)');
 		}, 600);
+		
+		console.log('✅ AI Search handleSwipe - completed, card will be removed in 600ms');
+	};
+	
+	// 处理卡片飞出屏幕事件 - 简化为不做任何操作，让handleSwipe处理一切
+	const handleCardLeftScreen = () => {
+		console.log('🚪 AI Search handleCardLeftScreen - called (no action needed)', { 
+			searchMode, 
+			basicResultsCount: results.length,
+			ideaResultsCount: ideaResults.length,
+			isSwipeHandled: isSwipeHandledRef.current 
+		});
+		// 不做任何操作，卡片移除由handleSwipe中的setTimeout处理
 	};
 
 	// Right-swipe feedback components (matching main page exactly)
@@ -409,7 +584,7 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 				onClick={onClose}
 			>
 				<motion.div
-					className="bg-white rounded-2xl p-6 mx-4 max-w-sm shadow-2xl"
+					className="bg-white rounded-2xl p-5 mx-4 w-[320px] max-w-[320px] shadow-2xl"
 					initial={{ scale: 0.8, y: 50 }}
 					animate={{ scale: 1, y: 0 }}
 					exit={{ scale: 0.8, y: 50 }}
@@ -432,7 +607,7 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 						</motion.div>
 						
 						<h3 className="text-xl font-bold text-gray-900 mb-2">
-							已右滑项目
+							{i18nCurrentLanguage === 'en' ? 'Project liked' : '已右滑项目'}
 						</h3>
 						
 						<div className="bg-gray-50 rounded-lg p-3 mb-4">
@@ -440,21 +615,21 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 							<p className="text-sm text-gray-600">{project.author}</p>
 						</div>
 						
-						<p className="text-gray-600 text-sm leading-relaxed mb-4">
-							等待对方也右滑你的项目来开启对话
+						<p className="text-gray-600 text-sm leading-relaxed mb-4 px-1">
+							{i18nCurrentLanguage === 'en' ? 'Waiting for the other party to like your project as well to start a chat' : '等待对方也右滑你的项目来开启对话'}
 						</p>
 						
-						<div className="flex items-center justify-center gap-2 text-blue-600 text-sm mb-4">
+						<div className="flex items-center justify-center gap-2 text-blue-600 text-xs mb-4 px-1">
 							<div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
-							<span>双向匹配才能聊天</span>
+							<span className="text-center">{i18nCurrentLanguage === 'en' ? 'Both sides must like to chat' : '双向匹配才能聊天'}</span>
 							<div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
 						</div>
 						
 						<button
 							onClick={onSuppress}
-							className="text-gray-500 text-xs hover:text-gray-700 transition-colors underline"
+							className="text-gray-500 text-xs hover:text-gray-700 transition-colors underline px-1"
 						>
-							不再显示此提示
+							{i18nCurrentLanguage === 'en' ? "Don't show this hint again" : '不再显示此提示'}
 						</button>
 					</div>
 				</motion.div>
@@ -489,8 +664,138 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 	const topShadow = `shadow-[0px_18px_40px_0px_rgba(0,0,0,0.30)]`;
 	const underShadow = `shadow-[0px_8px_24px_0px_rgba(0,0,0,0.18)]`;
 
-	const ProjectSwipeCard = ({ project, isTop }: { project: Project; isTop: boolean }) => {
-		// Exact same tap/drag detection logic as main page
+	const ProjectSwipeCard = ({ project, isTop, onOpenProject }: { project: Project; isTop: boolean; onOpenProject: (project: Project) => void }) => {
+		// 完整的飞出动画状态管理，与主页面保持一致
+		const [exitX, setExitX] = useState(0);
+		const [exitY, setExitY] = useState(0);
+		const [exitRotate, setExitRotate] = useState(0);
+		const [isExiting, setIsExiting] = useState(false);
+		const x = useMotionValue(0);
+		const y = useMotionValue(0);
+		const rotateTransform = useTransform(x, [-200, 0, 200], [-20, 0, 20]);
+		const rotate = useSpring(
+			isExiting ? exitRotate : rotateTransform,
+			{ stiffness: 300, damping: 20 }
+		);
+		
+		// 重置卡片状态的函数
+		const resetCardState = () => {
+			setIsExiting(false);
+			setExitX(0);
+			setExitY(0);
+			setExitRotate(0);
+			x.set(0);
+			y.set(0);
+		};
+		
+		// 重置卡片状态当项目ID变化时
+		useEffect(() => {
+			resetCardState();
+		}, [project.id]);
+		
+		// Badge overlay system (DOM-driven, matching main page)
+		const captureRef = useRef<HTMLDivElement | null>(null);
+		const badgeStartRef = useRef<{ x: number; y: number } | null>(null);
+		const badgeRafRef = useRef<number | null>(null);
+		const pickRef = useRef<HTMLDivElement | null>(null);
+		const passRef = useRef<HTMLDivElement | null>(null);
+		const glowRef = useRef<HTMLDivElement | null>(null);
+		const overlaysVisibleRef = useRef<boolean>(false);
+		const initialCardTransformRef = useRef<string>('');
+
+		// Capture initial inline transform of the inner card once
+		useEffect(() => {
+			const el = captureRef.current;
+			if (el && !initialCardTransformRef.current) {
+				initialCardTransformRef.current = el.style.transform || '';
+			}
+		}, []);
+
+		const updateBadgeStyles = (dx: number) => {
+			const pick = pickRef.current;
+			const pass = passRef.current;
+			const glow = glowRef.current;
+			const cardEl = captureRef.current;
+			if (!pick || !pass || !glow) return;
+			const show = Math.abs(dx) > 8;
+			if (!show) {
+				pick.style.opacity = '0';
+				pass.style.opacity = '0';
+				glow.style.boxShadow = 'none';
+				if (cardEl) cardEl.style.transform = initialCardTransformRef.current || '';
+				return;
+			}
+			const rightIntensity = Math.max(0, Math.min(1, (dx - 8) / 28));
+			const leftIntensity = Math.max(0, Math.min(1, (-dx - 8) / 28));
+			pick.style.opacity = String(rightIntensity);
+			pick.style.transform = `rotate(-12deg) scale(${1 + Math.max(0, Math.min(1, dx / 70)) * 0.06})`;
+			pass.style.opacity = String(leftIntensity);
+			pass.style.transform = `rotate(12deg) scale(${1 + Math.max(0, Math.min(1, -dx / 70)) * 0.06})`;
+			glow.style.boxShadow = dx > 10
+				? `inset 24px 0 96px -36px rgba(34,197,94,${Math.max(0, Math.min(0.70, (dx - 10) / 110))}), inset -24px 0 96px -36px rgba(59,130,246,${Math.max(0, Math.min(0.55, (dx - 10) / 110))})`
+				: dx < -10
+				? `inset -24px 0 96px -36px rgba(244,63,94,${Math.max(0, Math.min(0.70, (-dx - 10) / 110))}), inset 24px 0 96px -36px rgba(168,85,247,${Math.max(0, Math.min(0.55, (-dx - 10) / 110))})`
+				: 'none';
+
+			// Dynamic tilt of the inner card (rotate with drag direction)
+			if (cardEl) {
+				const clamped = Math.max(-14, Math.min(14, dx / 8));
+				const base = initialCardTransformRef.current || '';
+				const baseTrimmed = base.trim();
+				const sep = baseTrimmed && !baseTrimmed.endsWith(')') ? ' ' : baseTrimmed ? ' ' : '';
+				cardEl.style.transform = `${baseTrimmed}${sep}rotate(${clamped}deg)`;
+			}
+		};
+
+		// Passive, global listeners to drive badge only (no React state, no swipe interference)
+		useEffect(() => {
+			const getXY = (e: any) => ({
+				x: e?.clientX ?? e?.touches?.[0]?.clientX ?? e?.changedTouches?.[0]?.clientX,
+				y: e?.clientY ?? e?.touches?.[0]?.clientY ?? e?.changedTouches?.[0]?.clientY,
+			});
+			const onDown = (e: any) => {
+				const cardEl = captureRef.current;
+				if (!cardEl) return;
+				if (!cardEl.contains(e.target as Node)) return;
+				const p = getXY(e);
+				if (typeof p.x !== 'number') return;
+				badgeStartRef.current = { x: p.x, y: p.y };
+				overlaysVisibleRef.current = true;
+				// reset styles immediate
+				updateBadgeStyles(0);
+			};
+			const onMove = (e: any) => {
+				if (!badgeStartRef.current || !overlaysVisibleRef.current) return;
+				const p = getXY(e);
+				if (typeof p.x !== 'number') return;
+				const bdx = p.x - badgeStartRef.current.x;
+				if (badgeRafRef.current) cancelAnimationFrame(badgeRafRef.current!);
+				badgeRafRef.current = requestAnimationFrame(() => updateBadgeStyles(bdx));
+			};
+			const onUp = () => {
+				badgeStartRef.current = null;
+				if (badgeRafRef.current) cancelAnimationFrame(badgeRafRef.current);
+				badgeRafRef.current = null;
+				overlaysVisibleRef.current = false;
+				updateBadgeStyles(0);
+			};
+			window.addEventListener('pointerdown', onDown, { passive: true, capture: true } as any);
+			window.addEventListener('pointermove', onMove, { passive: true, capture: true } as any);
+			window.addEventListener('pointerup', onUp, { passive: true, capture: true } as any);
+			window.addEventListener('touchstart', onDown as any, { passive: true, capture: true } as any);
+			window.addEventListener('touchmove', onMove as any, { passive: true, capture: true } as any);
+			window.addEventListener('touchend', onUp as any, { passive: true, capture: true } as any);
+			return () => {
+				window.removeEventListener('pointerdown', onDown as any, true);
+				window.removeEventListener('pointermove', onMove as any, true);
+				window.removeEventListener('pointerup', onUp as any, true);
+				window.removeEventListener('touchstart', onDown as any, true);
+				window.removeEventListener('touchmove', onMove as any, true);
+				window.removeEventListener('touchend', onUp as any, true);
+			};
+		}, []);
+		
+		// 统一"点击 vs 拖动"判断逻辑
 		const tapStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
 		const isDraggingRef = useRef<boolean>(false);
 		const lastDxRef = useRef<number>(0);
@@ -502,16 +807,18 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 			return { x: e.clientX, y: e.clientY };
 		};
 
-		const handleDown = (e: any) => {
+		const onCardPointerDown = (e: any) => {
+			if (!isTop) return;
 			const p = getPoint(e);
 			tapStartRef.current = { x: p.x, y: p.y, t: Date.now() };
 			isDraggingRef.current = false;
 			lastDxRef.current = 0;
 			handledRef.current = false;
+			console.log('🔽 AI Search Card - Pointer Down', { isTop, project: project.title });
 		};
 
-		const handleMove = (e: any) => {
-			if (!tapStartRef.current) return;
+		const onCardPointerMove = (e: any) => {
+			if (!tapStartRef.current || !isTop) return;
 			const p = getPoint(e);
 			const dx = p.x - tapStartRef.current.x;
 			const dy = p.y - tapStartRef.current.y;
@@ -521,13 +828,21 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 			}
 		};
 
-		const handleUp = (e: any) => {
-			if (!tapStartRef.current) return;
+		const onCardPointerUp = (e: any) => {
+			if (!tapStartRef.current || !isTop) return;
 			const p = getPoint(e);
 			const dt = Date.now() - tapStartRef.current.t;
 			const dx = Math.abs(p.x - tapStartRef.current.x);
 			const dy = Math.abs(p.y - tapStartRef.current.y);
 			const isTap = !isDraggingRef.current && dt <= TAP_MAX_DURATION_MS && dx <= TAP_MAX_MOVEMENT_PX && dy <= TAP_MAX_MOVEMENT_PX;
+			console.log('🔺 AI Search Card - Pointer Up', { 
+				isTop, 
+				project: project.title, 
+				isDragging: isDraggingRef.current, 
+				dt, dx, dy, 
+				isTap, 
+				lastDx: lastDxRef.current 
+			});
 			tapStartRef.current = null;
 			isDraggingRef.current = false;
 			if (isTap) onOpenProject(project);
@@ -543,17 +858,43 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 				className="absolute inset-0"
 				key={project.id}
 				onSwipe={(dir: string) => {
-					if (!isTop) return; // Only handle swipes on the top card
+					if (!isTop) return; // 只处理顶部卡片
 					const mapped = resolveDir(dir);
+					console.log('🚀 AI Search Card - onSwipe triggered', { 
+						isTop, 
+						project: project.title, 
+						originalDir: dir, 
+						mappedDir: mapped,
+						lastDx: lastDxRef.current,
+						swipeRequirementType: SWIPE_REQUIREMENT,
+						swipeThreshold: SWIPE_THRESHOLD_PX
+					});
 					handledRef.current = true;
-					handleSwipe(mapped); // 直接调用外部定义的handleSwipe
+					
+					// 触发飞出动画
+					const direction = mapped === 'right' ? 1 : -1;
+					const currentRotation = rotateTransform.get();
+					setExitRotate(currentRotation);
+					setIsExiting(true);
+					setExitX(direction * 1200);
+					setExitY(0);
+					
+					// 调用处理函数
+					handleSwipe(mapped);
 				}}
 				onCardLeftScreen={() => {
-					if (!isTop) return; // Only handle on top card
+					if (!isTop) return; // 只处理顶部卡片
+					console.log('👋 AI Search Card - onCardLeftScreen triggered', { 
+						isTop, 
+						project: project.title, 
+						wasHandled: handledRef.current 
+					});
 					if (!handledRef.current) {
 						const mapped = lastDxRef.current >= 0 ? 'right' : 'left';
-						handleSwipe(mapped); // 直接调用外部定义的handleSwipe
+						console.log('🔄 AI Search Card - handling missed swipe', { mapped, lastDx: lastDxRef.current });
+						handleSwipe(mapped);
 					}
+					handleCardLeftScreen(); // 仅用于日志记录
 					handledRef.current = false;
 					lastDxRef.current = 0;
 				}}
@@ -561,17 +902,32 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 				swipeRequirementType={SWIPE_REQUIREMENT}
 				swipeThreshold={SWIPE_THRESHOLD_PX}
 			>
-				<div className="absolute inset-0" style={{ zIndex: 999 }}>
-					<div
-						className={`${baseCardClass} ${isTop ? topShadow : underShadow} ${isTop ? 'hover:scale-[1.02] transition-transform duration-150 will-change-transform' : ''}`}
-						onMouseDown={handleDown}
-						onMouseMove={handleMove}
-						onMouseUp={handleUp}
-						onTouchStart={handleDown}
-						onTouchMove={handleMove}
-						onTouchEnd={handleUp}
-					>
-						{project.cardStyle === 'image' && project.background ? (
+				<motion.div
+					className={`${baseCardClass} ${isTop ? topShadow : underShadow}`}
+					ref={captureRef}
+					style={{
+						x: isExiting ? exitX : x,
+						y: isExiting ? exitY : y,
+						rotate: rotate
+					}}
+					animate={isExiting ? {
+						x: exitX,
+						y: exitY,
+						rotate: exitRotate
+					} : undefined}
+					transition={isExiting ? {
+						type: "tween",
+						duration: 0.6,
+						ease: "easeOut"
+					} : undefined}
+					onMouseDown={onCardPointerDown}
+					onMouseMove={onCardPointerMove}
+					onMouseUp={onCardPointerUp}
+					onTouchStart={onCardPointerDown}
+					onTouchMove={onCardPointerMove}
+					onTouchEnd={onCardPointerUp}
+				>
+					{project.cardStyle === 'image' && project.background ? (
 							<>
 								<div className="absolute inset-0">
 									<img src={project.background} alt={project.title} className="w-full h-full object-cover" />
@@ -597,14 +953,195 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 								</div>
 							</>
 						)}
-					</div>
-				</div>
+
+					{/* Swipe overlays (DOM refs, pointer-events none) */}
+					{isTop && (
+						<>
+							{/* PICK (right) */}
+							<div
+								ref={pickRef}
+								className="absolute top-6 left-6 z-[1000] select-none pointer-events-none"
+								style={{
+									opacity: 0,
+									transform: 'rotate(-12deg) scale(1)',
+									filter: 'drop-shadow(0 0 12px rgba(16,185,129,0.55)) drop-shadow(0 0 24px rgba(59,130,246,0.35))',
+								}}
+							>
+								<div className="px-4 py-2 rounded-xl border-4 text-white font-extrabold tracking-widest uppercase backdrop-blur-sm pointer-events-none"
+									 style={{
+										 background: 'linear-gradient(135deg, rgba(34,197,94,0.42) 0%, rgba(59,130,246,0.42) 100%)',
+										 borderColor: 'rgba(34,197,94,1)',
+									 }}
+								>
+									Pick
+								</div>
+							</div>
+
+							{/* PASS (left) */}
+							<div
+								ref={passRef}
+								className="absolute top-6 right-6 z-[1000] select-none pointer-events-none"
+								style={{
+									opacity: 0,
+									transform: 'rotate(12deg) scale(1)',
+									filter: 'drop-shadow(0 0 12px rgba(244,63,94,0.55)) drop-shadow(0 0 24px rgba(168,85,247,0.35))',
+								}}
+							>
+								<div className="px-4 py-2 rounded-xl border-4 text-white font-extrabold tracking-widest uppercase backdrop-blur-sm pointer-events-none"
+									 style={{
+										 background: 'linear-gradient(135deg, rgba(244,63,94,0.42) 0%, rgba(168,85,247,0.42) 100%)',
+										 borderColor: 'rgba(244,63,94,1)',
+									 }}
+								>
+									Pass
+								</div>
+							</div>
+
+							{/* dynamic edge glow */}
+							<div
+								ref={glowRef}
+								className="pointer-events-none absolute inset-0 z-[900]"
+								style={{ boxShadow: 'none', transition: 'box-shadow 80ms linear' }}
+							/>
+						</>
+					)}
+				</motion.div>
 			</TinderCard>
 		);
 	};
 
 	const IdeaSwipeCard = ({ idea, isTop, idx }: { idea: ProjectIdea; isTop: boolean; idx: number }) => {
-		// Exact same tap/drag detection logic as main page
+		// 完整的飞出动画状态管理，与主页面保持一致
+		const [exitX, setExitX] = useState(0);
+		const [exitY, setExitY] = useState(0);
+		const [exitRotate, setExitRotate] = useState(0);
+		const [isExiting, setIsExiting] = useState(false);
+		const x = useMotionValue(0);
+		const y = useMotionValue(0);
+		const rotateTransform = useTransform(x, [-200, 0, 200], [-20, 0, 20]);
+		const rotate = useSpring(
+			isExiting ? exitRotate : rotateTransform,
+			{ stiffness: 300, damping: 20 }
+		);
+		
+		// 重置卡片状态的函数
+		const resetCardState = () => {
+			setIsExiting(false);
+			setExitX(0);
+			setExitY(0);
+			setExitRotate(0);
+			x.set(0);
+			y.set(0);
+		};
+		
+		// 重置卡片状态当想法ID变化时
+		useEffect(() => {
+			resetCardState();
+		}, [idea.project_idea_title]);
+		
+		// Badge overlay system (DOM-driven, matching main page)
+		const captureRef = useRef<HTMLDivElement | null>(null);
+		const badgeStartRef = useRef<{ x: number; y: number } | null>(null);
+		const badgeRafRef = useRef<number | null>(null);
+		const pickRef = useRef<HTMLDivElement | null>(null);
+		const passRef = useRef<HTMLDivElement | null>(null);
+		const glowRef = useRef<HTMLDivElement | null>(null);
+		const overlaysVisibleRef = useRef<boolean>(false);
+		const initialCardTransformRef = useRef<string>('');
+
+		// Capture initial inline transform of the inner card once
+		useEffect(() => {
+			const el = captureRef.current;
+			if (el && !initialCardTransformRef.current) {
+				initialCardTransformRef.current = el.style.transform || '';
+			}
+		}, []);
+
+		const updateBadgeStyles = (dx: number) => {
+			const pick = pickRef.current;
+			const pass = passRef.current;
+			const glow = glowRef.current;
+			const cardEl = captureRef.current;
+			if (!pick || !pass || !glow) return;
+			const show = Math.abs(dx) > 8;
+			if (!show) {
+				pick.style.opacity = '0';
+				pass.style.opacity = '0';
+				glow.style.boxShadow = 'none';
+				if (cardEl) cardEl.style.transform = initialCardTransformRef.current || '';
+				return;
+			}
+			const rightIntensity = Math.max(0, Math.min(1, (dx - 8) / 28));
+			const leftIntensity = Math.max(0, Math.min(1, (-dx - 8) / 28));
+			pick.style.opacity = String(rightIntensity);
+			pick.style.transform = `rotate(-12deg) scale(${1 + Math.max(0, Math.min(1, dx / 70)) * 0.06})`;
+			pass.style.opacity = String(leftIntensity);
+			pass.style.transform = `rotate(12deg) scale(${1 + Math.max(0, Math.min(1, -dx / 70)) * 0.06})`;
+			glow.style.boxShadow = dx > 10
+				? `inset 24px 0 96px -36px rgba(34,197,94,${Math.max(0, Math.min(0.70, (dx - 10) / 110))}), inset -24px 0 96px -36px rgba(59,130,246,${Math.max(0, Math.min(0.55, (dx - 10) / 110))})`
+				: dx < -10
+				? `inset -24px 0 96px -36px rgba(244,63,94,${Math.max(0, Math.min(0.70, (-dx - 10) / 110))}), inset 24px 0 96px -36px rgba(168,85,247,${Math.max(0, Math.min(0.55, (-dx - 10) / 110))})`
+				: 'none';
+
+			// Dynamic tilt of the inner card (rotate with drag direction)
+			if (cardEl) {
+				const clamped = Math.max(-14, Math.min(14, dx / 8));
+				const base = initialCardTransformRef.current || '';
+				const baseTrimmed = base.trim();
+				const sep = baseTrimmed && !baseTrimmed.endsWith(')') ? ' ' : baseTrimmed ? ' ' : '';
+				cardEl.style.transform = `${baseTrimmed}${sep}rotate(${clamped}deg)`;
+			}
+		};
+
+		// Passive, global listeners to drive badge only (no React state, no swipe interference)
+		useEffect(() => {
+			const getXY = (e: any) => ({
+				x: e?.clientX ?? e?.touches?.[0]?.clientX ?? e?.changedTouches?.[0]?.clientX,
+				y: e?.clientY ?? e?.touches?.[0]?.clientY ?? e?.changedTouches?.[0]?.clientY,
+			});
+			const onDown = (e: any) => {
+				const cardEl = captureRef.current;
+				if (!cardEl) return;
+				if (!cardEl.contains(e.target as Node)) return;
+				const p = getXY(e);
+				if (typeof p.x !== 'number') return;
+				badgeStartRef.current = { x: p.x, y: p.y };
+				overlaysVisibleRef.current = true;
+				// reset styles immediate
+				updateBadgeStyles(0);
+			};
+			const onMove = (e: any) => {
+				if (!badgeStartRef.current || !overlaysVisibleRef.current) return;
+				const p = getXY(e);
+				if (typeof p.x !== 'number') return;
+				const bdx = p.x - badgeStartRef.current.x;
+				if (badgeRafRef.current) cancelAnimationFrame(badgeRafRef.current!);
+				badgeRafRef.current = requestAnimationFrame(() => updateBadgeStyles(bdx));
+			};
+			const onUp = () => {
+				badgeStartRef.current = null;
+				if (badgeRafRef.current) cancelAnimationFrame(badgeRafRef.current);
+				badgeRafRef.current = null;
+				overlaysVisibleRef.current = false;
+				updateBadgeStyles(0);
+			};
+			window.addEventListener('pointerdown', onDown, { passive: true, capture: true } as any);
+			window.addEventListener('pointermove', onMove, { passive: true, capture: true } as any);
+			window.addEventListener('pointerup', onUp, { passive: true, capture: true } as any);
+			window.addEventListener('touchstart', onDown as any, { passive: true, capture: true } as any);
+			window.addEventListener('touchmove', onMove as any, { passive: true, capture: true } as any);
+			window.addEventListener('touchend', onUp as any, { passive: true, capture: true } as any);
+			return () => {
+				window.removeEventListener('pointerdown', onDown as any, true);
+				window.removeEventListener('pointermove', onMove as any, true);
+				window.removeEventListener('pointerup', onUp as any, true);
+				window.removeEventListener('touchstart', onDown as any, true);
+				window.removeEventListener('touchmove', onMove as any, true);
+				window.removeEventListener('touchend', onUp as any, true);
+			};
+		}, []);
+		
+		// 统一"点击 vs 拖动"判断逻辑
 		const tapStartRef = useRef<{ x: number; y: number; t: number } | null>(null);
 		const isDraggingRef = useRef<boolean>(false);
 		const lastDxRef = useRef<number>(0);
@@ -616,16 +1153,18 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 			return { x: e.clientX, y: e.clientY };
 		};
 
-		const handleDown = (e: any) => {
+		const onCardPointerDown = (e: any) => {
+			if (!isTop) return;
 			const p = getPoint(e);
 			tapStartRef.current = { x: p.x, y: p.y, t: Date.now() };
 			isDraggingRef.current = false;
 			lastDxRef.current = 0;
 			handledRef.current = false;
+			console.log('🔽 AI Search Idea - Pointer Down', { isTop, idea: idea.project_idea_title });
 		};
 
-		const handleMove = (e: any) => {
-			if (!tapStartRef.current) return;
+		const onCardPointerMove = (e: any) => {
+			if (!tapStartRef.current || !isTop) return;
 			const p = getPoint(e);
 			const dx = p.x - tapStartRef.current.x;
 			const dy = p.y - tapStartRef.current.y;
@@ -635,16 +1174,24 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 			}
 		};
 
-		const handleUp = (e: any) => {
-			if (!tapStartRef.current) return;
+		const onCardPointerUp = (e: any) => {
+			if (!tapStartRef.current || !isTop) return;
 			const p = getPoint(e);
 			const dt = Date.now() - tapStartRef.current.t;
 			const dx = Math.abs(p.x - tapStartRef.current.x);
 			const dy = Math.abs(p.y - tapStartRef.current.y);
 			const isTap = !isDraggingRef.current && dt <= TAP_MAX_DURATION_MS && dx <= TAP_MAX_MOVEMENT_PX && dy <= TAP_MAX_MOVEMENT_PX;
+			console.log('🔺 AI Search Idea - Pointer Up', { 
+				isTop, 
+				idea: idea.project_idea_title, 
+				isDragging: isDraggingRef.current, 
+				dt, dx, dy, 
+				isTap, 
+				lastDx: lastDxRef.current 
+			});
 			tapStartRef.current = null;
 			isDraggingRef.current = false;
-			if (isTap) setSelectedIdea(idea);
+			if (isTap) setSelectedIdea(idea); // 修改：显示AI idea的专用详情页面，而不是通用的项目详情页面
 		};
 
 		const resolveDir = (dir: string): 'left' | 'right' => {
@@ -657,17 +1204,43 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 				className="absolute inset-0"
 				key={`${idea.project_idea_title}-${idx}`}
 				onSwipe={(dir: string) => {
-					if (!isTop) return; // Only handle swipes on the top card
+					if (!isTop) return; // 只处理顶部卡片
 					const mapped = resolveDir(dir);
+					console.log('🚀 AI Search Idea - onSwipe triggered', { 
+						isTop, 
+						idea: idea.project_idea_title, 
+						originalDir: dir, 
+						mappedDir: mapped,
+						lastDx: lastDxRef.current,
+						swipeRequirementType: SWIPE_REQUIREMENT,
+						swipeThreshold: SWIPE_THRESHOLD_PX
+					});
 					handledRef.current = true;
-					handleSwipe(mapped); // 直接调用外部定义的handleSwipe
+					
+					// 触发飞出动画
+					const direction = mapped === 'right' ? 1 : -1;
+					const currentRotation = rotateTransform.get();
+					setExitRotate(currentRotation);
+					setIsExiting(true);
+					setExitX(direction * 1200);
+					setExitY(0);
+					
+					// 调用处理函数
+					handleSwipe(mapped);
 				}}
 				onCardLeftScreen={() => {
-					if (!isTop) return; // Only handle on top card
+					if (!isTop) return; // 只处理顶部卡片
+					console.log('👋 AI Search Idea - onCardLeftScreen triggered', { 
+						isTop, 
+						idea: idea.project_idea_title, 
+						wasHandled: handledRef.current 
+					});
 					if (!handledRef.current) {
 						const mapped = lastDxRef.current >= 0 ? 'right' : 'left';
-						handleSwipe(mapped); // 直接调用外部定义的handleSwipe
+						console.log('🔄 AI Search Idea - handling missed swipe', { mapped, lastDx: lastDxRef.current });
+						handleSwipe(mapped);
 					}
+					handleCardLeftScreen(); // 仅用于日志记录
 					handledRef.current = false;
 					lastDxRef.current = 0;
 				}}
@@ -675,24 +1248,90 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 				swipeRequirementType={SWIPE_REQUIREMENT}
 				swipeThreshold={SWIPE_THRESHOLD_PX}
 			>
-				<div className="absolute inset-0" style={{ zIndex: 999 }}>
-					<div
-						className={`${baseCardClass} ${isTop ? topShadow : underShadow} ${isTop ? 'hover:scale-[1.02] transition-transform duration-150 will-change-transform' : ''}`}
-						onMouseDown={handleDown}
-						onMouseMove={handleMove}
-						onMouseUp={handleUp}
-						onTouchStart={handleDown}
-						onTouchMove={handleMove}
-						onTouchEnd={handleUp}
-					>
-						<div className={`absolute inset-0 ${pick(gradientOptions, idx)}`} />
-						<div className="absolute inset-0 bg-black/20" />
-						<div className="absolute inset-0 p-6 text-white flex flex-col justify-center">
-							<h2 className="text-[22px] font-bold leading-[26px] mb-2 text-center">{idea.project_idea_title}</h2>
-							<p className="text-white/90 text-sm leading-5 text-center max-w-[85%] mx-auto line-clamp-3">{idea.description}</p>
-						</div>
+				<motion.div
+					className={`${baseCardClass} ${isTop ? topShadow : underShadow}`}
+					ref={captureRef}
+					style={{
+						x: isExiting ? exitX : x,
+						y: isExiting ? exitY : y,
+						rotate: rotate
+					}}
+					animate={isExiting ? {
+						x: exitX,
+						y: exitY,
+						rotate: exitRotate
+					} : undefined}
+					transition={isExiting ? {
+						type: "tween",
+						duration: 0.6,
+						ease: "easeOut"
+					} : undefined}
+					onMouseDown={onCardPointerDown}
+					onMouseMove={onCardPointerMove}
+					onMouseUp={onCardPointerUp}
+					onTouchStart={onCardPointerDown}
+					onTouchMove={onCardPointerMove}
+					onTouchEnd={onCardPointerUp}
+				>
+					<div className={`absolute inset-0 ${pick(gradientOptions, idx)}`} />
+					<div className="absolute inset-0 bg-black/20" />
+					<div className="absolute inset-0 p-6 text-white flex flex-col justify-center">
+						<h2 className="text-[22px] font-bold leading-[26px] mb-2 text-center">{idea.project_idea_title}</h2>
+						<p className="text-white/90 text-sm leading-5 text-center max-w-[85%] mx-auto line-clamp-3">{idea.description}</p>
 					</div>
-				</div>
+
+					{/* Swipe overlays (DOM refs, pointer-events none) */}
+					{isTop && (
+						<>
+							{/* PICK (right) */}
+							<div
+								ref={pickRef}
+								className="absolute top-6 left-6 z-[1000] select-none pointer-events-none"
+								style={{
+									opacity: 0,
+									transform: 'rotate(-12deg) scale(1)',
+									filter: 'drop-shadow(0 0 12px rgba(16,185,129,0.55)) drop-shadow(0 0 24px rgba(59,130,246,0.35))',
+								}}
+							>
+								<div className="px-4 py-2 rounded-xl border-4 text-white font-extrabold tracking-widest uppercase backdrop-blur-sm pointer-events-none"
+									 style={{
+										 background: 'linear-gradient(135deg, rgba(34,197,94,0.42) 0%, rgba(59,130,246,0.42) 100%)',
+										 borderColor: 'rgba(34,197,94,1)',
+									 }}
+								>
+									Pick
+								</div>
+							</div>
+
+							{/* PASS (left) */}
+							<div
+								ref={passRef}
+								className="absolute top-6 right-6 z-[1000] select-none pointer-events-none"
+								style={{
+									opacity: 0,
+									transform: 'rotate(12deg) scale(1)',
+									filter: 'drop-shadow(0 0 12px rgba(244,63,94,0.55)) drop-shadow(0 0 24px rgba(168,85,247,0.35))',
+								}}
+							>
+								<div className="px-4 py-2 rounded-xl border-4 text-white font-extrabold tracking-widest uppercase backdrop-blur-sm pointer-events-none"
+									 style={{
+										 background: 'linear-gradient(135deg, rgba(244,63,94,0.42) 0%, rgba(168,85,247,0.42) 100%)',
+										 borderColor: 'rgba(244,63,94,1)',
+									 }}
+								>
+									Pass
+								</div>
+							</div>
+
+							{/* dynamic edge glow */}
+							<div
+								ref={glowRef}
+								className="pointer-events-none absolute inset-0 z-[900]"
+								style={{ boxShadow: 'none', transition: 'box-shadow 80ms linear' }}
+							/>
+						</>
+					)}
+				</motion.div>
 			</TinderCard>
 		);
 	};
@@ -810,7 +1449,7 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 	};
 
 	return (
-		<div className="absolute inset-0 bg-white">
+		<div className="absolute inset-0 bg-white flex flex-col">
 			{/* ProjectIdeaDetailView */}
 			<AnimatePresence>
 				{selectedIdea && (
@@ -841,26 +1480,28 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 			</AnimatePresence>
 			
 			{/* Header: keep original buttons (settings + optional filter) */}
-			<HeaderBar
-				rightContent={(
-					<>
-						{/* 设置按钮 */}
-						<button onClick={() => setShowSettings(true)} className="flex flex-col items-center justify-center overflow-clip p-[8px] relative rounded-full hover:bg-gray-100">
-							<Settings className="w-6 h-6 text-black" />
-						</button>
-						{/* 筛选按钮 - 只在basic模式下显示 */}
-						{searchMode === 'basic' && (
-							<button onClick={onOpenFilter} className="flex flex-col items-center justify-center overflow-clip p-[8px] relative rounded-full">
-								<div className="w-6 h-6">
-									<svg className="block size-full" fill="none" viewBox="0 0 25 24">
-										<path d={svgPaths.filter} stroke="#000000" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round" />
-									</svg>
-								</div>
+			<div className="flex-shrink-0">
+				<HeaderBar
+					rightContent={(
+						<>
+							{/* 设置按钮 */}
+							<button onClick={() => setShowSettings(true)} className="flex flex-col items-center justify-center overflow-clip p-[8px] relative rounded-full hover:bg-gray-100">
+								<Settings className="w-6 h-6 text-black" />
 							</button>
-						)}
-					</>
-				)}
-			/>
+							{/* 筛选按钮 - 只在basic模式下显示 */}
+							{searchMode === 'basic' && (
+								<button onClick={onOpenFilter} className="flex flex-col items-center justify-center overflow-clip p-[8px] relative rounded-full">
+									<div className="w-6 h-6">
+										<svg className="block size-full" fill="none" viewBox="0 0 25 24">
+											<path d={svgPaths.filter} stroke="#000000" strokeWidth="2" strokeMiterlimit="10" strokeLinecap="round" />
+										</svg>
+									</div>
+								</button>
+							)}
+						</>
+					)}
+				/>
+			</div>
 
 			{/* 设置抽屉 */}
 					{showSettings && createPortal(
@@ -953,75 +1594,205 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 						</AnimatePresence>, document.body)}
 
 			{/* Search content area */}
-			<div className="flex-1 overflow-hidden px-4" style={{ height: 'calc(100% - 90px - 96px)' }}>
-				<AnimatePresence>
-					{hasSearched && (
-						<motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="mb-4 p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500">
-							<p className="text-gray-700">
-								<span className="text-blue-600">
-									{searchMode === 'basic' ? (t('youSearchedFor') || 'You searched for:') : (t('aiSearchedIdeasFor') || 'AI searched ideas for:')}
-								</span> "{lastResultsQuery}"
-							</p>
-						</motion.div>
-					)}
-				</AnimatePresence>
-				{/* Swipe stack between banner and search bar */}
-				<div className="h-[440px] flex items-center justify-center">
-					{isLoading ? (
-						<div className="w-[357px] h-[420px] rounded-[14px] bg-gray-200 animate-pulse" />
-					) : hasSearched && ((searchMode === 'basic' ? results.length : ideaResults.length) > 0) ? (
-						<div className="relative w-[357px] h-[420px]">
-							{(searchMode === 'basic' ? results.slice(0, 2) : ideaResults.slice(0, 2)).map((item: any, i: number) => {
-								const isTop = i === 0;
-								return (
-									<motion.div 
-										key={(searchMode === 'basic' ? item.id : `${item.project_idea_title}-${i}`)} 
-										className={`absolute inset-0 ${!isTop ? 'pointer-events-none' : ''}`} 
-										style={{ zIndex: isTop ? 2 : 1 }} 
-										initial={false} 
-										animate={isTop ? { scale: 1, y: 0 } : { scale: 0.94, y: 12 }} 
-										transition={isTop ? { type: 'spring', stiffness: 260, damping: 26 } : { type: 'spring', stiffness: 180, damping: 24 }}
-									>
-										{searchMode === 'basic' ? (
-											<ProjectSwipeCard project={item as Project} isTop={isTop} />
-										) : (
-											<IdeaSwipeCard idea={item as ProjectIdea} isTop={isTop} idx={i} />
-										)}
-									</motion.div>
-								);
-							})}
-							
-							{/* Simple right-swipe animation overlay */}
-							<AnimatePresence>
-								{showSwipeAnimation && (
-									<div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-end pr-4">
-										<SwipeAnimation />
-									</div>
-								)}
-							</AnimatePresence>
+			<div className="flex-1 flex flex-col overflow-y-auto px-4 relative">
+				{/* 搜索结果提示栏 - 自适应高度 */}
+				<div className="flex-shrink-0 mt-4">
+					<AnimatePresence>
+						{hasSearched && (
+							<motion.div 
+								initial={{ opacity: 0, y: -20 }} 
+								animate={{ opacity: 1, y: 0 }} 
+								className="p-4 bg-blue-50 rounded-lg border-l-4 border-blue-500"
+							>
+								{/* 标题行 - 在agent模式下添加折叠按钮 */}
+								<div className="flex items-center justify-between">
+									<p className="text-gray-700">
+										<span className="text-blue-600">
+											{searchMode === 'basic' ? (t('youSearchedFor') || 'You searched for:') : (t('aiSearchedIdeasFor') || 'AI searched ideas for:')}
+										</span> "{lastResultsQuery}"
+									</p>
+									{/* 在agent模式下添加折叠/展开按钮 */}
+									{searchMode === 'multi-resources' && showThinkingStream && (
+										<button
+											onClick={() => setThinkingStreamCollapsed(!thinkingStreamCollapsed)}
+											className="flex items-center gap-2 text-blue-600 hover:text-blue-800 transition-colors"
+										>
+											<motion.div
+												animate={{ rotate: thinkingStreamCollapsed ? 0 : 180 }}
+												transition={{ duration: 0.2 }}
+											>
+												<ChevronDown className="w-4 h-4" />
+											</motion.div>
+										</button>
+									)}
 								</div>
-					) : hasSearched ? (
-						<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center w-full text-gray-500">
-							<Search size={48} className="mb-4 text-gray-300" />
-							<p>{t('noResults') || `No ${searchMode === 'basic' ? 'projects' : 'ideas'} found. Try a different search term.`}</p>
-						</motion.div>
-					) : (
-						<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center w-full text-gray-500">
+								
+								{/* 思考流内容 - 自适应高度，最大高度限制 */}
+								{searchMode === 'multi-resources' && showThinkingStream && (
+									<AnimatePresence>
+										{!thinkingStreamCollapsed && (
+											<motion.div
+												className="mt-3 space-y-2 overflow-y-auto"
+												style={{ maxHeight: '160px' }}
+												initial={{ opacity: 0, height: 0 }}
+												animate={{ opacity: 1, height: 'auto' }}
+												exit={{ opacity: 0, height: 0 }}
+												transition={{ duration: 0.2 }}
+											>
+												{thinkingSteps.slice(0, currentStepIndex + 1).map((step, index) => (
+													<motion.div
+														key={step.id}
+														className="flex items-start gap-3"
+														initial={{ opacity: 0, x: -20 }}
+														animate={{ opacity: 1, x: 0 }}
+														transition={{ duration: 0.5 }}
+													>
+														<div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${
+															step.completed ? 'bg-green-500' : 'bg-blue-500'
+														}`} />
+														<div className="flex-1">
+															<p className="text-sm text-gray-700">
+																{step.content}
+															</p>
+															{step.completed && (
+																<motion.div
+																	initial={{ scale: 0 }}
+																	animate={{ scale: 1 }}
+																	className="inline-flex items-center gap-1 mt-1 text-xs text-green-600"
+																>
+																	<Check className="w-3 h-3" />
+																	<span>完成</span>
+																</motion.div>
+															)}
+														</div>
+													</motion.div>
+												))}
+
+												{/* 思考中的动画指示器或完成状态 */}
+												{currentStepIndex < thinkingSteps.length ? (
+													<motion.div
+														className="flex items-center gap-3 opacity-60"
+														initial={{ opacity: 0 }}
+														animate={{ opacity: 0.6 }}
+													>
+														<div className="flex gap-1">
+															{[0, 1, 2].map((i) => (
+																<motion.div
+																	key={i}
+																	className="w-1 h-1 bg-blue-500 rounded-full"
+																	animate={{ 
+																		scale: [1, 1.2, 1],
+																		opacity: [0.4, 1, 0.4]
+																	}}
+																	transition={{ 
+																		duration: 0.8,
+																		repeat: Infinity,
+																		delay: i * 0.2
+																	}}
+																/>
+															))}
+														</div>
+														<p className="text-xs text-gray-500">思考中...</p>
+													</motion.div>
+												) : thinkingSteps.length > 0 && (
+													<motion.div
+														className="flex items-center gap-3"
+														initial={{ opacity: 0 }}
+														animate={{ opacity: 1 }}
+														transition={{ delay: 0.3 }}
+													>
+														<motion.div
+															className="w-2 h-2 bg-green-500 rounded-full"
+															initial={{ scale: 0 }}
+															animate={{ scale: 1 }}
+															transition={{ delay: 0.5 }}
+														/>
+														<p className="text-xs text-green-600 font-medium">完成思考</p>
+													</motion.div>
+												)}
+											</motion.div>
+										)}
+									</AnimatePresence>
+								)}
+							</motion.div>
+						)}
+					</AnimatePresence>
+				</div>
+				
+				{/* 卡片区域或默认提示 */}
+				{!hasSearched && !isSearching ? (
+					/* 默认状态提示 - 在页面中央显示 */
+					<div className="flex-1 flex items-center justify-center">
+						<motion.div 
+							initial={{ opacity: 0 }} 
+							animate={{ opacity: 1 }} 
+							className="flex flex-col items-center justify-center text-gray-500 max-w-md text-center px-4"
+						>
 							<Search size={48} className="mb-4 text-gray-300" />
 							<h3 className="text-xl mb-2">{t('aiProjectSearchTitle') || 'AI Project Search'}</h3>
-							<p className="text-center max-w-md">
+							<p className="text-center">
 								{searchMode === 'basic' 
 									? (t('aiProjectSearchBasic') || "Describe what kind of project or collaborator you're looking for, and our AI will find the perfect matches.")
 									: (t('aiProjectSearchAgent') || "Describe your project idea and our AI will generate innovative project concepts and suggestions.")
 								}
 							</p>
 						</motion.div>
-					)}
-				</div>
+					</div>
+				) : (
+					/* 搜索结果或加载状态的卡片区域 */
+					<div className="flex-shrink-0 flex items-center justify-center mt-6 mb-[120px]">
+						<div className="relative w-[357px] h-[420px]">
+							{isSearching ? (
+								<div className="w-full h-full rounded-[14px] bg-gray-200 animate-pulse" />
+							) : hasSearched && ((searchMode === 'basic' ? results.length : ideaResults.length) > 0) ? (
+								<div className="relative w-[357px] h-[420px]">
+									{(searchMode === 'basic' ? results.slice(0, 2) : ideaResults.slice(0, 2)).map((item: any, i: number) => {
+										const isTop = i === 0;
+										return (
+											<motion.div 
+												key={(searchMode === 'basic' ? item.id : `${item.project_idea_title}-${i}`)} 
+												className={`absolute inset-0 ${!isTop ? 'pointer-events-none' : ''}`} 
+												style={{ zIndex: isTop ? 2 : 1 }} 
+												initial={false} 
+												animate={isTop ? { scale: 1, y: 0 } : { scale: 0.94, y: 12 }} 
+												transition={isTop ? { type: 'spring', stiffness: 260, damping: 26 } : { type: 'spring', stiffness: 180, damping: 24 }}
+											>
+												{searchMode === 'basic' ? (
+													<ProjectSwipeCard project={item as Project} isTop={isTop} onOpenProject={onOpenProject} />
+												) : (
+													<IdeaSwipeCard idea={item as ProjectIdea} isTop={isTop} idx={i} />
+												)}
+											</motion.div>
+										);
+									})}
+									
+									{/* Simple right-swipe animation overlay */}
+									<AnimatePresence>
+										{showSwipeAnimation && (
+											<div className="absolute inset-0 pointer-events-none z-50 flex items-center justify-end pr-4">
+												<SwipeAnimation />
+											</div>
+										)}
+									</AnimatePresence>
+								</div>
+							) : (
+								<motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center w-full h-full text-gray-500">
+									<Search size={48} className="mb-4 text-gray-300" />
+									<p>{t('noResults') || `No ${searchMode === 'basic' ? 'projects' : 'ideas'} found. Try a different search term.`}</p>
+								</motion.div>
+							)}
+						</div>
+					</div>
+				)}
 			</div>
 
-			{/* Search bar docked above main bottom nav */}
-			<motion.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="absolute bg-white border-t border-gray-200 p-6 shadow-lg" style={{ bottom: '96px', left: 0, right: 0, height: '96px' }}>
+			{/* Search bar - 固定在底部导航上方 */}
+			<motion.div 
+				initial={{ y: 100, opacity: 0 }} 
+				animate={{ y: 0, opacity: 1 }} 
+				className="flex-shrink-0 bg-white border-t border-gray-200 p-6 shadow-lg" 
+				style={{ height: '96px', marginBottom: '96px' }}
+			>
 				<div className="flex items-center gap-3 mx-auto w-[357px]">
 					<div className="flex-1 relative">
 						<Input 
@@ -1030,14 +1801,14 @@ export default function AISearchIntegrated({ onBackToMain, onOpenFilter, onOpenP
 							onKeyDown={handleKeyPress} 
 							placeholder={searchMode === 'basic' ? (t('searchBarPlaceholderBasic') || 'Ask AI to find projects or collaborators...') : (t('searchBarPlaceholderAgent') || 'Describe your project idea for AI suggestions...')} 
 							className="pr-12 h-12 rounded-full border-2 border-gray-200 bg-gray-50 focus-visible:!border-blue-500 focus-visible:!ring-2 focus-visible:!ring-blue-500/20 focus-visible:!ring-offset-0" 
-							disabled={isLoading} 
+							disabled={isSearching} 
 						/>
 						<div className="absolute right-3 top-1/2 -translate-y-1/2">
 							<Search size={20} className="text-gray-400" />
 						</div>
 					</div>
-					<button onClick={handleSearch} disabled={!searchQuery.trim() || isLoading} className="h-12 w-12 rounded-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 flex items-center justify-center">
-						{isLoading ? (
+					<button onClick={handleSearch} disabled={!searchQuery.trim() || isSearching} className="h-12 w-12 rounded-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 flex items-center justify-center">
+						{isSearching ? (
 							<motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }} className="w-5 h-5 border-2 border-white border-t-transparent rounded-full" />
 						) : (
 							<Send size={20} className="text-white" />

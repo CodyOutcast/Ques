@@ -1,12 +1,65 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import logo from '../auth-imports/no_bg.PNG';
 
-export const BrandBlock: React.FC = () => {
-  const [logoAspect, setLogoAspect] = useState<number | null>(null);
-  useEffect(() => {
+// 全局缓存图片宽高比，避免重复加载
+let globalLogoAspect: number | null = null;
+let isLoadingGlobal = false;
+const loadingCallbacks: ((aspect: number) => void)[] = [];
+
+const loadLogoAspect = (): Promise<number> => {
+  return new Promise((resolve) => {
+    // 如果已经有缓存的宽高比，直接返回
+    if (globalLogoAspect !== null) {
+      resolve(globalLogoAspect);
+      return;
+    }
+    
+    // 如果正在加载中，添加到回调队列
+    if (isLoadingGlobal) {
+      loadingCallbacks.push(resolve);
+      return;
+    }
+    
+    // 开始加载图片
+    isLoadingGlobal = true;
     const img = new Image();
-    img.onload = () => setLogoAspect((img.naturalWidth && img.naturalHeight) ? (img.naturalWidth / img.naturalHeight) : 1);
+    img.onload = () => {
+      const aspect = (img.naturalWidth && img.naturalHeight) ? (img.naturalWidth / img.naturalHeight) : 1;
+      globalLogoAspect = aspect;
+      isLoadingGlobal = false;
+      
+      // 调用所有等待的回调
+      resolve(aspect);
+      loadingCallbacks.forEach(callback => callback(aspect));
+      loadingCallbacks.length = 0; // 清空回调数组
+    };
+    img.onerror = () => {
+      globalLogoAspect = 1; // 默认宽高比
+      isLoadingGlobal = false;
+      resolve(1);
+      loadingCallbacks.forEach(callback => callback(1));
+      loadingCallbacks.length = 0;
+    };
     img.src = logo as any;
+  });
+};
+
+export const BrandBlock: React.FC = React.memo(() => {
+  const [logoAspect, setLogoAspect] = useState<number | null>(globalLogoAspect);
+  const mountedRef = useRef(true);
+
+  useEffect(() => {
+    mountedRef.current = true;
+    
+    loadLogoAspect().then((aspect) => {
+      if (mountedRef.current) {
+        setLogoAspect(aspect);
+      }
+    });
+
+    return () => {
+      mountedRef.current = false;
+    };
   }, []);
 
   return (
@@ -18,7 +71,7 @@ export const BrandBlock: React.FC = () => {
         className="inline-block"
         style={{
           height: '36px',
-          width: logoAspect ? `${Math.round(36 * (logoAspect as number))}px` : 'auto',
+          width: logoAspect ? `${Math.round(36 * logoAspect)}px` : 'auto',
           backgroundColor: '#0055F7',
           WebkitMaskImage: `url(${logo})`,
           maskImage: `url(${logo})`,
@@ -48,4 +101,4 @@ export const BrandBlock: React.FC = () => {
       </p>
     </div>
   );
-}; 
+}); 

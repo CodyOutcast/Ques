@@ -4,7 +4,7 @@ import { Button } from '../ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../ui/dialog';
 import { ProjectForm } from './ProjectForm';
 import { DraftsPage } from './DraftsPage';
-import { createProject } from '../../src/api/projects';
+import { createProjectFromFrontend, FrontendProjectData } from '../../src/api/projects';
 import { t, currentLanguage as i18nCurrentLanguage } from '../../translations';
 
 interface ProjectData {
@@ -13,11 +13,6 @@ interface ProjectData {
   media: File[];
   projectTags: string[];
   ownRole: string[];
-  collaborators: Array<{
-    id: string;
-    name: string;
-    role: string[];
-  }>;
   startTime: string;
   currentProgress: number;
   detailedDescription: string;
@@ -34,7 +29,6 @@ const initialProjectData: ProjectData = {
   media: [],
   projectTags: [],
   ownRole: [],
-  collaborators: [],
   startTime: '',
   currentProgress: 0,
   detailedDescription: '',
@@ -121,7 +115,7 @@ export function PostingProjectPage({ onBack, resumeDraft = false, draftId, onPub
     const isEmpty = !projectData.title && !projectData.shortDescription && 
                    !projectData.detailedDescription && !projectData.purpose &&
                    !projectData.whatWeAreDoing && !projectData.peopleLookingFor &&
-                   projectData.ownRole.length === 0 && projectData.collaborators.length === 0 &&
+                   projectData.ownRole.length === 0 &&
                    projectData.media.length === 0 && projectData.projectTags.length === 0 &&
                    projectData.lookingForTags.length === 0 && projectData.links.length === 0;
     setHasChanges(!isEmpty);
@@ -250,12 +244,38 @@ export function PostingProjectPage({ onBack, resumeDraft = false, draftId, onPub
         links: Array.isArray(projectData.links) ? projectData.links : [],
       };
 
-      // Try real API but fall back to optimistic success
+      // Try new unified API but fall back to optimistic success
       try {
-        const resp = await createProject(payload);
-        console.log('Project created:', resp);
-        if (resp && (resp as any).id) {
-          optimisticProject.id = (resp as any).id;
+        // Convert to API format for the new unified API
+        const frontendData: ProjectData = {
+          title: projectData.title,
+          shortDescription: projectData.shortDescription,
+          media: projectData.media,
+          projectTags: projectData.projectTags,
+          ownRole: projectData.ownRole,
+          startTime: projectData.startTime,
+          currentProgress: projectData.currentProgress,
+          detailedDescription: projectData.detailedDescription,
+          purpose: projectData.purpose,
+          whatWeAreDoing: projectData.whatWeAreDoing,
+          peopleLookingFor: projectData.peopleLookingFor,
+          lookingForTags: projectData.lookingForTags,
+          links: projectData.links
+        };
+
+        const result = await createProjectFromFrontend(frontendData);
+        
+        if (result.success && result.data) {
+          console.log('Project created successfully:', result.data);
+          optimisticProject.id = result.data.project_id;
+          // Update with additional backend data
+          optimisticProject.title = result.data.title;
+          optimisticProject.description = result.data.description;
+          optimisticProject.createdAt = result.data.created_at;
+          optimisticProject.tags = result.data.feature_tags || optimisticProject.tags;
+          optimisticProject.media = result.data.image_urls || optimisticProject.media;
+        } else {
+          console.warn('API failed:', result.error);
         }
       } catch (apiErr) {
         console.warn('API failed, using optimistic publish:', apiErr);
@@ -319,10 +339,10 @@ export function PostingProjectPage({ onBack, resumeDraft = false, draftId, onPub
 
   return (
     <div 
-      className="flex flex-col h-screen bg-gradient-to-br from-background to-secondary/20"
+      className="flex flex-col h-[900px] bg-gradient-to-br from-background to-secondary/20"
       style={{
         backgroundColor: '#ffffff',
-        minHeight: '100vh',
+        minHeight: '900px',
         width: '100%',
         display: 'flex',
         flexDirection: 'column'

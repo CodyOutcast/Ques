@@ -83,3 +83,22 @@ def get_optional_user(
         return user
     except Exception:
         return None
+
+async def get_current_admin_user(
+    current_user: User = Depends(get_current_active_user)
+) -> User:
+    """
+    Dependency to get current admin user
+    TODO: Implement proper admin role checking when admin system is ready
+    For now, all verified active users can access admin endpoints
+    """
+    # TODO: Add proper admin role check
+    # if not hasattr(current_user, 'is_admin') or not current_user.is_admin:
+    #     raise HTTPException(
+    #         status_code=status.HTTP_403_FORBIDDEN,
+    #         detail="Admin privileges required"
+    #     )
+    
+    # For now, allow all active users to access admin endpoints
+    # This should be restricted in production
+    return current_user
