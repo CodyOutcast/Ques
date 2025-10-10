@@ -1,0 +1,58 @@
+# ========================================
+# QuesAI Backend Test - Dependencies
+# ========================================
+
+# ----------------------------------------
+# Web Framework & API
+# ----------------------------------------
+fastapi>=0.104.1
+uvicorn[standard]>=0.24.0
+pydantic>=2.5.0
+
+# ----------------------------------------
+# HTTP Clients
+# ----------------------------------------
+httpx>=0.25.0
+requests>=2.31.0
+
+# ----------------------------------------
+# Vector Search & Embeddings
+# ----------------------------------------
+qdrant-client>=1.7.0
+sentence-transformers>=2.2.0
+transformers>=4.35.0
+torch>=2.0.0
+
+# ----------------------------------------
+# Data Processing & ML
+# ----------------------------------------
+numpy>=1.24.0
+
+# ----------------------------------------
+# Environment & Configuration
+# ----------------------------------------
+python-dotenv>=1.0.0
+
+# ----------------------------------------
+# Testing Framework
+# ----------------------------------------
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# ----------------------------------------
+# Development Tools (Optional)
+# ----------------------------------------
+# Uncomment for development
+# black>=23.0.0          # Code formatting
+# flake8>=6.0.0          # Linting  
+# mypy>=1.7.0            # Type checking
+# isort>=5.12.0          # Import sorting
+
+# ----------------------------------------
+# Notes:
+# ----------------------------------------
+# - sqlite3: Part of Python standard library
+# - json, os, re, time, logging: Standard library modules
+# - torch: Required for SPLADE sparse vector generation
+# - transformers: Required for BGE-M3 and SPLADE models
+# - sentence-transformers: Required for BGE-M3 dense embeddings
