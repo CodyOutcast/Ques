@@ -1,194 +1,305 @@
 # Ques Frontend
 
-Ques is the first AI-powered social network designed to connect people based on skills, projects, goals, and mutual interests. This repository contains the React-based frontend application built with Vite and TypeScript.
+Ques 是首个AI驱动的社交网络，旨在基于技能、项目、目标和共同兴趣连接人们。本仓库包含使用 Vite 和 TypeScript 构建的 React 前端应用程序。
 
-## 🚀 Project Overview
+## 🚀 项目概述
 
-Ques Frontend is a modern, responsive web application that provides:
-- **AI-powered matchmaking** - Connect with people based on compatibility algorithms
-- **Swipeable card interface** - Tinder-like interaction for discovering connections
-- **Comprehensive user profiles** - Detailed profiles with skills, projects, goals, and institutions
-- **Real-time chat system** - Integrated messaging with contacts
-- **Notification system** - Friend requests and interaction alerts
-- **Contact history** - Track and revisit previous connections
+Ques Frontend 是一个现代化、响应式的 Web 应用，提供：
+- **AI 智能匹配** - 基于兼容性算法连接用户
+- **卡片滑动界面** - 类似 Tinder 的交互方式发现连接
+- **全面的用户档案** - 包含技能、项目、目标和机构的详细档案
+- **智能聊天系统** - 集成 AI 的消息和推荐系统
+- **通知系统** - 好友请求和交互提醒
+- **联系人历史** - 追踪并重访之前的连接
+- **多语言支持** - 中文/英文双语界面
+- **Whisper 消息** - 包含完整档案信息的消息系统
 
-## 📁 Project Structure
+## 📁 项目结构
 
 ```
-frontend/Ques/Ques_Frontend/
+Ques_Frontend/
 ├── src/
-│   ├── components/           # React components
-│   │   ├── ui/              # Reusable UI components (shadcn/ui)
-│   │   ├── BottomNavigation.tsx
-│   │   ├── ChatCards.tsx
-│   │   ├── ChatInterface.tsx
-│   │   ├── ContactHistory.tsx
-│   │   ├── NotificationPanel.tsx
-│   │   ├── PersonReceivesBar.tsx
-│   │   ├── ProfileSetupWizard.tsx
-│   │   ├── ProfileView.tsx
-│   │   ├── ReceivesBar.tsx
-│   │   ├── SettingsScreen.tsx
-│   │   ├── SwipeableCardStack.tsx
-│   │   └── WelcomeScreen.tsx
+│   ├── components/              # React 组件
+│   │   ├── ui/                 # 可复用 UI 组件 (shadcn/ui)
+│   │   │   ├── button.tsx, input.tsx, card.tsx...  # 基础组件
+│   │   │   ├── dialog.tsx, drawer.tsx, sheet.tsx   # 对话框组件
+│   │   │   ├── loading.tsx, error.tsx             # 状态组件
+│   │   │   └── ... (50+ 组件)
+│   │   ├── BottomNavigation.tsx          # 底部导航栏
+│   │   ├── ChatCards.tsx                 # 聊天卡片显示
+│   │   ├── ChatInterface.tsx             # 聊天界面（本地版）
+│   │   ├── ChatInterfaceAPI.tsx          # 聊天界面（API集成版）
+│   │   ├── ContactHistory.tsx            # 联系人历史
+│   │   ├── NotificationPanel.tsx         # 通知面板
+│   │   ├── PersonReceivesBar.tsx         # 个人receives状态栏
+│   │   ├── PhysicsTagContainer.tsx       # 物理引擎标签容器
+│   │   ├── ProfileSetupWizard.tsx        # 档案设置向导（本地版）
+│   │   ├── ProfileSetupWizardAPI.tsx     # 档案设置向导（API版）
+│   │   ├── ProfileView.tsx               # 档案查看
+│   │   ├── ReceivesBar.tsx               # Receives 状态栏
+│   │   ├── SettingsScreen.tsx            # 设置页面
+│   │   ├── SwipeableCardStack.tsx        # 卡片滑动堆栈
+│   │   └── WelcomeScreen.tsx             # 欢迎屏幕
+│   ├── services/                # API 服务层
+│   │   ├── authService.ts              # 认证服务
+│   │   ├── profileService.ts           # 档案管理服务
+│   │   ├── profileAIService.ts         # AI 档案优化服务
+│   │   ├── chatService.ts              # 聊天服务
+│   │   ├── recommendationService.ts    # 推荐服务
+│   │   ├── matchingService.ts          # 匹配搜索服务
+│   │   ├── swipeService.ts             # 滑动交互服务
+│   │   ├── contactService.ts           # 联系人服务
+│   │   ├── notificationService.ts      # 通知服务
+│   │   ├── whisperService.ts           # Whisper消息服务
+│   │   ├── cardTrackingService.ts      # 卡片跟踪服务
+│   │   ├── settingsService.ts          # 设置管理服务
+│   │   ├── paymentService.ts           # 支付服务
+│   │   ├── universityService.ts        # 大学验证服务
+│   │   ├── httpClient.ts               # HTTP 客户端
+│   │   ├── config.ts                   # API 配置
+│   │   └── index.ts                    # 统一导出
+│   ├── hooks/                   # 自定义 React Hooks
+│   │   ├── useChatInterface.ts         # 聊天界面逻辑
+│   │   ├── useProfileWizard.ts         # 档案设置逻辑
+│   │   ├── useSettings.ts              # 设置管理逻辑
+│   │   └── useSwipeActions.ts          # 滑动操作逻辑
+│   ├── contexts/                # React Context
+│   │   ├── LanguageContext.tsx         # 语言切换上下文
+│   │   └── index.ts
+│   ├── locales/                 # 国际化翻译
+│   │   ├── zh.ts                       # 中文翻译
+│   │   ├── en.ts                       # 英文翻译
+│   │   └── index.ts
+│   ├── types/                   # TypeScript 类型定义
+│   │   └── api.ts                      # API 相关类型
 │   ├── styles/
-│   │   └── globals.css       # Global styling
-│   ├── guidelines/
-│   │   └── Guidelines.md     # Design system guidelines
-│   ├── App.tsx               # Main application component
-│   ├── main.tsx             # Application entry point
-│   ├── index.css            # Base styles
-│   └── Attributions.md      # Third-party attributions
-├── build/                   # Production build output
-├── index.html              # HTML template
-├── package.json            # Dependencies and scripts
-├── vite.config.ts          # Vite configuration
-└── README.md               # Original project README
+│   │   └── globals.css                 # 全局样式
+│   ├── assets/                  # 静态资源
+│   │   ├── icon.jpg                    # 应用图标
+│   │   └── icon_inverted.webp          # 反色图标
+│   ├── App.tsx                  # 主应用组件
+│   ├── main.tsx                 # 应用入口
+│   ├── index.css                # 基础样式
+│   ├── vite-env.d.ts            # Vite 类型声明
+│   └── Attributions.md          # 第三方归属
+├── build/                       # 生产构建输出
+├── node_modules/                # 依赖包
+├── index.html                   # HTML 模板
+├── package.json                 # 依赖和脚本
+├── package-lock.json            # 依赖锁定文件
+├── vite.config.ts               # Vite 配置
+├── FRONTEND_API_DOCUMENTATION.md     # API 文档（中文）
+├── FRONTEND_API_DOCUMENTATION_EN.md  # API 文档（英文）
+└── README.md                    # 项目说明文档
 ```
 
-## 🎯 Core Components
+## 🎯 核心组件
 
-### Application Flow Components
+### 应用流程组件
 
-#### **WelcomeScreen.tsx**
-- **Purpose**: First screen shown to new users
-- **Features**: App branding, tagline, and get started button
-- **Dependencies**: Motion animations, Lucide icons
+#### **WelcomeScreen.tsx** - 欢迎屏幕
+- **功能**: 新用户首次看到的屏幕
+- **特性**: 应用品牌展示、标语、开始按钮
+- **依赖**: Motion 动画、Lucide 图标
 
-#### **ProfileSetupWizard.tsx**
-- **Purpose**: Multi-step profile creation process
-- **Features**: 
-  - Demographics (name, age, gender, location)
-  - Skills and resources input
-  - Project portfolio creation
-  - Goals and demands specification
-  - Institution verification
-- **Navigation**: Step-by-step wizard with validation
+#### **ProfileSetupWizard.tsx / ProfileSetupWizardAPI.tsx** - 档案设置向导
+- **功能**: 多步骤档案创建流程
+- **特性**: 
+  - 人口统计信息（姓名、年龄、性别、位置）
+  - 技能和资源输入
+  - 项目作品集创建
+  - 目标和需求说明
+  - 机构验证（大学邮箱验证）
+- **版本**: 
+  - `ProfileSetupWizard.tsx`: 本地状态管理版本
+  - `ProfileSetupWizardAPI.tsx`: API 集成版本
 
-#### **App.tsx**
-- **Purpose**: Main application container and state management
-- **Features**:
-  - Screen routing (`welcome`, `profile-setup`, `home`, `profile`, `settings`)
-  - Global state for user profile, contacts, notifications
-  - Contact history and friend request management
-  - Plan and receives tracking (basic/pro plans)
+#### **App.tsx** - 主应用容器
+- **功能**: 主应用容器和状态管理
+- **特性**:
+  - 屏幕路由 (`welcome`, `profile-setup`, `home`, `profile`, `settings`)
+  - 全局状态管理（用户档案、联系人、通知）
+  - 联系人历史和好友请求管理
+  - 计划和 receives 跟踪（basic/pro 计划）
+  - 多语言支持集成
 
-### User Interface Components
+### 用户界面组件
 
-#### **SwipeableCardStack.tsx**
-- **Purpose**: Main card-swiping interface for discovering connections
-- **Features**:
-  - Tinder-like swipe gestures (left to ignore, right to connect)
-  - Expandable profile cards with detailed information
-  - Match score display and reasoning
-  - Plan-based receives tracking
+#### **ChatInterface.tsx / ChatInterfaceAPI.tsx** - 聊天界面
+- **功能**: 应用内智能聊天系统
+- **特性**:
+  - AI 对话和搜索功能
+  - 用户推荐卡片显示
+  - 消息历史管理
+  - 引用/回复功能
+  - Inside/Global 搜索模式切换
+  - 集成卡片跟踪功能
+- **版本**:
+  - `ChatInterface.tsx`: 本地模拟版本
+  - `ChatInterfaceAPI.tsx`: 完整 API 集成版本
 
-#### **ChatInterface.tsx**
-- **Purpose**: In-app messaging system
-- **Features**:
-  - Real-time chat simulation
-  - Contact profile preview
-  - Message history management
-  - Quote/reply functionality
+#### **SwipeableCardStack.tsx** - 卡片滑动堆栈
+- **功能**: 主要的卡片滑动界面用于发现连接
+- **特性**:
+  - 类似 Tinder 的滑动手势（左滑忽略，右滑发送 Whisper）
+  - 可展开的档案卡片，包含详细信息
+  - 匹配分数显示和推理
+  - 基于计划的 receives 跟踪
+  - 集成 Whisper 消息发送
 
-#### **ProfileView.tsx**
-- **Purpose**: User's own profile display and editing
-- **Features**:
-  - Comprehensive profile overview
-  - Edit mode for updating information
-  - Profile completeness indicators
-  - Section-based organization
+#### **ProfileView.tsx** - 档案查看
+- **功能**: 用户自己的档案显示和编辑
+- **特性**:
+  - 全面的档案概览
+  - 编辑模式更新信息
+  - 档案完整度指示器
+  - 基于分段的组织结构
+  - 物理引擎标签显示
 
-### Navigation & History Components
+### 导航和历史组件
 
-#### **BottomNavigation.tsx**
-- **Purpose**: Main app navigation bar
-- **Features**: Tab-based navigation between Home, Profile, and Settings
-- **Notifications**: Badge count for unread notifications
+#### **BottomNavigation.tsx** - 底部导航栏
+- **功能**: 主应用导航栏
+- **特性**: 
+  - 在首页、档案和设置之间切换的标签导航
+  - 未读通知的徽章计数
+  - 响应式设计
 
-#### **ContactHistory.tsx**
-- **Purpose**: View and manage previously contacted users
-- **Features**:
-  - Contact list with details
-  - Report functionality
-  - Quote/message options
-  - Remove contacts option
+#### **ContactHistory.tsx** - 联系人历史
+- **功能**: 查看和管理之前联系过的用户
+- **特性**:
+  - 带详细信息的联系人列表
+  - 举报功能
+  - 引用/消息选项
+  - 删除联系人选项
+  - API 集成的联系人管理
 
-#### **NotificationPanel.tsx**
-- **Purpose**: Friend requests and notification management
-- **Features**:
-  - Friend request list
-  - Accept/decline actions
-  - Quote functionality for messaging
+#### **NotificationPanel.tsx** - 通知面板
+- **功能**: 好友请求和通知管理
+- **特性**:
+  - 好友请求列表
+  - 接受/拒绝操作
+  - 用于消息的引用功能
+  - 实时通知更新
 
-### Utility Components
+### 实用组件
 
-#### **SettingsScreen.tsx**
-- **Purpose**: App configuration and user preferences
-- **Features**: Account settings, preferences, and app information
+#### **SettingsScreen.tsx** - 设置屏幕
+- **功能**: 应用配置和用户偏好
+- **特性**: 
+  - 账户设置和管理
+  - 微信 ID 配置
+  - 自定义 Whisper 消息
+  - 计划升级/降级
+  - 购买 receives
+  - 语言切换
+  - 账户操作（登出、删除账户）
 
-#### **ChatCards.tsx**
-- **Purpose**: Alternative card display component for chat contexts
-- **Features**: Similar to SwipeableCardStack but optimized for messaging flow
+#### **ChatCards.tsx** - 聊天卡片
+- **功能**: 用于聊天上下文的替代卡片显示组件
+- **特性**: 类似于 SwipeableCardStack 但针对消息流程优化
 
-#### **PersonReceivesBar.tsx** & **ReceivesBar.tsx**
-- **Purpose**: Display and manage user's monthly "receives" (connection attempts)
-- **Features**: 
-  - Usage tracking
-  - Top-up functionality
-  - Gift receives to other users
+#### **PersonReceivesBar.tsx & ReceivesBar.tsx** - Receives 状态栏
+- **功能**: 显示和管理用户的月度 "receives"（连接尝试）
+- **特性**: 
+  - 使用跟踪
+  - 充值功能
+  - 向其他用户赠送 receives
 
-### UI Component Library
+#### **PhysicsTagContainer.tsx** - 物理引擎标签容器
+- **功能**: 使用物理引擎显示交互式标签
+- **特性**:
+  - Matter.js 物理引擎集成
+  - 交互式标签动画
+  - 用于技能、项目、目标等的可视化显示
 
-The `components/ui/` directory contains a comprehensive set of reusable UI components based on **shadcn/ui**:
+### UI 组件库
 
-- **Form Components**: `button.tsx`, `input.tsx`, `textarea.tsx`, `select.tsx`, `checkbox.tsx`, etc.
-- **Layout Components**: `card.tsx`, `separator.tsx`, `scroll-area.tsx`, `sheet.tsx`
-- **Navigation Components**: `tabs.tsx`, `navigation-menu.tsx`, `breadcrumb.tsx`
-- **Feedback Components**: `alert.tsx`, `badge.tsx`, `progress.tsx`, `skeleton.tsx`
-- **Overlay Components**: `dialog.tsx`, `popover.tsx`, `tooltip.tsx`, `drawer.tsx`
+`components/ui/` 目录包含基于 **shadcn/ui** 的全面可复用 UI 组件集：
 
-## 🛠️ Technology Stack
+- **表单组件**: `button.tsx`, `input.tsx`, `textarea.tsx`, `select.tsx`, `checkbox.tsx` 等
+- **布局组件**: `card.tsx`, `separator.tsx`, `scroll-area.tsx`, `sheet.tsx`
+- **导航组件**: `tabs.tsx`, `navigation-menu.tsx`, `breadcrumb.tsx`
+- **反馈组件**: `alert.tsx`, `badge.tsx`, `progress.tsx`, `skeleton.tsx`
+- **覆盖组件**: `dialog.tsx`, `popover.tsx`, `tooltip.tsx`, `drawer.tsx`
+- **状态组件**: `loading.tsx`, `error.tsx` - 自定义加载和错误显示组件
 
-### Core Technologies
-- **React 18.3.1** - UI library with hooks and functional components
-- **TypeScript** - Type-safe JavaScript development
-- **Vite 6.3.5** - Fast build tool and development server
-- **Motion (Framer Motion)** - Advanced animations and gestures
+## 🛠️ 技术栈
 
-### UI Framework
-- **Radix UI** - Accessible, unstyled UI primitives
-- **shadcn/ui** - Re-usable components built on Radix UI
-- **Tailwind CSS** - Utility-first CSS framework
-- **Lucide React** - Beautiful, customizable icons
+### 核心技术
+- **React 18.3.1** - 使用 hooks 和函数组件的 UI 库
+- **TypeScript** - 类型安全的 JavaScript 开发
+- **Vite 6.3.5** - 快速构建工具和开发服务器
+- **Motion (Framer Motion)** - 高级动画和手势库
 
-### Key Libraries
-- **React Hook Form 7.55.0** - Performant forms with validation
-- **React Day Picker 8.10.1** - Date selection component
-- **Recharts 2.15.2** - Charting library for data visualization
-- **CMDK 1.1.1** - Command palette component
-- **Sonner 2.0.3** - Toast notifications
-- **Next Themes 0.4.6** - Theme switching functionality
+### UI 框架
+- **Radix UI** - 可访问的、无样式的 UI 原语组件
+  - 20+ Radix UI 组件包（Dialog, Dropdown, Select, Tabs 等）
+- **shadcn/ui** - 基于 Radix UI 构建的可复用组件系统
+- **Tailwind CSS** - 实用优先的 CSS 框架（通过 Vite 配置）
+- **Lucide React 0.487.0** - 美观、可定制的图标库
 
-## 📱 Features
+### 关键库
+- **React Hook Form 7.55.0** - 高性能的表单和验证
+- **React Day Picker 8.10.1** - 日期选择组件
+- **Recharts 2.15.2** - 数据可视化图表库
+- **CMDK 1.1.1** - 命令面板组件
+- **Sonner 2.0.3** - Toast 通知系统
+- **Next Themes 0.4.6** - 主题切换功能
+- **Matter.js 0.20.0** - 2D 物理引擎（用于标签动画）
+- **Embla Carousel React 8.6.0** - 轮播组件
+- **Input OTP 1.4.2** - OTP 输入组件
+- **Vaul 1.1.2** - 抽屉组件
+- **Class Variance Authority 0.7.1** - CSS 类名管理
+- **Tailwind Merge** - Tailwind 类名合并工具
+- **CLSX** - 条件类名工具
 
-### User Experience
-- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
-- **Smooth Animations**: Motion-powered transitions and interactions
-- **Intuitive Navigation**: Bottom tab navigation with clear visual feedback
-- **Dark/Light Mode**: Theme switching capability (configured but not fully implemented)
+## 📱 功能特性
 
-### Core Functionality
-- **Profile Management**: Comprehensive user profiles with multiple data types
-- **AI Matching**: Algorithm-based user recommendations with match scores
-- **Social Interactions**: Swipe-to-connect, messaging, and friend requests
-- **Contact Management**: History tracking, reporting, and contact organization
-- **Plan Management**: Basic/Pro plans with receives tracking
+### 用户体验
+- **响应式设计**: 在桌面、平板和移动设备上无缝工作
+- **流畅动画**: Motion 驱动的过渡和交互效果
+- **直观导航**: 带有清晰视觉反馈的底部标签导航
+- **多语言支持**: 完整的中文/英文双语界面切换
+- **物理引擎交互**: Matter.js 驱动的交互式标签显示
 
-### Data Structure
+### 核心功能
+
+#### 1. 档案管理
+- **完整的用户档案**: 包含多种数据类型的综合档案系统
+- **AI 档案优化**: 智能档案完善和优化建议
+- **大学邮箱验证**: 机构身份验证系统
+- **微信 ID 集成**: 联系方式管理
+
+#### 2. AI 智能匹配
+- **智能推荐算法**: 基于算法的用户推荐，带有匹配分数
+- **匹配解释**: AI 生成的匹配理由和兼容性分析
+- **Inside/Global 搜索**: 双模式搜索系统
+- **高级筛选**: 基于位置、技能、项目等的高级搜索
+
+#### 3. 社交互动
+- **滑动连接**: 类似 Tinder 的滑动手势交互
+- **Whisper 消息**: 包含完整档案信息的消息系统
+- **好友请求**: 发送和管理好友请求
+- **联系人管理**: 历史跟踪、举报和联系人组织
+- **卡片跟踪**: 实时跟踪当前查看的推荐卡片
+
+#### 4. 聊天系统
+- **AI 对话**: 智能聊天助手帮助查找连接
+- **实时推荐**: 基于对话内容的实时用户推荐
+- **消息历史**: 完整的聊天历史记录管理
+- **引用功能**: 引用联系人和消息的能力
+
+#### 5. 计划管理
+- **Basic/Pro 计划**: 双层级订阅系统
+- **Receives 跟踪**: 月度连接尝试次数管理
+- **在线支付**: 集成微信支付、支付宝、信用卡
+- **计划升级/降级**: 灵活的订阅管理
+
+### 数据结构
 ```typescript
 interface UserProfile {
-  // Demographics
+  // 人口统计信息
   profilePhoto?: string;
   name: string;
   age: string;
@@ -198,11 +309,11 @@ interface UserProfile {
   languages: string[];
   oneSentenceIntro?: string;
   
-  // Professional
+  // 专业信息
   skills: string[];
   resources: string[];
   
-  // Projects
+  // 项目
   projects: { 
     title: string; 
     role: string; 
@@ -210,11 +321,11 @@ interface UserProfile {
     referenceLinks: string[] 
   }[];
   
-  // Goals & Demands  
+  // 目标和需求
   goals: string[];
   demands: string[];
   
-  // Institutions
+  // 机构
   institutions: { 
     name: string; 
     role: string; 
@@ -222,340 +333,290 @@ interface UserProfile {
     email?: string;
     verified: boolean;
   }[];
+  
+  // 大学
+  university?: {
+    name: string;
+    verified: boolean;
+  };
+  
+  // 联系方式和社交
+  wechatId?: string;
+  
+  // 向后兼容的遗留字段
+  bio?: string;
+  expertise?: { skill: string; level: string; years: string }[];
+  interests?: string[];
+  education?: string;
+  experience?: string;
+  availability?: string;
+  preferences?: string[];
+  values?: string[];
 }
 ```
 
-## 🚀 Setup Guide
+## 🚀 安装指南
 
-### Prerequisites
-- **Node.js** (version 16 or higher)
-- **npm** or **yarn** package manager
-- **Git** for version control
+### 前置要求
+- **Node.js** (版本 16 或更高)
+- **npm** 或 **yarn** 包管理器
+- **Git** 用于版本控制
 
-### Installation
+### 安装步骤
 
-1. **Clone the repository**
+1. **克隆仓库**
    ```bash
    git clone <repository-url>
-   cd Ques/frontend/Ques/Ques_Frontend
+   cd Ques/Ques_Frontend
    ```
 
-2. **Install dependencies**
+2. **安装依赖**
    ```bash
    npm install
-   # or
+   # 或
    yarn install
    ```
 
-3. **Start development server**
+3. **配置环境变量（可选）**
+   ```bash
+   # 创建 .env.local 文件
+   cp .env.example .env.local
+   
+   # 编辑 .env.local 文件
+   VITE_API_BASE_URL=http://localhost:8000/api
+   VITE_APP_MODE=development
+   VITE_APP_DEBUG=true
+   ```
+
+4. **启动开发服务器**
    ```bash
    npm run dev
-   # or
+   # 或
    yarn dev
    ```
 
-4. **Open in browser**
-   - Navigate to `http://localhost:5173`
-   - The app will automatically reload when you make changes
+5. **在浏览器中打开**
+   - 导航到 `http://localhost:3000`
+   - 应用会在您进行更改时自动重新加载
 
-### Production Build
+### 生产构建
 
-1. **Create production build**
+1. **创建生产构建**
    ```bash
    npm run build
-   # or
+   # 或
    yarn build
    ```
 
-2. **Preview production build**
-   ```bash
-   npm run preview
-   # or
-   yarn preview
-   ```
+2. **构建输出**
+   - `build/` 目录包含生产就绪的文件
+   - 部署到任何静态托管服务（Vercel、Netlify 等）
 
-3. **Deploy**
-   - The `build/` directory contains the production-ready files
-   - Deploy to any static hosting service (Vercel, Netlify, etc.)
+### 开发工作流
 
-### Development Workflow
+1. **代码结构**: 遵循现有的组件组织结构
+2. **样式**: 使用 Tailwind CSS 类和已建立的设计系统
+3. **组件**: 在 `src/components/` 中创建新组件
+4. **UI 组件**: 使用 `src/components/ui/` 中现有的 shadcn/ui 组件
+5. **API 服务**: 在 `src/services/` 中添加新的 API 服务
+6. **自定义 Hooks**: 在 `src/hooks/` 中创建可复用的逻辑
+7. **国际化**: 在 `src/locales/` 中添加翻译字符串
+8. **类型安全**: 始终为组件 props 和数据结构使用 TypeScript 接口
 
-1. **Code Structure**: Follow the existing component organization
-2. **Styling**: Use Tailwind CSS classes and the established design system
-3. **Components**: Create new components in `src/components/`
-4. **UI Components**: Use existing shadcn/ui components from `src/components/ui/`
-5. **State Management**: Use React hooks and prop drilling (consider Redux for complex state)
-6. **Type Safety**: Always use TypeScript interfaces for component props and data structures
+### 配置
 
-### Configuration
+#### Vite 配置 (`vite.config.ts`)
+- **插件**: React SWC 用于快速编译
+- **别名**: `@` 指向 `src/` 目录
+- **依赖别名**: 版本特定的包别名映射
+- **服务器**: 配置为在 3000 端口运行，允许局域网访问
+- **构建**: 输出到 `build/` 目录
 
-#### Vite Configuration (`vite.config.ts`)
-- **Plugins**: React SWC for fast compilation
-- **Aliases**: Path aliases for cleaner imports
-- **Dependency Aliases**: Version-specific package aliases
+#### API 配置 (`src/services/config.ts`)
+- **基础 URL**: 从环境变量读取
+- **端点定义**: 所有 API 端点的集中配置
+- **超时设置**: 请求超时配置
 
-#### Design System
-- **Guidelines**: See `src/guidelines/Guidelines.md`
-- **Colors**: Tailwind CSS default palette with custom extensions
-- **Typography**: System fonts with proper scaling
-- **Components**: shadcn/ui design system components
+#### 语言配置 (`src/contexts/LanguageContext.tsx`)
+- **支持语言**: 中文 (zh) 和英文 (en)
+- **默认语言**: 英文
+- **持久化**: 语言选择保存在 localStorage 中
 
-## 🎨 Design Philosophy
+## 🎨 设计理念
 
-### Principles
-- **User-Centric**: Prioritize user experience and intuitive interactions
-- **Accessible**: Follow WCAG guidelines and use semantic HTML
-- **Performant**: Optimize for fast loading and smooth animations  
-- **Consistent**: Maintain design consistency across all screens
-- **Mobile-First**: Design for mobile and scale up to desktop
+### 原则
+- **以用户为中心**: 优先考虑用户体验和直观交互
+- **可访问性**: 遵循 WCAG 指南，使用语义化 HTML
+- **高性能**: 优化快速加载和流畅动画
+- **一致性**: 在所有屏幕上保持设计一致性
+- **移动优先**: 为移动设备设计，然后扩展到桌面
+- **国际化**: 支持多语言的全球化设计
 
-### Visual Design
-- **Clean Interface**: Minimal, uncluttered design with clear hierarchy
-- **Card-Based Layout**: Consistent card components for content organization
-- **Smooth Animations**: Enhance UX with purposeful motion design
-- **Intuitive Icons**: Lucide icons for clear visual communication
+### 视觉设计
+- **简洁界面**: 简约、整洁的设计，层次清晰
+- **基于卡片的布局**: 一致的卡片组件用于内容组织
+- **流畅动画**: 通过有目的的动作设计增强用户体验
+- **直观图标**: 使用 Lucide 图标实现清晰的视觉交流
+- **物理交互**: Matter.js 驱动的自然物理交互
 
-## 🔗 Integration Points
+## 🔗 API 集成
 
-### Backend API (Future)
-The frontend is prepared for backend integration with:
-- User authentication and registration
-- Profile data persistence
-- Real-time messaging
-- Recommendation algorithms
-- Notification systems
+### 后端 API 集成
+前端已完全准备好与后端 API 集成，包括：
 
-### Expected API Endpoints
-```
+#### 认证和用户管理
+- `authService.ts` - 用户注册、登录、登出
+- `profileService.ts` - 档案 CRUD 操作
+- `universityService.ts` - 大学邮箱验证
+
+#### 社交功能
+- `chatService.ts` - AI 聊天和对话管理
+- `recommendationService.ts` - 智能推荐算法
+- `matchingService.ts` - 高级搜索和匹配
+- `swipeService.ts` - 滑动交互跟踪
+- `whisperService.ts` - Whisper 消息系统
+- `contactService.ts` - 联系人管理
+- `notificationService.ts` - 通知和好友请求
+
+#### 支付和订阅
+- `paymentService.ts` - 支付处理、订阅管理
+- `settingsService.ts` - 用户设置和偏好
+
+#### 实用功能
+- `cardTrackingService.ts` - 卡片浏览跟踪
+- `profileAIService.ts` - AI 档案优化
+
+### API 端点示例
+详细的 API 文档请参考：
+- 中文文档: `FRONTEND_API_DOCUMENTATION.md`
+- 英文文档: `FRONTEND_API_DOCUMENTATION_EN.md`
+
+主要端点类别：
+```typescript
+// 认证
 POST /api/auth/register
 POST /api/auth/login
-GET /api/user/profile
-PUT /api/user/profile
+POST /api/auth/logout
+
+// 档案管理
+GET /api/profile
+PUT /api/profile
+POST /api/profile/avatar
+
+// 聊天和推荐
+POST /api/chat/message
 GET /api/recommendations
-POST /api/connections
-GET /api/chat/messages
-POST /api/chat/messages
-GET /api/notifications
+POST /api/matching/search
+
+// 社交互动
+POST /api/swipe/right
+POST /api/swipe/left
+POST /api/whisper/send
+GET /api/contacts
+
+// 通知
+GET /api/notifications/friend-requests
+POST /api/notifications/friend-request
+GET /api/notifications/receives
+
+// 支付
+POST /api/payments/receives
+POST /api/payments/plan
+GET /api/payments/transactions
 ```
 
-## 📋 Development Status
+## 📋 开发状态
 
-### Completed Features ✅
-- User onboarding and profile setup
-- Swipeable card interface  
-- Basic messaging UI
-- Contact history management
-- Notification system UI
-- Responsive design
-- Component library integration
+### 已完成功能 ✅
+- ✅ 用户引导和档案设置
+- ✅ 卡片滑动界面
+- ✅ AI 聊天系统
+- ✅ 联系人历史管理
+- ✅ 通知系统 UI
+- ✅ 响应式设计
+- ✅ 组件库集成
+- ✅ 完整的 API 服务层
+- ✅ Whisper 消息系统
+- ✅ 卡片跟踪功能
+- ✅ 多语言支持（中文/英文）
+- ✅ 大学邮箱验证
+- ✅ 物理引擎标签显示
+- ✅ 支付集成（微信、支付宝、信用卡）
+- ✅ 订阅计划管理
+- ✅ 自定义 Hooks（useChatInterface, useProfileWizard, useSettings 等）
 
-### In Progress 🚧
-- Backend API integration
-- Real-time messaging
-- Advanced matching algorithms
-- User authentication
-- Data persistence
+### 待完成功能 🚧
+- 🔄 后端 API 完全集成和测试
+- 🔄 实时消息推送
+- 🔄 WebSocket 连接
+- 🔄 推送通知
+- 🔄 高级搜索优化
 
-### Future Enhancements 🔮
-- Push notifications
-- Advanced search and filters
-- Group conversations
-- Media sharing
-- Video calls integration
-- Analytics dashboard
+### 未来增强 🔮
+- 📱 PWA 支持
+- 🔔 浏览器推送通知
+- 👥 群组对话
+- 📸 媒体分享
+- 📹 视频通话集成
+- 📊 分析仪表板
+- 🤖 更多 AI 功能
+- 🌐 更多语言支持
 
-## 🤝 Contributing
+## 🤝 贡献指南
 
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-4. **Push to the branch** (`git push origin feature/amazing-feature`)
-5. **Open a Pull Request**
+1. **Fork 仓库**
+2. **创建功能分支** (`git checkout -b feature/amazing-feature`)
+3. **提交更改** (`git commit -m 'Add amazing feature'`)
+4. **推送到分支** (`git push origin feature/amazing-feature`)
+5. **打开 Pull Request**
 
-### Code Style
-- Use TypeScript for all new code
-- Follow existing naming conventions
-- Add JSDoc comments for complex functions
-- Use Prettier for code formatting
-- Follow React best practices and hooks patterns
+### 代码风格
+- 所有新代码使用 TypeScript
+- 遵循现有的命名约定
+- 为复杂函数添加 JSDoc 注释
+- 遵循 React 最佳实践和 hooks 模式
+- 保持组件的单一职责
+- 编写可复用的代码
 
-## 📄 License
+### 提交规范
+- feat: 新功能
+- fix: 修复 bug
+- docs: 文档更新
+- style: 代码格式调整
+- refactor: 代码重构
+- test: 测试相关
+- chore: 构建或工具相关
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+## 📚 相关文档
 
-## 🙏 Acknowledgments
+### API 文档
+- **中文**: `FRONTEND_API_DOCUMENTATION.md` - 完整的 API 集成文档
+- **English**: `FRONTEND_API_DOCUMENTATION_EN.md` - Complete API integration documentation
 
-- **shadcn/ui** - Beautiful, accessible component library
-- **Radix UI** - Unstyled, accessible UI primitives  
-- **Lucide** - Beautiful icon library
-- **Unsplash** - High-quality photos for user avatars
-- **Tailwind CSS** - Utility-first CSS framework
-- **Vite** - Next generation frontend tooling
+### 服务文档
+- `src/services/SET_UP_README.md` - API 服务设置指南
+- `src/services/CHAT_API_README.md` - 聊天 API 使用文档
+- `src/services/CARD_TRACKING_README.md` - 卡片跟踪功能文档
+- `src/services/CARD_TRACKING_API_REFERENCE.md` - 卡片跟踪 API 参考
+- `src/services/PROFILE_API_USAGE_EXAMPLES.md` - 档案 API 使用示例
+- `src/services/SWIPE_API_USAGE_EXAMPLES.md` - 滑动 API 使用示例
+
+## 📄 许可证
+
+本项目采用 MIT 许可证 - 详见 LICENSE 文件
+
+## 🙏 致谢
+
+- **shadcn/ui** - 美观、可访问的组件库
+- **Radix UI** - 无样式、可访问的 UI 原语组件
+- **Lucide** - 美观的图标库
+- **Tailwind CSS** - 实用优先的 CSS 框架
+- **Vite** - 下一代前端构建工具
+- **Motion (Framer Motion)** - 强大的动画库
+- **Matter.js** - 2D 物理引擎
 
 ---
 
+用 ❤️ 构建，通过 AI 驱动的社交网络连接人们。
+
 Built with ❤️ for connecting people through AI-powered social networking.
-
-## �� 最新功能更新 - Whisper消息系统
-
-### 功能概述
-实现了完整的搜索页面卡片右滑发送whisper消息功能，用户可以通过右滑卡片向其他用户发送包含完整档案信息的whisper消息。
-
-### 核心功能
-- **卡片右滑发送Whisper**: 在搜索结果中右滑用户卡片即可发送whisper消息
-- **完整档案信息**: whisper消息包含发送者的完整档案信息（技能、项目、目标、微信号等）
-- **智能匹配解释**: 自动包含AI生成的匹配解释
-- **微信ID管理**: 支持在设置中管理个人微信ID
-- **自定义消息**: Pro用户可设置自定义whisper消息模板
-
-### 技术实现
-
-#### 新增服务
-- `whisperService.ts`: 完整的whisper消息API服务
-  - 发送whisper消息
-  - 获取收到/发送的whisper消息
-  - 回复whisper消息
-  - 管理whisper设置
-
-#### 核心文件更新
-- `useChatInterface.ts`: 更新卡片右滑逻辑，调用whisper API
-- `App.tsx`: UserProfile接口添加wechatId字段
-- `SettingsScreen.tsx`: 支持微信ID和自定义消息的本地存储
-- `services/index.ts`: 导出新的whisperService
-
-#### API数据结构
-```typescript
-SendWhisperRequest {
-  recipientId: string;
-  message?: string;
-  senderProfile: {
-    // 包含完整的用户档案信息
-    id, name, avatar, wechatId, skills, projects, etc.
-  };
-  context: {
-    searchQuery, searchMode, matchExplanation, etc.
-  };
-}
-```
-
-### 使用流程
-1. 用户在设置中配置微信ID
-2. 在搜索界面进行搜索
-3. 右滑感兴趣的用户卡片
-4. 系统自动发送包含完整档案的whisper消息
-5. 对方收到whisper请求，包含发送者的微信号等联系信息
-
-### 与FriendRequest的区别
-- **FriendRequest**: 仅包含基本信息 (recipientId, message, giftReceives)
-- **Whisper**: 包含完整的发送者档案信息，便于接收者了解发送者背景
-
-### 本地存储
-- `user_wechat_id`: 用户微信ID
-- `custom_whisper_message`: 自定义whisper消息模板
-
-这个实现确保了搜索页面的卡片右滑能够发送完整的whisper消息，而不仅仅是添加到本地联系人历史。
-
-## 💳 设置页面接口实现
-
-### 功能概述
-完整实现了设置页面的所有后端接口，包括购买receives、计划升级/降级、账户管理等核心功能。
-
-### 新增服务
-
-#### settingsService.ts - 用户设置管理
-- **用户设置CRUD**: 获取、更新用户设置信息
-- **通知设置**: 管理whisper请求等通知开关
-- **用户偏好**: 搜索模式、自动匹配等偏好设置
-- **账户操作**: 登出、删除账户、导出数据
-- **本地设置管理**: 微信ID、自定义消息的localStorage管理
-
-#### paymentService.ts - 支付和订阅管理
-- **购买receives**: 支持微信支付、支付宝、信用卡等支付方式
-- **计划升级/降级**: Basic ↔ Pro计划切换
-- **交易历史**: 获取用户的所有交易记录
-- **支付会话**: 创建支付链接和二维码
-- **费用计算**: 自动计算购买和升级费用
-
-### useSettings Hook
-创建了完整的React Hook来管理设置页面状态：
-
-```typescript
-const {
-  // 状态
-  userSettings,
-  currentPlan,
-  receivesLeft,
-  isProcessingPayment,
-  paymentError,
-  
-  // 操作
-  purchaseReceives,
-  changePlan,
-  updateNotificationSettings,
-  logout,
-  deleteAccount,
-} = useSettings();
-```
-
-### API端点结构
-```typescript
-// 设置管理
-SETTINGS: {
-  GET_USER_SETTINGS: '/settings',
-  UPDATE_NOTIFICATION_SETTINGS: '/settings/notifications',
-  UPDATE_USER_PREFERENCES: '/settings/preferences',
-  GET_USER_STATS: '/settings/stats',
-},
-
-// 支付管理
-PAYMENTS: {
-  PURCHASE_RECEIVES: '/payments/receives',
-  CHANGE_PLAN: '/payments/plan',
-  GET_TRANSACTIONS: '/payments/transactions',
-  CREATE_PAYMENT_SESSION: '/payments/session',
-},
-
-// 账户管理
-ACCOUNT: {
-  LOGOUT: '/auth/logout',
-  DELETE_ACCOUNT: '/account/delete',
-  EXPORT_DATA: '/account/export',
-}
-```
-
-### 核心功能实现
-
-#### 1. 购买Receives
-```typescript
-// 购买1-100个receives，每个¥1
-await purchaseReceives(amount, 'wechat_pay');
-// 自动处理支付跳转和余额更新
-```
-
-#### 2. 计划升级
-```typescript
-// 升级到Pro计划（¥10/月）
-await changePlan('pro', 'alipay');
-// 降级到Basic计划（免费）
-await changePlan('basic');
-```
-
-#### 3. 数据类型完整性
-- **UserSettings**: 用户完整设置信息
-- **Transaction**: 交易历史记录
-- **PurchaseReceivesRequest/Response**: 购买请求和响应
-- **ChangePlanRequest/Response**: 计划变更数据结构
-
-### 支付集成
-- 支持微信支付、支付宝、信用卡
-- 自动生成支付链接和二维码
-- 处理支付状态回调
-- 交易记录和状态跟踪
-
-### 错误处理和用户反馈
-- 完善的错误处理机制
-- 支付失败自动重试
-- 用户友好的错误提示
-- 本地数据同步保护
-
-这个实现为设置页面提供了完整的后端支持，用户可以直接进行购买、升级、账户管理等操作。
