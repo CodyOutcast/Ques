@@ -395,3 +395,167 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 Built with ❤️ for connecting people through AI-powered social networking.
+
+## �� 最新功能更新 - Whisper消息系统
+
+### 功能概述
+实现了完整的搜索页面卡片右滑发送whisper消息功能，用户可以通过右滑卡片向其他用户发送包含完整档案信息的whisper消息。
+
+### 核心功能
+- **卡片右滑发送Whisper**: 在搜索结果中右滑用户卡片即可发送whisper消息
+- **完整档案信息**: whisper消息包含发送者的完整档案信息（技能、项目、目标、微信号等）
+- **智能匹配解释**: 自动包含AI生成的匹配解释
+- **微信ID管理**: 支持在设置中管理个人微信ID
+- **自定义消息**: Pro用户可设置自定义whisper消息模板
+
+### 技术实现
+
+#### 新增服务
+- `whisperService.ts`: 完整的whisper消息API服务
+  - 发送whisper消息
+  - 获取收到/发送的whisper消息
+  - 回复whisper消息
+  - 管理whisper设置
+
+#### 核心文件更新
+- `useChatInterface.ts`: 更新卡片右滑逻辑，调用whisper API
+- `App.tsx`: UserProfile接口添加wechatId字段
+- `SettingsScreen.tsx`: 支持微信ID和自定义消息的本地存储
+- `services/index.ts`: 导出新的whisperService
+
+#### API数据结构
+```typescript
+SendWhisperRequest {
+  recipientId: string;
+  message?: string;
+  senderProfile: {
+    // 包含完整的用户档案信息
+    id, name, avatar, wechatId, skills, projects, etc.
+  };
+  context: {
+    searchQuery, searchMode, matchExplanation, etc.
+  };
+}
+```
+
+### 使用流程
+1. 用户在设置中配置微信ID
+2. 在搜索界面进行搜索
+3. 右滑感兴趣的用户卡片
+4. 系统自动发送包含完整档案的whisper消息
+5. 对方收到whisper请求，包含发送者的微信号等联系信息
+
+### 与FriendRequest的区别
+- **FriendRequest**: 仅包含基本信息 (recipientId, message, giftReceives)
+- **Whisper**: 包含完整的发送者档案信息，便于接收者了解发送者背景
+
+### 本地存储
+- `user_wechat_id`: 用户微信ID
+- `custom_whisper_message`: 自定义whisper消息模板
+
+这个实现确保了搜索页面的卡片右滑能够发送完整的whisper消息，而不仅仅是添加到本地联系人历史。
+
+## 💳 设置页面接口实现
+
+### 功能概述
+完整实现了设置页面的所有后端接口，包括购买receives、计划升级/降级、账户管理等核心功能。
+
+### 新增服务
+
+#### settingsService.ts - 用户设置管理
+- **用户设置CRUD**: 获取、更新用户设置信息
+- **通知设置**: 管理whisper请求等通知开关
+- **用户偏好**: 搜索模式、自动匹配等偏好设置
+- **账户操作**: 登出、删除账户、导出数据
+- **本地设置管理**: 微信ID、自定义消息的localStorage管理
+
+#### paymentService.ts - 支付和订阅管理
+- **购买receives**: 支持微信支付、支付宝、信用卡等支付方式
+- **计划升级/降级**: Basic ↔ Pro计划切换
+- **交易历史**: 获取用户的所有交易记录
+- **支付会话**: 创建支付链接和二维码
+- **费用计算**: 自动计算购买和升级费用
+
+### useSettings Hook
+创建了完整的React Hook来管理设置页面状态：
+
+```typescript
+const {
+  // 状态
+  userSettings,
+  currentPlan,
+  receivesLeft,
+  isProcessingPayment,
+  paymentError,
+  
+  // 操作
+  purchaseReceives,
+  changePlan,
+  updateNotificationSettings,
+  logout,
+  deleteAccount,
+} = useSettings();
+```
+
+### API端点结构
+```typescript
+// 设置管理
+SETTINGS: {
+  GET_USER_SETTINGS: '/settings',
+  UPDATE_NOTIFICATION_SETTINGS: '/settings/notifications',
+  UPDATE_USER_PREFERENCES: '/settings/preferences',
+  GET_USER_STATS: '/settings/stats',
+},
+
+// 支付管理
+PAYMENTS: {
+  PURCHASE_RECEIVES: '/payments/receives',
+  CHANGE_PLAN: '/payments/plan',
+  GET_TRANSACTIONS: '/payments/transactions',
+  CREATE_PAYMENT_SESSION: '/payments/session',
+},
+
+// 账户管理
+ACCOUNT: {
+  LOGOUT: '/auth/logout',
+  DELETE_ACCOUNT: '/account/delete',
+  EXPORT_DATA: '/account/export',
+}
+```
+
+### 核心功能实现
+
+#### 1. 购买Receives
+```typescript
+// 购买1-100个receives，每个¥1
+await purchaseReceives(amount, 'wechat_pay');
+// 自动处理支付跳转和余额更新
+```
+
+#### 2. 计划升级
+```typescript
+// 升级到Pro计划（¥10/月）
+await changePlan('pro', 'alipay');
+// 降级到Basic计划（免费）
+await changePlan('basic');
+```
+
+#### 3. 数据类型完整性
+- **UserSettings**: 用户完整设置信息
+- **Transaction**: 交易历史记录
+- **PurchaseReceivesRequest/Response**: 购买请求和响应
+- **ChangePlanRequest/Response**: 计划变更数据结构
+
+### 支付集成
+- 支持微信支付、支付宝、信用卡
+- 自动生成支付链接和二维码
+- 处理支付状态回调
+- 交易记录和状态跟踪
+
+### 错误处理和用户反馈
+- 完善的错误处理机制
+- 支付失败自动重试
+- 用户友好的错误提示
+- 本地数据同步保护
+
+这个实现为设置页面提供了完整的后端支持，用户可以直接进行购买、升级、账户管理等操作。

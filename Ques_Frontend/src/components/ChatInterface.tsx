@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
-import { Send, History, MessageCircle, Bell, School, Globe } from 'lucide-react';
+import { Send, History, Bell, School, Globe } from 'lucide-react';
+import logoIcon from '../assets/icon.jpg';
+import { useLanguage } from '../contexts/LanguageContext';
 import type { UserProfile } from '../App';
 import type { FriendRequest } from './NotificationPanel';
 import ChatCards from './ChatCards';
@@ -213,7 +215,7 @@ const MOCK_RECOMMENDATIONS: UserRecommendation[] = [
     matchScore: 82,
     bio: 'Data scientist passionate about AI ethics and open source contributions. Published researcher with 20+ papers in top-tier journals.',
     oneSentenceIntro: 'I use data science to solve real-world problems with ethical AI solutions.',
-    whyMatch: 'Strong mutual interest! � Your AI ethics values align perfectly with her research focus, while your technical skills complement her data science background. She\'s looking for collaborators who share her values-driven approach to AI development.',
+    whyMatch: 'Strong mutual interest! 🤝 Your AI ethics values align perfectly with her research focus, while your technical skills complement her data science background. She\'s looking for collaborators who share her values-driven approach to AI development.',
     receivesLeft: 8,
   }
 ];
@@ -241,6 +243,7 @@ export function ChatInterface({
   singleCardInChat,
   onClearSingleCard
 }: ChatInterfaceProps) {
+  const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -543,12 +546,16 @@ export function ChatInterface({
       {messages.length > 0 && (
         <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-              <MessageCircle size={16} className="text-white" />
+            <div className="w-8 h-8 rounded-full flex items-center justify-center overflow-hidden">
+              <img 
+                src={logoIcon} 
+                alt="Ques AI" 
+                className="w-full h-full object-cover"
+              />
             </div>
             <div>
-              <h2 className="font-medium">Ques AI</h2>
-              <p className="text-xs text-gray-500">Find your perfect connections</p>
+              <h2 className="font-medium">{t('chat.appName')}</h2>
+              <p className="text-xs text-gray-500">{t('chat.headerSubtitle')}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -622,11 +629,15 @@ export function ChatInterface({
               transition={{ duration: 0.5 }}
               className="text-center"
             >
-              <div className="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
-                <MessageCircle size={32} className="text-white" />
+              <div className="w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg overflow-hidden">
+                <img 
+                  src={logoIcon} 
+                  alt="Ques AI Logo" 
+                  className="w-full h-full object-cover"
+                />
               </div>
-              <h1 className="text-2xl mb-2 text-gray-800">Ques AI</h1>
-              <p className="text-gray-500 mb-4">Your AI-powered networking agent</p>
+              <h1 className="text-2xl mb-2 text-gray-800">{t('chat.appName')}</h1>
+              <p className="text-gray-500 mb-4">{t('chat.appTagline')}</p>
             </motion.div>
           </div>
         </>
@@ -635,9 +646,9 @@ export function ChatInterface({
       {/* Messages and Cards - show when there are messages or cards */}
       {(messages.length > 0 || showCards) && (
         <div className="flex-1 overflow-y-auto px-4 py-4">
-          <div className="space-y-4">
+          <div className="space-y-6">
             {/* Before Cards Messages */}
-            <div className="w-full">
+            <div className="w-full space-y-4">
               <AnimatePresence>
                 {beforeCards.map((message) => (
                   <motion.div
@@ -646,16 +657,17 @@ export function ChatInterface({
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
                     layout
+                    className="mb-4"
                   >
                     {message.type === 'user' ? (
-                      <div className="flex justify-end">
+                      <div className="flex justify-end mb-3">
                         <div className="bg-blue-500 text-white rounded-2xl rounded-tr-md px-4 py-2 max-w-xs">
                           <p>{message.content}</p>
                           <p className="text-xs opacity-75 mt-1">{formatTime(message.timestamp)}</p>
                         </div>
                       </div>
                     ) : (
-                      <div className="flex justify-start">
+                      <div className="flex justify-start mb-3">
                         <div className="bg-gray-100 rounded-2xl rounded-tl-md px-4 py-2 max-w-xs">
                           <p className="text-gray-800">{message.content}</p>
                           <p className="text-xs text-gray-500 mt-1">{formatTime(message.timestamp)}</p>
@@ -677,7 +689,7 @@ export function ChatInterface({
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 50, scale: 0.95 }}
                   transition={{ duration: 0.4 }}
-                  className="flex justify-center w-full my-4"
+                  className="flex justify-center w-full my-6"
                 >
                   <ChatCards
                     profiles={currentRecommendations}
@@ -691,6 +703,7 @@ export function ChatInterface({
             </AnimatePresence>
 
             {/* After Cards Messages */}
+            <div className="w-full space-y-4">
             <AnimatePresence>
               {afterCards.map((message) => (
                 <motion.div
@@ -699,16 +712,17 @@ export function ChatInterface({
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.3 }}
                   layout
+                    className="mb-4"
                 >
                   {message.type === 'user' ? (
-                    <div className="flex justify-end">
+                      <div className="flex justify-end mb-3">
                       <div className="bg-blue-500 text-white rounded-2xl rounded-tr-md px-4 py-2 max-w-xs">
                         <p>{message.content}</p>
                         <p className="text-xs opacity-75 mt-1">{formatTime(message.timestamp)}</p>
                       </div>
                     </div>
                   ) : (
-                    <div className="flex justify-start">
+                      <div className="flex justify-start mb-3">
                       <div className="bg-gray-100 rounded-2xl rounded-tl-md px-4 py-2 max-w-xs">
                         <p className="text-gray-800">{message.content}</p>
                         <p className="text-xs text-gray-500 mt-1">{formatTime(message.timestamp)}</p>
@@ -718,13 +732,14 @@ export function ChatInterface({
                 </motion.div>
               ))}
             </AnimatePresence>
+            </div>
 
             {/* Typing Indicator */}
             {isTyping && (
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="flex justify-start"
+                className="flex justify-start mt-4"
               >
                 <div className="bg-gray-100 rounded-2xl rounded-tl-md px-4 py-2">
                   <div className="flex space-x-1">
@@ -816,11 +831,11 @@ export function ChatInterface({
       <div className="p-4 border-t border-gray-200 bg-white">
         <div className="flex items-center gap-3">
           <div className="flex-1 relative">
-            <Input
+              <Input
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask me to find connections..."
+              placeholder={t('chat.typeMessage')}
               className="pr-12 rounded-full"
             />
             <Button

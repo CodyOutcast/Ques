@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { ProfileSetupWizard } from './components/ProfileSetupWizard';
 import { ChatInterface } from './components/ChatInterface';
@@ -9,6 +9,7 @@ import { BottomNavigation } from './components/BottomNavigation';
 import { ContactHistory, type ContactedUser } from './components/ContactHistory';
 import { NotificationPanel, type FriendRequest } from './components/NotificationPanel';
 import { SwipeableCardStack } from './components/SwipeableCardStack';
+import { LanguageProvider } from './contexts/LanguageContext';
 
 export type Screen = 'welcome' | 'profile-setup' | 'home' | 'profile' | 'settings';
 
@@ -54,7 +55,8 @@ export interface UserProfile {
     verified: boolean;
   };
   
-
+  // Contact & Social
+  wechatId?: string;
   
   // Legacy fields for backward compatibility
   bio?: string;
@@ -127,12 +129,24 @@ export default function App() {
     const newContact: ContactedUser = {
       id: recommendation.id,
       name: recommendation.name,
+      age: recommendation.age,
+      gender: recommendation.gender,
       avatar: recommendation.avatar,
-      skills: recommendation.skills,
       location: recommendation.location,
+      hobbies: recommendation.hobbies || [],
+      languages: recommendation.languages || [],
+      skills: recommendation.skills,
+      resources: recommendation.resources || [],
+      projects: recommendation.projects || [],
+      goals: recommendation.goals || [],
+      demands: recommendation.demands || [],
+      institutions: recommendation.institutions || [],
+      university: recommendation.university,
       matchScore: recommendation.matchScore,
       bio: recommendation.bio,
-      projects: recommendation.projects,
+      oneSentenceIntro: recommendation.oneSentenceIntro,
+      whyMatch: recommendation.whyMatch,
+      receivesLeft: recommendation.receivesLeft,
       contactedAt: new Date(),
       reported: false,
     };
@@ -163,11 +177,28 @@ export default function App() {
     const quotedRequest = {
       id: contact.id,
       name: contact.name,
+      age: '25', // Default age since ContactedUser doesn't have this
+      gender: 'Unknown', // Default gender since ContactedUser doesn't have this
       avatar: contact.avatar,
-      skills: contact.skills,
       location: contact.location,
-      bio: contact.bio,
+      hobbies: [], // Default empty array
+      languages: [], // Default empty array
+      skills: contact.skills,
+      resources: [], // Default empty array
+      projects: contact.projects.map((p: any) => ({ 
+        title: p.title || p, 
+        role: 'Collaborator', 
+        description: '', 
+        referenceLinks: [] 
+      })),
+      goals: [], // Default empty array
+      demands: [], // Default empty array
+      institutions: [], // Default empty array
+      university: undefined, // Default undefined
       matchScore: contact.matchScore,
+      bio: contact.bio,
+      oneSentenceIntro: contact.bio?.substring(0, 100) + '...', // Short intro from bio
+      receivesLeft: 5, // Default value
       requestedAt: contact.contactedAt,
       mutualInterest: 'Previous conversation partner',
       wechatId: 'existing_contact'
@@ -202,12 +233,24 @@ export default function App() {
     const newContact: ContactedUser = {
       id: request.id,
       name: request.name,
+      age: request.age,
+      gender: request.gender,
       avatar: request.avatar,
-      skills: request.skills,
       location: request.location,
+      hobbies: request.hobbies,
+      languages: request.languages,
+      skills: request.skills,
+      resources: request.resources,
+      projects: request.projects,
+      goals: request.goals,
+      demands: request.demands,
+      institutions: request.institutions,
+      university: request.university,
       matchScore: request.matchScore,
       bio: request.bio,
-      projects: [], // Friend requests don't have projects data
+      oneSentenceIntro: request.oneSentenceIntro,
+      whyMatch: request.mutualInterest, // 将mutualInterest映射为whyMatch
+      receivesLeft: request.receivesLeft,
       contactedAt: new Date(),
       reported: false,
     };
@@ -224,18 +267,26 @@ export default function App() {
     const cardData: any = {
       id: contact.id,
       name: contact.name,
+      age: contact.age || '25', // 默认年龄
+      gender: contact.gender || 'Unknown', // 默认性别
       avatar: contact.avatar,
-      skills: contact.skills,
       location: contact.location,
+      hobbies: contact.hobbies || [],
+      languages: contact.languages || [],
+      skills: contact.skills,
+      resources: contact.resources || [],
+      projects: 'projects' in contact 
+        ? contact.projects
+        : [],
+      goals: contact.goals || [],
+      demands: contact.demands || [],
+      institutions: contact.institutions || [],
+      university: contact.university,
       matchScore: contact.matchScore,
       bio: contact.bio,
-      oneSentenceIntro: contact.bio?.substring(0, 100) + '...', // Short intro from bio
-      projects: 'projects' in contact ? contact.projects.map((p: any) => ({ title: p, role: 'Collaborator', description: '', referenceLinks: [] })) : [],
-      goals: [],
-      demands: [],
-      institutions: [],
-      university: undefined,
-      whyMatch: 'mutualInterest' in contact ? contact.mutualInterest : 'This is the original profile card you requested to review.',
+      oneSentenceIntro: contact.oneSentenceIntro || contact.bio?.substring(0, 100) + '...', // Short intro from bio
+      whyMatch: 'whyMatch' in contact ? contact.whyMatch : ('mutualInterest' in contact ? contact.mutualInterest : 'This is the original profile card you requested to review.'),
+      receivesLeft: contact.receivesLeft || 5, // 默认值
     };
     
     // Switch to home screen and show in chat
@@ -248,7 +299,7 @@ export default function App() {
   };
 
   const handleTopUpReceives = (amount: number) => {
-    setReceivesLeft(prev => prev + amount);
+    setReceivesLeft(prev => Math.min(prev + amount, 50)); // Cap at 50 for basic plan
   };
 
   const handleGiftReceives = (recipientName: string, amount: number) => {
@@ -262,7 +313,7 @@ export default function App() {
     if (plan === 'pro') {
       setReceivesLeft(999); // Unlimited for pro
     } else {
-      setReceivesLeft(5); // Reset to basic limit
+      setReceivesLeft(Math.min(receivesLeft, 50)); // Cap at 50 for basic plan
     }
   };
 
@@ -280,11 +331,46 @@ export default function App() {
         {
           id: 'req_1',
           name: 'Emma Zhang',
+          age: '26',
+          gender: 'Female',
           avatar: '👩‍💼',
-          skills: ['Product Design', 'UX Research', 'Figma'],
           location: 'Shanghai, China',
-          bio: 'Senior Product Designer at tech startup',
+          hobbies: ['Design', 'Photography', 'Coffee'],
+          languages: ['English', 'Mandarin', 'Japanese'],
+          skills: ['Product Design', 'UX Research', 'Figma', 'Sketch', 'User Testing'],
+          resources: ['Design Team', 'Research Lab', 'Prototyping Tools', 'User Testing Platform'],
+          projects: [
+            {
+              title: 'Mobile Banking App',
+              role: 'Lead Designer',
+              description: 'Redesigned mobile banking experience for 2M+ users',
+              referenceLinks: ['https://dribbble.com/emma-banking-redesign']
+            },
+            {
+              title: 'Design System Framework',
+              role: 'Creator',
+              description: 'Built comprehensive design system for startup ecosystem',
+              referenceLinks: []
+            }
+          ],
+          goals: ['Start design consultancy', 'Publish design book', 'Teach UX workshops'],
+          demands: ['Technical co-founder', 'Frontend developer', 'Business partner'],
+          institutions: [
+            {
+              name: 'ByteDance',
+              role: 'Senior Product Designer',
+              description: 'Lead designer for TikTok\'s creator tools and monetization features',
+              verified: true
+            }
+          ],
+          university: {
+            name: 'Shanghai University of Finance and Economics',
+            verified: true
+          },
           matchScore: 92,
+          bio: 'Senior Product Designer at tech startup with passion for creating user-centered experiences',
+          oneSentenceIntro: 'I design digital experiences that make complex tasks feel effortless.',
+          receivesLeft: 8,
           requestedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
           mutualInterest: 'Perfect design-tech match! 🎨 You have the Python skills she needs for her design tool project, while she offers the UX expertise for your AI platform. Both looking for co-founders in China.',
           wechatId: 'Emma_Designer2024',
@@ -293,11 +379,46 @@ export default function App() {
         {
           id: 'req_2', 
           name: 'David Liu',
+          age: '31',
+          gender: 'Male',
           avatar: '👨‍💻',
-          skills: ['Blockchain', 'Smart Contracts', 'Web3'],
           location: 'Beijing, China',
+          hobbies: ['Blockchain', 'Gaming', 'Investing'],
+          languages: ['Mandarin', 'English', 'Korean'],
+          skills: ['Blockchain', 'Smart Contracts', 'Web3', 'Solidity', 'DeFi', 'Rust'],
+          resources: ['Blockchain Infrastructure', 'Crypto Community', 'VC Network', 'Mining Farm Access'],
+          projects: [
+            {
+              title: 'DeFi Lending Protocol',
+              role: 'Lead Developer',
+              description: 'Built decentralized lending platform with $50M+ TVL',
+              referenceLinks: ['https://github.com/davidliu/defi-protocol']
+            },
+            {
+              title: 'NFT Marketplace',
+              role: 'Co-founder & CTO',
+              description: 'Launched NFT platform for digital artists in Asia',
+              referenceLinks: ['https://nftasia.com']
+            }
+          ],
+          goals: ['Build next unicorn startup', 'Create Web3 ecosystem', 'Mentor blockchain developers'],
+          demands: ['Business co-founder', 'Marketing expert', 'Regulatory advisor'],
+          institutions: [
+            {
+              name: 'Binance',
+              role: 'Former Blockchain Engineer',
+              description: 'Core contributor to Binance Smart Chain development',
+              verified: true
+            }
+          ],
+          university: {
+            name: 'Tsinghua University',
+            verified: true
+          },
           matchScore: 88,
-          bio: 'Blockchain developer and crypto enthusiast',
+          bio: 'Blockchain developer and crypto enthusiast building the future of decentralized finance',
+          oneSentenceIntro: 'I build blockchain solutions that democratize access to financial services.',
+          receivesLeft: 12,
           requestedAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
           mutualInterest: 'Great tech synergy! ⚡ Your AI background complements his blockchain expertise perfectly for building next-gen fintech solutions. He\'s seeking technical co-founders with your skill set.',
           wechatId: 'DavidLiu_BlockDev'
@@ -311,15 +432,11 @@ export default function App() {
   const showBottomNav = currentScreen !== 'welcome' && currentScreen !== 'profile-setup';
 
   return (
-    <div className="w-full h-screen bg-white flex flex-col overflow-hidden" style={{ maxWidth: '375px', margin: '0 auto' }}>
-      {/* Status Bar Simulator */}
-      <div className="h-11 bg-white flex items-center justify-between px-4 text-sm">
-        <span>9:41</span>
-        <span>Ques</span>
-        <div className="flex items-center gap-1">
-          <div className="w-4 h-2 bg-black rounded-sm"></div>
-          <div className="w-1 h-2 bg-black rounded-sm"></div>
-        </div>
+    <LanguageProvider>
+      <div className="w-full h-screen bg-white flex flex-col overflow-hidden mx-auto" style={{ maxWidth: 'min(100vw, 600px)', minWidth: '320px' }}>
+      {/* Status Bar - Keep height for device status bar but remove content */}
+      <div className="bg-white" style={{ height: 'max(2.75rem, env(safe-area-inset-top, 2.75rem))' }}>
+        {/* Empty div to maintain status bar height */}
       </div>
 
       {/* Main Content */}
@@ -450,6 +567,7 @@ export default function App() {
             onQuoteContact={handleQuoteFromHistory}
             onRemoveContact={handleRemoveFromHistory}
             onViewOriginalCard={handleViewOriginalCard}
+            onGiftReceives={handleGiftReceives}
           />
         )}
       </AnimatePresence>
@@ -463,7 +581,9 @@ export default function App() {
         onRemoveRequest={handleRemoveRequest}
         onAddToHistory={handleAddWhisperToHistory}
         onViewOriginalCard={handleViewOriginalCard}
+        onGiftReceives={handleGiftReceives}
       />
-    </div>
+      </div>
+    </LanguageProvider>
   );
 }

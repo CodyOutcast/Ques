@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useMemo } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -8,6 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from './ui/badge';
 import { Card, CardContent } from './ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { PhysicsTagContainer } from './PhysicsTagContainer';
+import { useLanguage } from '../contexts/LanguageContext';
 import { 
   ChevronRight, 
   User, 
@@ -34,6 +36,7 @@ interface ProfileSetupWizardProps {
 }
 
 export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardProps) {
+  const { t } = useLanguage();
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
@@ -67,18 +70,33 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
   const [showUniversityDropdown, setShowUniversityDropdown] = useState(false);
   const [isUniversitySelected, setIsUniversitySelected] = useState(false);
   const [wechatAuthenticated, setWechatAuthenticated] = useState(false);
+  const [ageError, setAgeError] = useState(false);
+  
+  // Word count error states for tag inputs
+  const [hobbyWordError, setHobbyWordError] = useState(false);
+  const [languageWordError, setLanguageWordError] = useState(false);
+  const [skillWordError, setSkillWordError] = useState(false);
+  const [resourceWordError, setResourceWordError] = useState(false);
+  const [goalWordError, setGoalWordError] = useState(false);
+  const [demandWordError, setDemandWordError] = useState(false);
+
+  const validateAge = useCallback((age: string) => {
+    // Check if it's a positive integer
+    const ageNumber = parseInt(age, 10);
+    return age === ageNumber.toString() && ageNumber > 0 && ageNumber <= 120;
+  }, []);
 
   const steps = useMemo(() => [
-    'Demographics', 
-    'Skills',
-    'Resources',
-    'Past Projects',
-    'Goals',
-    'Demands',
-    'Past Institutions',
-    'Your Affiliated University',
-    'Authentication'
-  ], []);
+    t('profileSetup.demographics'), 
+    t('profileSetup.skills'),
+    t('profileSetup.resources'),
+    t('profileSetup.pastProjects'),
+    t('profileSetup.goals'),
+    t('profileSetup.demands'),
+    t('profileSetup.pastInstitutions'),
+    t('profileSetup.university'),
+    t('profileSetup.authentication')
+  ], [t]);
 
   // Chinese universities list - memoized to prevent recreating on each render
   const chineseUniversities = useMemo(() => [
@@ -134,9 +152,10 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
         goals: ['Skip Goals'],
         demands: ['Skip Demands'],
         institutions: [],
-        currentUniversity: 'Skip University',
-        universityEmail: 'skip@skip.edu',
-        wechatVerified: true,
+        university: {
+          name: 'Skip University',
+          verified: true
+        },
         wechatId: 'skip_user'
       };
       
@@ -158,13 +177,33 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
     }
   }, [handleInputChange]);
 
-  const addToArray = useCallback((field: keyof UserProfile, value: string, tempSetter: (val: string) => void) => {
+  // Helper function to check word count
+  const checkWordCount = useCallback((value: string) => {
+    if (!value.trim()) return 0;
+    return value.trim().split(/\s+/).length;
+  }, []);
+
+  const addToArray = useCallback((field: keyof UserProfile, value: string, tempSetter: (val: string) => void, errorSetter?: (error: boolean) => void) => {
     if (value.trim()) {
       const currentArray = profile[field] as string[];
+      
+      // Check if array already has 5 items
+      if (currentArray.length >= 5) {
+        return;
+      }
+      
+      // Check if value exceeds 15 words
+      const wordCount = checkWordCount(value);
+      if (wordCount > 15) {
+        if (errorSetter) errorSetter(true);
+        return;
+      }
+      
       handleInputChange(field, [...currentArray, value.trim()]);
       tempSetter('');
+      if (errorSetter) errorSetter(false);
     }
-  }, [profile, handleInputChange]);
+  }, [profile, handleInputChange, checkWordCount]);
 
   const removeFromArray = useCallback((field: keyof UserProfile, index: number) => {
     const currentArray = profile[field] as string[];
@@ -295,7 +334,6 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
       // Complete setup
       onComplete({
         ...cleanedProfile,
-        wechatVerified: true,
         wechatId: 'user_' + Date.now()
       });
     } else {
@@ -315,18 +353,18 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
   const canProceed = useCallback(() => {
     switch (currentStep) {
-      case 0: return profile.name && profile.age && profile.gender && profile.location && profile.profilePhoto;
+      case 0: return profile.name && profile.age && validateAge(profile.age) && profile.gender && profile.location && profile.profilePhoto;
       case 1: return true;
       case 2: return true;
       case 3: return true;
       case 4: return true; // Goals are now optional
       case 5: return true;
       case 6: return true;
-      case 7: return emailVerified; // University step requires email verification
-      case 8: return wechatAuthenticated; // Require WeChat authentication on final step
+      case 7: return true; // University verification is now optional
+      case 8: return true; // WeChat authentication is now optional (can skip)
       default: return false;
     }
-  }, [currentStep, profile, wechatAuthenticated, currentUniversity, emailVerified]);
+  }, [currentStep, profile, validateAge]);
 
   // Render functions for each step
   const renderDemographics = useCallback(() => (
@@ -335,7 +373,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
       <div className="text-center mb-3">
         <div className="flex items-center justify-center gap-2">
           <User size={20} className="text-blue-500" />
-          <h2>Tell us about yourself</h2>
+          <h2>{t('profileSetup.tellUsAbout')}</h2>
         </div>
       </div>
 
@@ -357,7 +395,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
               ) : (
                 <div className="flex flex-col items-center justify-center text-xs text-gray-500">
                   <Camera size={18} className="mb-1" />
-                  <span>Photo</span>
+                  <span>{t('profileSetup.photo')}*</span>
                 </div>
               )}
             </div>
@@ -373,7 +411,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
             )}
           </div>
           {profile.profilePhoto && (
-            <Label className="text-xs text-gray-500 mt-1">Photo</Label>
+            <Label className="text-xs text-gray-500 mt-1">{t('profileSetup.photo')}</Label>
           )}
           <input
             id="photo-upload"
@@ -386,35 +424,48 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
         <div className="col-span-2 space-y-2">
           <div>
-            <Label className="text-sm">Name *</Label>
+            <Label className="text-sm">{t('profileSetup.name')} *</Label>
             <Input
               value={profile.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="Your full name"
+              placeholder={t('profileSetup.name')}
               className="h-8"
             />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-sm">Age *</Label>
+              <Label className="text-sm">{t('profileSetup.age')} *</Label>
               <Input
                 value={profile.age}
-                onChange={(e) => handleInputChange('age', e.target.value)}
+                onChange={(e) => {
+                  const age = e.target.value;
+                  handleInputChange('age', age);
+                  if (age && !validateAge(age)) {
+                    setAgeError(true);
+                  } else {
+                    setAgeError(false);
+                  }
+                }}
                 placeholder="25"
                 type="number"
-                className="h-8"
+                min="1"
+                max="120"
+                className={`h-8 ${ageError ? 'border-red-500 bg-red-50' : ''}`}
               />
+              {ageError && (
+                <p className="text-xs text-red-500 mt-1">{t('profileSetup.validAgeError')}</p>
+              )}
             </div>
             <div>
-              <Label className="text-sm">Gender *</Label>
+              <Label className="text-sm">{t('profileSetup.gender')} *</Label>
               <Select value={profile.gender} onValueChange={(value) => handleInputChange('gender', value)}>
                 <SelectTrigger className="h-8">
-                  <SelectValue placeholder="Select" />
+                  <SelectValue placeholder={t('profileSetup.selectGender')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="male">{t('profileSetup.male')}</SelectItem>
+                  <SelectItem value="female">{t('profileSetup.female')}</SelectItem>
+                  <SelectItem value="other">{t('profileSetup.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -424,13 +475,13 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
       {/* Location */}
       <div>
-        <Label className="text-sm">Location *</Label>
+        <Label className="text-sm">{t('profileSetup.location')} *</Label>
         <div className="relative">
           <MapPin size={14} className="absolute left-3 top-2 text-gray-400" />
           <Input
             value={profile.location}
             onChange={(e) => handleInputChange('location', e.target.value)}
-            placeholder="Beijing, China"
+            placeholder={t('profileSetup.locationPlaceholder')}
             className="pl-9 h-8"
           />
         </div>
@@ -438,13 +489,13 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
       {/* One sentence intro */}
       <div>
-        <Label className="text-sm">Describe yourself in one sentence</Label>
+        <Label className="text-sm">{t('profileSetup.oneSentence')}</Label>
         <div className="relative">
           <MessageCircle size={14} className="absolute left-3 top-2 text-gray-400" />
           <Input
             value={profile.oneSentenceIntro || ''}
             onChange={(e) => handleInputChange('oneSentenceIntro', e.target.value)}
-            placeholder="I'm a passionate designer..."
+            placeholder={t('profileSetup.oneSentencePlaceholder')}
             className="pl-9 h-8"
             maxLength={150}
           />
@@ -453,24 +504,34 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
       {/* Fixed Height Hobbies with Horizontal Scroll */}
       <div>
-        <Label className="text-sm">Hobbies & Interests</Label>
+        <Label className="text-sm">{t('profileSetup.hobbies')} <span className="text-xs text-gray-400">({profile.hobbies.length}/5, {t('profileSetup.maxItems')})</span></Label>
         <div className="flex gap-2 mb-1">
           <Input
             value={tempHobby}
-            onChange={(e) => setTempHobby(e.target.value)}
-            placeholder="Add a hobby"
-            onKeyPress={(e) => e.key === 'Enter' && addToArray('hobbies', tempHobby, setTempHobby)}
-            className="h-7 text-sm"
+            onChange={(e) => {
+              const value = e.target.value;
+              setTempHobby(value);
+              const wordCount = checkWordCount(value);
+              setHobbyWordError(wordCount > 15);
+            }}
+            placeholder={t('profileSetup.addHobby')}
+            onKeyPress={(e) => e.key === 'Enter' && addToArray('hobbies', tempHobby, setTempHobby, setHobbyWordError)}
+            className={`h-7 text-sm ${hobbyWordError ? 'border-red-500' : ''}`}
+            disabled={profile.hobbies.length >= 5}
           />
           <Button 
             type="button" 
             size="sm"
-            onClick={() => addToArray('hobbies', tempHobby, setTempHobby)}
+            onClick={() => addToArray('hobbies', tempHobby, setTempHobby, setHobbyWordError)}
             className="h-7 px-2"
+            disabled={profile.hobbies.length >= 5 || hobbyWordError}
           >
             <Plus size={12} />
           </Button>
         </div>
+        {hobbyWordError && (
+          <p className="text-xs text-red-500 mt-1">{t('profileSetup.wordLimitError')} {checkWordCount(tempHobby)} {t('profileSetup.words')}</p>
+        )}
         {/* Fixed height container for tags */}
         <div className="h-8 overflow-hidden">
           {profile.hobbies.length > 0 ? (
@@ -491,7 +552,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
             </div>
           ) : (
             <div className="h-8 flex items-center">
-              <span className="text-xs text-gray-400">No hobbies added yet</span>
+              <span className="text-xs text-gray-400">{t('profileSetup.noHobbiesAdded')}</span>
             </div>
           )}
         </div>
@@ -499,27 +560,37 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
       {/* Fixed Height Languages with Horizontal Scroll */}
       <div>
-        <Label className="text-sm">Languages</Label>
+        <Label className="text-sm">{t('profileSetup.languages')} <span className="text-xs text-gray-400">({profile.languages.length}/5, {t('profileSetup.maxItems')})</span></Label>
         <div className="flex gap-2 mb-1">
           <div className="relative flex-1">
             <Languages size={14} className="absolute left-3 top-1.5 text-gray-400" />
             <Input
               value={tempLanguage}
-              onChange={(e) => setTempLanguage(e.target.value)}
-              placeholder="Add a language"
-              className="pl-9 h-7 text-sm"
-              onKeyPress={(e) => e.key === 'Enter' && addToArray('languages', tempLanguage, setTempLanguage)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setTempLanguage(value);
+                const wordCount = checkWordCount(value);
+                setLanguageWordError(wordCount > 15);
+              }}
+              placeholder={t('profileSetup.addLanguage')}
+              className={`pl-9 h-7 text-sm ${languageWordError ? 'border-red-500' : ''}`}
+              onKeyPress={(e) => e.key === 'Enter' && addToArray('languages', tempLanguage, setTempLanguage, setLanguageWordError)}
+              disabled={profile.languages.length >= 5}
             />
           </div>
           <Button 
             type="button" 
             size="sm"
-            onClick={() => addToArray('languages', tempLanguage, setTempLanguage)}
+            onClick={() => addToArray('languages', tempLanguage, setTempLanguage, setLanguageWordError)}
             className="h-7 px-2"
+            disabled={profile.languages.length >= 5 || languageWordError}
           >
             <Plus size={12} />
           </Button>
         </div>
+        {languageWordError && (
+          <p className="text-xs text-red-500 mt-1">{t('profileSetup.wordLimitError')} {checkWordCount(tempLanguage)} {t('profileSetup.words')}</p>
+        )}
         {/* Fixed height container for tags */}
         <div className="h-8 overflow-hidden">
           {profile.languages.length > 0 ? (
@@ -540,13 +611,13 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
             </div>
           ) : (
             <div className="h-8 flex items-center">
-              <span className="text-xs text-gray-400">No languages added yet</span>
+              <span className="text-xs text-gray-400">{t('profileSetup.noLanguagesAdded')}</span>
             </div>
           )}  
         </div>
       </div>
     </div>
-  ), [profile, tempHobby, tempLanguage, handleInputChange, addToArray, removeFromArray]);
+  ), [profile, tempHobby, tempLanguage, handleInputChange, addToArray, removeFromArray, checkWordCount, hobbyWordError, languageWordError, t]);
 
   const renderSkills = useCallback(() => {
     const skillSuggestions = [
@@ -558,56 +629,28 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
     return (
       <div className="flex flex-col h-full py-6 relative">
         {/* Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <Lightbulb size={28} className="text-blue-500 mx-auto mb-2" />
-          <h2>What are your skills?</h2>
-          <p className="text-sm text-gray-500">Add tags to showcase your expertise</p>
+          <h2>{t('profileSetup.whatAreSkills')}</h2>
+          <p className="text-sm text-gray-500">{t('profileSetup.addTagsSkills')}</p>
         </div>
 
-        {/* Added Skills - Center of screen */}
-        <div className="flex-1 flex items-center justify-center pb-32">
-          <AnimatePresence>
-            {profile.skills.length > 0 ? (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap gap-2 justify-center max-w-sm"
-              >
-                {profile.skills.map((skill, index) => (
-                  <motion.div
-                    key={`skill-${skill}-${index}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.2, delay: index * 0.05 }}
-                  >
-                    <Badge variant="outline" className="pr-1">
-                      {skill}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-4 w-4 p-0 ml-1"
-                        onClick={() => removeFromArray('skills', index)}
-                      >
-                        <X size={10} />
-                      </Button>
-                    </Badge>
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              <div className="text-center text-gray-400">
-                <p className="text-sm">Your skills will appear here</p>
-              </div>
-            )}
-          </AnimatePresence>
+        {/* Physics Tag Container - Center of screen */}
+        <div className="flex-1 pb-32">
+          <PhysicsTagContainer 
+            tags={profile.skills}
+            onRemoveTag={(index) => removeFromArray('skills', index)}
+            containerHeight={280}
+            tagColor="default"
+            emptyText={t('profileSetup.skillsAppear')}
+          />
         </div>
 
         {/* Bottom Section - Suggestions + Input */}
-        <div className="absolute bottom-0 left-6 right-6 space-y-4">
+        <div className="absolute bottom-4 left-6 right-6 space-y-4">
           {/* Suggestion Bubbles */}
           <div>
-            <Label className="text-xs text-gray-500 mb-2 block">Quick suggestions:</Label>
+            <Label className="text-xs text-gray-500 mb-2 block">{t('profileSetup.quickSuggestions')}</Label>
             <div className="flex flex-wrap gap-2">
               {skillSuggestions
                 .filter(suggestion => !profile.skills.includes(suggestion))
@@ -635,29 +678,38 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
           {/* Input at bottom */}
           <div>
-            <Label className="text-sm">Skills & Expertise</Label>
+            <Label className="text-sm">{t('profileSetup.skillsExpertise')} <span className="text-xs text-gray-400">({profile.skills.length}/5, {t('profileSetup.maxItems')})</span></Label>
             <div className="flex gap-2">
               <Input
                 value={tempSkill}
-                onChange={(e) => setTempSkill(e.target.value)}
-                placeholder="e.g., Programming, Design, Marketing"
-                onKeyPress={(e) => e.key === 'Enter' && addToArray('skills', tempSkill, setTempSkill)}
-                className="h-9 flex-1"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setTempSkill(value);
+                  const wordCount = checkWordCount(value);
+                  setSkillWordError(wordCount > 15);
+                }}
+                placeholder={t('profileSetup.skillPlaceholder')}
+                onKeyPress={(e) => e.key === 'Enter' && addToArray('skills', tempSkill, setTempSkill, setSkillWordError)}
+                className={`h-9 flex-1 ${skillWordError ? 'border-red-500' : ''}`}
+                disabled={profile.skills.length >= 5}
               />
               <Button
                 type="button"
-                onClick={() => addToArray('skills', tempSkill, setTempSkill)}
-                disabled={!tempSkill.trim()}
+                onClick={() => addToArray('skills', tempSkill, setTempSkill, setSkillWordError)}
+                disabled={!tempSkill.trim() || profile.skills.length >= 5 || skillWordError}
                 className="h-9 px-3"
               >
                 +
               </Button>
             </div>
+            {skillWordError && (
+              <p className="text-xs text-red-500 mt-1">{t('profileSetup.wordLimitError')} {checkWordCount(tempSkill)} {t('profileSetup.words')}</p>
+            )}
           </div>
         </div>
       </div>
     );
-  }, [profile.skills, tempSkill, addToArray, removeFromArray]);
+  }, [profile.skills, tempSkill, addToArray, removeFromArray, checkWordCount, skillWordError, t]);
 
   const renderResources = useCallback(() => {
     const resourceSuggestions = [
@@ -669,56 +721,28 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
     return (
       <div className="flex flex-col h-full py-6 relative">
         {/* Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-4">
           <Package size={28} className="text-blue-500 mx-auto mb-2" />
-          <h2>What resources do you have?</h2>
-          <p className="text-sm text-gray-500">Share what you can offer to others</p>
+          <h2>{t('profileSetup.whatResources')}</h2>
+          <p className="text-sm text-gray-500">{t('profileSetup.shareResources')}</p>
         </div>
 
-        {/* Added Resources - Center of screen */}
-        <div className="flex-1 flex items-center justify-center pb-32">
-          <AnimatePresence>
-            {profile.resources.length > 0 ? (
-              <motion.div 
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-wrap gap-2 justify-center max-w-sm"
-              >
-                {profile.resources.map((resource, index) => (
-                  <motion.div
-                    key={`resource-${resource}-${index}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ duration: 0.2, delay: index * 0.05 }}
-                  >
-                    <Badge variant="outline" className="pr-1 bg-green-50 text-green-700 border-green-200">
-                      {resource}
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-4 w-4 p-0 ml-1"
-                        onClick={() => removeFromArray('resources', index)}
-                      >
-                        <X size={10} />
-                      </Button>
-                    </Badge>
-                  </motion.div>
-                ))}
-              </motion.div>
-            ) : (
-              <div className="text-center text-gray-400">
-                <p className="text-sm">Your resources will appear here</p>
-              </div>
-            )}
-          </AnimatePresence>
+        {/* Physics Tag Container - Center of screen */}
+        <div className="flex-1 pb-32">
+          <PhysicsTagContainer 
+            tags={profile.resources}
+            onRemoveTag={(index) => removeFromArray('resources', index)}
+            containerHeight={280}
+            tagColor="green"
+            emptyText={t('profileSetup.resourcesAppear')}
+          />
         </div>
 
         {/* Bottom Section - Suggestions + Input */}
-        <div className="absolute bottom-0 left-6 right-6 space-y-4">
+        <div className="absolute bottom-4 left-6 right-6 space-y-4">
           {/* Suggestion Bubbles */}
           <div>
-            <Label className="text-xs text-gray-500 mb-2 block">Quick suggestions:</Label>
+            <Label className="text-xs text-gray-500 mb-2 block">{t('profileSetup.quickSuggestions')}</Label>
             <div className="flex flex-wrap gap-2">
               {resourceSuggestions
                 .filter(suggestion => !profile.resources.includes(suggestion))
@@ -746,37 +770,46 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
           {/* Input at bottom */}
           <div>
-            <Label className="text-sm">Available Resources</Label>
+            <Label className="text-sm">{t('profileSetup.availableResources')} <span className="text-xs text-gray-400">({profile.resources.length}/5, {t('profileSetup.maxItems')})</span></Label>
             <div className="flex gap-2">
               <Input
                 value={tempResource}
-                onChange={(e) => setTempResource(e.target.value)}
-                placeholder="e.g., Mentorship, Funding, Network Access"
-                onKeyPress={(e) => e.key === 'Enter' && addToArray('resources', tempResource, setTempResource)}
-                className="h-9 flex-1"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  setTempResource(value);
+                  const wordCount = checkWordCount(value);
+                  setResourceWordError(wordCount > 15);
+                }}
+                placeholder={t('profileSetup.resourcePlaceholder')}
+                onKeyPress={(e) => e.key === 'Enter' && addToArray('resources', tempResource, setTempResource, setResourceWordError)}
+                className={`h-9 flex-1 ${resourceWordError ? 'border-red-500' : ''}`}
+                disabled={profile.resources.length >= 5}
               />
               <Button
                 type="button"
-                onClick={() => addToArray('resources', tempResource, setTempResource)}
-                disabled={!tempResource.trim()}
+                onClick={() => addToArray('resources', tempResource, setTempResource, setResourceWordError)}
+                disabled={!tempResource.trim() || profile.resources.length >= 5 || resourceWordError}
                 className="h-9 px-3"
               >
                 +
               </Button>
             </div>
+            {resourceWordError && (
+              <p className="text-xs text-red-500 mt-1">{t('profileSetup.wordLimitError')} {checkWordCount(tempResource)} {t('profileSetup.words')}</p>
+            )}
           </div>
         </div>
       </div>
     );
-  }, [profile.resources, tempResource, addToArray, removeFromArray]);
+  }, [profile.resources, tempResource, addToArray, removeFromArray, checkWordCount, resourceWordError, t]);
 
   const renderProjects = useCallback(() => (
     <div className="flex flex-col h-full py-6 relative">
       {/* Header */}
       <div className="text-center mb-6">
         <Target size={28} className="text-blue-500 mx-auto mb-2" />
-        <h2>Your Past Projects</h2>
-        <p className="text-sm text-gray-500">Showcase your experience and achievements</p>
+        <h2>{t('profileSetup.yourPastProjects')}</h2>
+        <p className="text-sm text-gray-500">{t('profileSetup.showcaseExperience')}</p>
       </div>
 
       {/* Project Cards - Center/scrollable area */}
@@ -795,7 +828,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                   <Card className="p-4">
                     <CardContent className="p-0 space-y-1">
                       <div className="flex justify-between items-start">
-                        <h3>Project {index + 1}</h3>
+                        <h3>{t('profileSetup.projectNumber')} {index + 1}</h3>
                         <Button
                           size="sm"
                           variant="ghost"
@@ -808,39 +841,39 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                       
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <Label className="text-sm">Project Title</Label>
+                          <Label className="text-sm">{t('profileSetup.projectTitle')}</Label>
                           <Input
                             value={project.title}
                             onChange={(e) => updateProject(index, 'title', e.target.value)}
-                            placeholder="Project name"
+                            placeholder={t('profileSetup.projectTitlePlaceholder')}
                           />
                         </div>
                         <div>
-                          <Label className="text-sm">Your Role</Label>
+                          <Label className="text-sm">{t('profileSetup.yourRole')}</Label>
                           <Input
                             value={project.role}
                             onChange={(e) => updateProject(index, 'role', e.target.value)}
-                            placeholder="e.g., Lead Developer"
+                            placeholder={t('profileSetup.yourRolePlaceholder')}
                           />
                         </div>
                       </div>
                       
                       <div>
-                        <Label className="text-sm">Description</Label>
+                        <Label className="text-sm">{t('profileSetup.description')}</Label>
                         <Textarea
                           value={project.description}
                           onChange={(e) => updateProject(index, 'description', e.target.value)}
-                          placeholder="Describe your project and achievements"
+                          placeholder={t('profileSetup.descriptionPlaceholder')}
                           rows={3}
                         />
                       </div>
                       
                       <div>
-                        <Label className="text-sm">Reference Links</Label>
+                        <Label className="text-sm">{t('profileSetup.referenceLinks')}</Label>
                         <Input
                           value={project.referenceLinks.join(', ')}
                           onChange={(e) => updateProject(index, 'referenceLinks', e.target.value.split(', ').filter(link => link.trim()))}
-                          placeholder="URLs separated by commas"
+                          placeholder={t('profileSetup.referenceLinksPlaceholder')}
                         />
                       </div>
                     </CardContent>
@@ -850,168 +883,137 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
             </div>
           ) : (
             <div className="text-center text-gray-400 py-8">
-              <p className="text-sm">Add your projects to showcase your experience</p>
+              <p className="text-sm">{t('profileSetup.addProjectsNotice')}</p>
             </div>
           )}
         </AnimatePresence>
       </div>
 
       {/* Add Project Button - Fixed at bottom */}
-      <div className="absolute bottom-0 left-6 right-6">
+      <div className="absolute bottom-4 left-6 right-6">
         <Button onClick={addProject} className="w-full">
           <Plus size={16} className="mr-2" />
-          Add Project
+          {t('profileSetup.addProject')}
         </Button>
       </div>
     </div>
-  ), [profile.projects, addProject, updateProject, removeProject]);
+  ), [profile.projects, addProject, updateProject, removeProject, t]);
 
   const renderGoals = useCallback(() => (
     <div className="flex flex-col h-full py-6 relative">
-      <div className="text-center mb-6">
+      <div className="text-center mb-4">
         <div className="flex items-center justify-center gap-2">
           <Search size={24} className="text-blue-500" />
-          <h2>What are your goals?</h2>
+          <h2>{t('profileSetup.whatAreGoals')}</h2>
         </div>
+        <p className="text-sm text-gray-500">{t('profileSetup.defineGoals')}</p>
       </div>
 
-      {/* Goals Display - Center area */}
-      <div className="flex-1 flex items-center justify-center pb-24">
-        <div className="w-full max-w-sm">
-          <AnimatePresence>
-            {profile.goals.length > 0 ? (
-              <div className="space-y-2">
-                {profile.goals.map((goal, index) => (
-                  <motion.div
-                    key={`goal-${goal}-${index}`}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100"
-                  >
-                    <span className="text-sm">{goal}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeFromArray('goals', index)}
-                      className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
-                    >
-                      <X size={14} />
-                    </Button>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-gray-400">
-                <p className="text-sm">Add your goals to get started</p>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
+      {/* Physics Tag Container - Center area */}
+      <div className="flex-1 pb-24">
+        <PhysicsTagContainer 
+          tags={profile.goals}
+          onRemoveTag={(index) => removeFromArray('goals', index)}
+          containerHeight={300}
+          tagColor="blue"
+          emptyText={t('profileSetup.addGoalsNotice')}
+        />
       </div>
 
       {/* Add Goal Input - Bottom */}
-      <div className="absolute bottom-0 left-6 right-6">
-        <Label className="text-sm">Add a Goal</Label>
+      <div className="absolute bottom-4 left-6 right-6">
+        <Label className="text-sm">{t('profileSetup.addGoal')} <span className="text-xs text-gray-400">({profile.goals.length}/5, {t('profileSetup.maxItems')})</span></Label>
         <div className="flex gap-2">
           <Input
             value={tempGoal}
-            onChange={(e) => setTempGoal(e.target.value)}
-            placeholder="e.g., Find a co-founder, Learn new skills, Build a network"
-            onKeyPress={(e) => e.key === 'Enter' && addToArray('goals', tempGoal, setTempGoal)}
-            className="flex-1 h-9"
+            onChange={(e) => {
+              const value = e.target.value;
+              setTempGoal(value);
+              const wordCount = checkWordCount(value);
+              setGoalWordError(wordCount > 15);
+            }}
+            placeholder={t('profileSetup.goalPlaceholder')}
+            onKeyPress={(e) => e.key === 'Enter' && addToArray('goals', tempGoal, setTempGoal, setGoalWordError)}
+            className={`flex-1 h-9 ${goalWordError ? 'border-red-500' : ''}`}
+            disabled={profile.goals.length >= 5}
           />
           <Button
             type="button"
-            onClick={() => addToArray('goals', tempGoal, setTempGoal)}
-            disabled={!tempGoal.trim()}
+            onClick={() => addToArray('goals', tempGoal, setTempGoal, setGoalWordError)}
+            disabled={!tempGoal.trim() || profile.goals.length >= 5 || goalWordError}
             className="px-4 h-9"
           >
             <Plus size={16} />
           </Button>
         </div>
+        {goalWordError && (
+          <p className="text-xs text-red-500 mt-1">{t('profileSetup.wordLimitError')} {checkWordCount(tempGoal)} {t('profileSetup.words')}</p>
+        )}
       </div>
     </div>
-  ), [profile.goals, tempGoal, addToArray, removeFromArray]);
+  ), [profile.goals, tempGoal, addToArray, removeFromArray, checkWordCount, goalWordError, t]);
 
   const renderDemands = useCallback(() => (
     <div className="flex flex-col h-full py-6 relative">
-      <div className="text-center mb-6">
+      <div className="text-center mb-4">
         <div className="flex items-center justify-center gap-2">
           <Target size={24} className="text-purple-500" />
-          <h2>What do you need?</h2>
+          <h2>{t('profileSetup.whatDoYouNeed')}</h2>
         </div>
-        <p className="text-sm text-gray-500">Tell us what you're looking for</p>
+        <p className="text-sm text-gray-500">{t('profileSetup.tellUsNeeds')}</p>
       </div>
 
-      {/* Demands Display - Center area */}
-      <div className="flex-1 flex items-center justify-center pb-24">
-        <div className="w-full max-w-sm">
-          <AnimatePresence>
-            {profile.demands.length > 0 ? (
-              <div className="space-y-2">
-                {profile.demands.map((demand, index) => (
-                  <motion.div
-                    key={`demand-${demand}-${index}`}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex items-center justify-between p-3 bg-purple-50 rounded-lg border border-purple-100"
-                  >
-                    <span className="text-sm">{demand}</span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => removeFromArray('demands', index)}
-                      className="text-red-500 hover:text-red-700 h-6 w-6 p-0"
-                    >
-                      <X size={14} />
-                    </Button>
-                  </motion.div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center text-gray-400">
-                <p className="text-sm">Add what you need help with</p>
-              </div>
-            )}
-          </AnimatePresence>
-        </div>
+      {/* Physics Tag Container - Center area */}
+      <div className="flex-1 pb-24">
+        <PhysicsTagContainer 
+          tags={profile.demands}
+          onRemoveTag={(index) => removeFromArray('demands', index)}
+          containerHeight={300}
+          tagColor="purple"
+          emptyText={t('profileSetup.addDemandsNotice')}
+        />
       </div>
 
       {/* Add Demand Input - Bottom */}
-      <div className="absolute bottom-0 left-6 right-6">
-        <Label className="text-sm">What do you need?</Label>
+      <div className="absolute bottom-4 left-6 right-6">
+        <Label className="text-sm">{t('profileSetup.whatNeed')} <span className="text-xs text-gray-400">({profile.demands.length}/5, {t('profileSetup.maxItems')})</span></Label>
         <div className="flex gap-2">
           <Input
             value={tempDemand}
-            onChange={(e) => setTempDemand(e.target.value)}
-            placeholder="e.g., Technical expertise, Funding, Marketing help"
-            onKeyPress={(e) => e.key === 'Enter' && addToArray('demands', tempDemand, setTempDemand)}
-            className="flex-1 h-9"
+            onChange={(e) => {
+              const value = e.target.value;
+              setTempDemand(value);
+              const wordCount = checkWordCount(value);
+              setDemandWordError(wordCount > 15);
+            }}
+            placeholder={t('profileSetup.demandPlaceholder')}
+            onKeyPress={(e) => e.key === 'Enter' && addToArray('demands', tempDemand, setTempDemand, setDemandWordError)}
+            className={`flex-1 h-9 ${demandWordError ? 'border-red-500' : ''}`}
+            disabled={profile.demands.length >= 5}
           />
           <Button
             type="button"
-            onClick={() => addToArray('demands', tempDemand, setTempDemand)}
-            disabled={!tempDemand.trim()}
+            onClick={() => addToArray('demands', tempDemand, setTempDemand, setDemandWordError)}
+            disabled={!tempDemand.trim() || profile.demands.length >= 5 || demandWordError}
             className="px-4 h-9"
           >
             <Plus size={16} />
           </Button>
         </div>
+        {demandWordError && (
+          <p className="text-xs text-red-500 mt-1">{t('profileSetup.wordLimitError')} {checkWordCount(tempDemand)} {t('profileSetup.words')}</p>
+        )}
       </div>
     </div>
-  ), [profile.demands, tempDemand, addToArray, removeFromArray]);
+  ), [profile.demands, tempDemand, addToArray, removeFromArray, checkWordCount, demandWordError, t]);
 
   const renderInstitutions = useCallback(() => (
     <div className="flex flex-col h-full py-6 relative">
       {/* Header */}
       <div className="text-center mb-6">
         <Building size={28} className="text-blue-500 mx-auto mb-2" />
-        <h2>Your Past Institutions</h2>
-        <p className="text-sm text-gray-500">Schools, companies, organizations you've been part of</p>
+        <h2>{t('profileSetup.yourPastInstitutions')}</h2>
+        <p className="text-sm text-gray-500">{t('profileSetup.schoolsCompanies')}</p>
       </div>
 
       {/* Institution Cards - Center/scrollable area */}
@@ -1030,7 +1032,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                   <Card className="p-4">
                     <CardContent className="p-0 space-y-3">
                       <div className="flex justify-between items-start">
-                        <h3>Institution {index + 1}</h3>
+                        <h3>{t('profileSetup.institutionNumber')} {index + 1}</h3>
                         <Button
                           size="sm"
                           variant="ghost"
@@ -1043,29 +1045,29 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                       
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <Label className="text-sm">Institution Name</Label>
+                          <Label className="text-sm">{t('profileSetup.institutionName')}</Label>
                           <Input
                             value={institution.name}
                             onChange={(e) => updateInstitution(index, 'name', e.target.value)}
-                            placeholder="University/Company name"
+                            placeholder={t('profileSetup.institutionNamePlaceholder')}
                           />
                         </div>
                         <div>
-                          <Label className="text-sm">Your Role</Label>
+                          <Label className="text-sm">{t('profileSetup.yourRole')}</Label>
                           <Input
                             value={institution.role}
                             onChange={(e) => updateInstitution(index, 'role', e.target.value)}
-                            placeholder="e.g., Student, Engineer"
+                            placeholder={t('profileSetup.institutionRolePlaceholder')}
                           />
                         </div>
                       </div>
                       
                       <div>
-                        <Label className="text-sm">Description</Label>
+                        <Label className="text-sm">{t('profileSetup.description')}</Label>
                         <Textarea
                           value={institution.description}
                           onChange={(e) => updateInstitution(index, 'description', e.target.value)}
-                          placeholder="Describe your experience and achievements"
+                          placeholder={t('profileSetup.institutionDescriptionPlaceholder')}
                           rows={3}
                         />
                       </div>
@@ -1076,29 +1078,29 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
             </div>
           ) : (
             <div className="text-center text-gray-400 py-8">
-              <p className="text-sm">Add institutions to showcase your background</p>
+              <p className="text-sm">{t('profileSetup.addInstitutionsNotice')}</p>
             </div>
           )}
         </AnimatePresence>
       </div>
 
       {/* Add Institution Button - Fixed at bottom */}
-      <div className="absolute bottom-0 left-6 right-6">
+      <div className="absolute bottom-4 left-6 right-6">
         <Button onClick={addInstitution} className="w-full">
           <Plus size={16} className="mr-2" />
-          Add Institution
+          {t('profileSetup.addInstitution')}
         </Button>
       </div>
     </div>
-  ), [profile.institutions, addInstitution, updateInstitution, removeInstitution]);
+  ), [profile.institutions, addInstitution, updateInstitution, removeInstitution, t]);
 
   const renderCurrentUniversity = useCallback(() => (
     <div className="flex flex-col h-full py-6 relative">
       {/* Header */}
       <div className="text-center mb-6">
         <Building size={28} className="text-blue-500 mx-auto mb-2" />
-        <h2>Your Affiliated University</h2>
-        <p className="text-sm text-gray-500">Connect with your university community</p>
+        <h2>{t('profileSetup.yourUniversity')}</h2>
+        <p className="text-sm text-gray-500">{t('profileSetup.universityConnect')}</p>
       </div>
 
       {/* University Details - Center area */}
@@ -1116,7 +1118,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-sm">{currentUniversity}</h3>
-                    <p className="text-xs text-gray-500">Selected University</p>
+                    <p className="text-xs text-gray-500">{t('profileSetup.selectedUniversity')}</p>
                   </div>
                   <Button
                     size="sm"
@@ -1147,13 +1149,13 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                 className="space-y-3"
               >
                 <div>
-                  <Label className="text-sm">University Email</Label>
+                  <Label className="text-sm">{t('profileSetup.universityEmail')}</Label>
                   <div className="relative">
                     <Mail size={14} className="absolute left-3 top-2.5 text-gray-400" />
                     <Input
                       value={universityEmail}
                       onChange={(e) => setUniversityEmail(e.target.value)}
-                      placeholder="your.name@university.edu.cn"
+                      placeholder={t('profileSetup.universityEmailPlaceholder')}
                       className="pl-9 h-9"
                     />
                   </div>
@@ -1169,7 +1171,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                       disabled={!validateUniversityEmail()}
                       className="w-full h-9"
                     >
-                      Send Verification Code
+                      {t('profileSetup.sendVerificationCode')}
                     </Button>
                   </motion.div>
                 )}
@@ -1181,11 +1183,11 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                     className="space-y-2"
                   >
                     <div>
-                      <Label className="text-sm">Verification Code</Label>
+                      <Label className="text-sm">{t('profileSetup.verificationCode')}</Label>
                       <Input
                         value={verificationCode}
                         onChange={(e) => setVerificationCode(e.target.value)}
-                        placeholder="Enter 6-digit code"
+                        placeholder={t('profileSetup.verificationCodePlaceholder')}
                         className="h-9"
                         maxLength={6}
                       />
@@ -1195,7 +1197,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                       disabled={verificationCode.length !== 6}
                       className="w-full h-9"
                     >
-                      Verify Code
+                      {t('profileSetup.verifyCode')}
                     </Button>
                   </motion.div>
                 )}
@@ -1207,7 +1209,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                     className="flex items-center gap-2 p-2 bg-green-50 rounded-lg border border-green-200"
                   >
                     <CheckCircle size={16} className="text-green-600" />
-                    <span className="text-sm text-green-700">Email verified successfully!</span>
+                    <span className="text-sm text-green-700">{t('profileSetup.emailVerified')}</span>
                   </motion.div>
                 )}
               </motion.div>
@@ -1216,16 +1218,16 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
           {!currentUniversity && (
             <div className="text-center text-gray-400">
-              <p className="text-sm">Search for your university below</p>
+              <p className="text-sm">{t('profileSetup.searchUniversity')}</p>
             </div>
           )}
         </div>
       </div>
 
       {/* University Search - Bottom */}
-      <div className="absolute bottom-0 left-6 right-6">
+      <div className="absolute bottom-4 left-6 right-6">
         <div className="relative">
-          <Label className="text-sm">Select University</Label>
+          <Label className="text-sm">{t('profileSetup.selectUniversity')}</Label>
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Building size={14} className="absolute left-3 top-2.5 text-gray-400" />
@@ -1234,7 +1236,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                 onChange={(e) => handleUniversitySearch(e.target.value)}
                 onFocus={() => setShowUniversityDropdown(universitySearchInput.length > 0)}
                 onBlur={() => setTimeout(() => setShowUniversityDropdown(false), 200)}
-                placeholder="Search for your university..."
+                placeholder={t('profileSetup.universitySearchPlaceholder')}
                 className="pl-9 h-9"
               />
               
@@ -1298,29 +1300,29 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
       <div className="text-center space-y-6">
         <div>
           <Shield size={32} className="text-green-500 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold mb-2">Profile Complete</h2>
+          <h2 className="text-xl font-semibold mb-2">{t('profileSetup.profileComplete')}</h2>
           <p className="text-sm text-gray-600">
-            Complete WeChat verification to join the community
+            {t('profileSetup.completeWechat')}
           </p>
         </div>
         
         <div className="space-y-3">
           <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
             <CheckCircle size={20} className="text-green-600" />
-            <span className="text-sm font-medium">Profile completed</span>
+            <span className="text-sm font-medium">{t('profileSetup.profileCompleted')}</span>
           </div>
           
           {emailVerified && (
             <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
               <CheckCircle size={20} className="text-green-600" />
-              <span className="text-sm font-medium">University email verified</span>
+              <span className="text-sm font-medium">{t('profileSetup.universityVerified')}</span>
             </div>
           )}
 
           {wechatAuthenticated && (
             <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
               <CheckCircle size={20} className="text-green-600" />
-              <span className="text-sm font-medium">WeChat verified</span>
+              <span className="text-sm font-medium">{t('profileSetup.wechatVerified')}</span>
             </div>
           )}
         </div>
@@ -1329,22 +1331,22 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center gap-2 justify-center mb-2">
               <MessageCircle size={18} className="text-blue-600" />
-              <span className="text-sm font-medium text-blue-800">WeChat Verification Required</span>
+              <span className="text-sm font-medium text-blue-800">{t('profileSetup.wechatRequired')}</span>
             </div>
             <p className="text-xs text-blue-700">
-              Verify your identity for secure networking
+              {t('profileSetup.verifyIdentity')}
             </p>
           </div>
         )}
 
         <p className="text-xs text-gray-500">
-          By continuing, you agree to our Terms of Service and Privacy Policy
+          {t('profileSetup.agreeTerms')}
         </p>
       </div>
 
       {/* WeChat Sign In Button - Fixed at bottom */}
       {!wechatAuthenticated && (
-        <div className="absolute bottom-0 left-6 right-6">
+        <div className="absolute bottom-4 left-6 right-6">
           <Button 
             className="w-full bg-green-600 hover:bg-green-700 text-white py-3 text-sm font-medium"
             onClick={() => {
@@ -1354,12 +1356,12 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
             }}
           >
             <MessageCircle size={18} className="mr-2" />
-            Sign in with WeChat
+            {t('profileSetup.signInWeChat')}
           </Button>
         </div>
       )}
     </div>
-  ), [emailVerified, wechatAuthenticated]);
+  ), [emailVerified, wechatAuthenticated, t]);
 
   const renderStepContent = () => {
     switch (currentStep) {
@@ -1417,7 +1419,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
           onClick={handlePrevious}
           className="flex-1"
         >
-          {currentStep === 0 ? 'Back' : 'Previous'}
+          {currentStep === 0 ? t('profileSetup.back') : t('profileSetup.previous')}
         </Button>
         <Button 
           onClick={handleNext} 
@@ -1426,12 +1428,12 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
         >
           {currentStep === steps.length - 1 ? (
             <>
-              Complete
+              {t('profileSetup.complete')}
               <ChevronRight size={16} className="ml-1" />
             </>
           ) : (
             <>
-              Next
+              {t('profileSetup.next')}
               <ChevronRight size={16} className="ml-1" />
             </>
           )}

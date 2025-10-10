@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence, PanInfo } from 'motion/react';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -114,7 +114,7 @@ export function SwipeableCardStack({
         </div>
 
         {/* Card Stack */}
-        <div className={inline ? "relative w-full max-w-sm h-[500px] mt-12" : "relative w-full max-w-sm h-[600px]"}>
+        <div className={inline ? "relative w-full max-w-sm h-[min(500px,70vh)] mt-12" : "relative w-full max-w-sm h-[min(600px,75vh)]"}>
           {/* Background cards (stack effect) */}
           {nextCards.map((card, index) => (
             <motion.div
@@ -162,7 +162,6 @@ export function SwipeableCardStack({
               dragElastic={0.7}
               onDragEnd={handleDragEnd}
               whileDrag={{
-                rotate: (info: any) => info.offset.x * 0.1,
                 scale: 1.05
               }}
             >
@@ -298,6 +297,15 @@ export function SwipeableCardStack({
                           <div className="flex items-center gap-2 mb-2">
                             <Users size={14} className="text-purple-600" />
                             <h4 className="font-medium text-sm">Why You Match</h4>
+                            <span 
+                              className="text-white text-xs px-2 py-0.5 rounded-full font-medium"
+                              style={{
+                                background: 'linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%)',
+                                backgroundImage: 'linear-gradient(90deg, #8b5cf6 0%, #3b82f6 100%)'
+                              }}
+                            >
+                              AI
+                            </span>
                           </div>
                           <div className="bg-blue-50 rounded-lg p-3">
                             <p className="text-xs text-blue-700 leading-relaxed">

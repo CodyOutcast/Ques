@@ -1,6 +1,7 @@
 import React from 'react';
 import { Home, User, Settings } from 'lucide-react';
 import type { Screen } from '../App';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface BottomNavigationProps {
   currentScreen: Screen;
@@ -8,14 +9,16 @@ interface BottomNavigationProps {
 }
 
 export function BottomNavigation({ currentScreen, onScreenChange }: BottomNavigationProps) {
+  const { t } = useLanguage();
+  
   const navItems = [
-    { id: 'home' as Screen, icon: Home, label: 'Home' },
-    { id: 'profile' as Screen, icon: User, label: 'Profile' },
-    { id: 'settings' as Screen, icon: Settings, label: 'Settings' },
+    { id: 'home' as Screen, icon: Home, label: t('navigation.home') },
+    { id: 'profile' as Screen, icon: User, label: t('navigation.profile') },
+    { id: 'settings' as Screen, icon: Settings, label: t('navigation.settings') },
   ];
 
   return (
-    <div className="bg-white border-t border-gray-200 px-4 py-2 safe-area-inset-bottom">
+    <div className="bg-white border-t border-gray-200 px-4 py-2" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 1.25rem))' }}>
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
@@ -50,19 +50,20 @@ export function ReceivesBar({
               <div className="w-16 bg-gray-200 rounded-full h-1.5">
                 <div 
                   className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                  style={{ width: `${(receivesLeft / 5) * 100}%` }}
+                  style={{ width: `${Math.min((receivesLeft / 50) * 100, 100)}%` }}
                 />
               </div>
             )}
           </div>
 
           <div className="flex items-center gap-2">
-            {currentPlan === 'basic' && (
+            {currentPlan === 'basic' && receivesLeft < 50 && (
               <Button
                 variant="outline"
                 size="sm"
                 className="text-xs h-6 px-2"
                 onClick={() => onTopUpReceives?.(1)}
+                disabled={receivesLeft >= 50}
               >
                 +1 (¥1)
               </Button>

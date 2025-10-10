@@ -37,7 +37,7 @@ export function PersonReceivesBar({
                 className={`h-1.5 rounded-full transition-all duration-300 ${
                   hasEnoughReceives ? 'bg-green-500' : 'bg-orange-500'
                 }`}
-                style={{ width: `${Math.min((receivesLeft / 5) * 100, 100)}%` }}
+                style={{ width: `${Math.min((receivesLeft / 50) * 100, 100)}%` }}
               />
             </div>
             

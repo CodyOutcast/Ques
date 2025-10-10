@@ -4,7 +4,8 @@
   import path from 'path';
 
   export default defineConfig({
-    plugins: [react()],
+  plugins: [react()],
+  base: './',
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {
@@ -55,6 +56,7 @@
     },
     server: {
       port: 3000,
+      host: '0.0.0.0', // Allow access from mobile devices on local network
       open: true,
     },
   });

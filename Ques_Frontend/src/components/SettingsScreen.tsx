@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion } from 'framer-motion';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Switch } from './ui/switch';
@@ -8,6 +8,7 @@ import { Badge } from './ui/badge';
 import { Input } from './ui/input';
 import { Textarea } from './ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { useLanguage } from '../contexts/LanguageContext';
 
 import { 
   Bell, 
@@ -18,7 +19,10 @@ import {
   Trash2,
   Crown,
   Plus,
-  Gift
+  Gift,
+  Globe,
+  Moon,
+  Sun
 } from 'lucide-react';
 
 interface SettingsScreenProps {
@@ -36,19 +40,32 @@ export function SettingsScreen({
   onTopUpReceives,
   onGiftReceives
 }: SettingsScreenProps) {
+  const { language, setLanguage, t } = useLanguage();
+  
   const [notifications, setNotifications] = useState({
     whisperRequests: true,
   });
 
-  const [wechatId, setWechatId] = useState('your_wechat_id');
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+
+  const [wechatId, setWechatId] = useState(() => {
+    // 从localStorage加载保存的微信ID
+    return localStorage.getItem('user_wechat_id') || 'your_wechat_id';
+  });
   const [whisperCount, setWhisperCount] = useState(3); // Remaining whispers for basic plan
-  const [customWhisperMessage, setCustomWhisperMessage] = useState('Hi! I found your profile through Ques and would love to connect. Looking forward to chatting!');
+  const [customWhisperMessage, setCustomWhisperMessage] = useState(() => {
+    // 从localStorage加载保存的自定义消息
+    return localStorage.getItem('custom_whisper_message') || 'Hi! I found your profile through Ques and would love to connect. Looking forward to chatting!';
+  });
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
 
+  // Calculate maximum purchase amount (cap at 50)
+  const maxPurchaseAmount = Math.max(0, 50 - receivesLeft);
+
   const handleTopUpConfirm = () => {
     const amount = parseInt(topUpAmount);
-    if (amount && amount > 0 && amount <= 100) {
+    if (amount && amount > 0 && amount <= maxPurchaseAmount) {
       onTopUpReceives?.(amount);
       setShowTopUpModal(false);
       setTopUpAmount('');
@@ -57,36 +74,153 @@ export function SettingsScreen({
 
   const settingSections = [
     {
-      title: 'Whispers',
+      title: t('settings.language.title'),
+      icon: Globe,
+      description: t('settings.language.description'),
+      content: (
+        <div className="space-y-3">
+          {/* English Option */}
+          <div 
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              language === 'en' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+            onClick={() => {
+              setLanguage('en');
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">{t('settings.language.english')}</h4>
+                <p className="text-xs text-gray-500">{t('settings.language.englishDesc')}</p>
+              </div>
+              {language === 'en' && (
+                <Badge variant="default" className="text-xs">{t('settings.language.current')}</Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Chinese Option */}
+          <div 
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              language === 'zh' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+            onClick={() => {
+              setLanguage('zh');
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">{t('settings.language.chinese')}</h4>
+                <p className="text-xs text-gray-500">{t('settings.language.chineseDesc')}</p>
+              </div>
+              {language === 'zh' && (
+                <Badge variant="default" className="text-xs">{t('settings.language.current')}</Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: t('settings.appearance.title'),
+      icon: Moon,
+      description: t('settings.appearance.description'),
+      content: (
+        <div className="space-y-3">
+          {/* Light Mode Option */}
+          <div 
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              theme === 'light' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+            onClick={() => {
+              setTheme('light');
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Sun size={20} className="text-yellow-500" />
+                <div>
+                  <h4 className="font-medium">{t('settings.appearance.lightMode')}</h4>
+                  <p className="text-xs text-gray-500">{t('settings.appearance.lightModeDesc')}</p>
+                </div>
+              </div>
+              {theme === 'light' && (
+                <Badge variant="default" className="text-xs">{t('settings.appearance.current')}</Badge>
+              )}
+            </div>
+          </div>
+
+          {/* Dark Mode Option */}
+          <div 
+            className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+              theme === 'dark' 
+                ? 'border-blue-500 bg-blue-50' 
+                : 'border-gray-200 hover:border-gray-300'
+            }`}
+            onClick={() => {
+              setTheme('dark');
+            }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Moon size={20} className="text-indigo-500" />
+                <div>
+                  <h4 className="font-medium">{t('settings.appearance.darkMode')}</h4>
+                  <p className="text-xs text-gray-500">{t('settings.appearance.darkModeDesc')}</p>
+                </div>
+              </div>
+              {theme === 'dark' && (
+                <Badge variant="default" className="text-xs">{t('settings.appearance.current')}</Badge>
+              )}
+            </div>
+          </div>
+        </div>
+      )
+    },
+    {
+      title: t('settings.whispers.title'),
       icon: MessageCircle,
-      description: 'Manage your whisper settings and WeChat contact',
+      description: t('settings.whispers.description'),
       content: (
         <div className="space-y-4">
           <div>
-            <h4 className="text-sm font-medium mb-2">WeChat ID for Whispers</h4>
+            <h4 className="text-sm font-medium mb-2">{t('settings.whispers.wechatTitle')}</h4>
             <p className="text-xs text-gray-500 mb-3">
-              This WeChat ID will be shared when someone whispers back to you
+              {t('settings.whispers.wechatDesc')}
             </p>
             <Input
-              placeholder="Enter your WeChat ID"
+              placeholder={t('settings.whispers.wechatPlaceholder')}
               value={wechatId}
-              onChange={(e) => setWechatId(e.target.value)}
+              onChange={(e) => {
+                const newWechatId = e.target.value;
+                setWechatId(newWechatId);
+                // 立即保存到localStorage
+                localStorage.setItem('user_wechat_id', newWechatId);
+              }}
             />
           </div>
 
           {currentPlan === 'pro' && (
             <div>
-              <h4 className="text-sm font-medium mb-2">Custom Whisper Message</h4>
+              <h4 className="text-sm font-medium mb-2">{t('settings.whispers.customMessageTitle')}</h4>
               <p className="text-xs text-gray-500 mb-3">
-                Personalize your whisper message that gets sent with your contact info
+                {t('settings.whispers.customMessageDesc')}
               </p>
               <Textarea
-                placeholder="Enter your custom whisper message..."
+                placeholder={t('settings.whispers.customMessagePlaceholder')}
                 value={customWhisperMessage}
                 onChange={(e) => {
                   const newValue = e.target.value;
                   if (newValue.length <= 200) {
                     setCustomWhisperMessage(newValue);
+                    // 立即保存到localStorage
+                    localStorage.setItem('custom_whisper_message', newValue);
                   }
                 }}
                 rows={3}
@@ -94,27 +228,27 @@ export function SettingsScreen({
                 className="resize-none"
               />
               <p className="text-xs text-gray-400 mt-1">
-                {customWhisperMessage.length}/200 characters
+                {customWhisperMessage.length}/200 {t('settings.whispers.charactersCount')}
               </p>
             </div>
           )}
           
           <div className="p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center justify-between mb-1">
-              <span className="text-sm font-medium">Whisper Usage</span>
+              <span className="text-sm font-medium">{t('settings.whispers.usageTitle')}</span>
               <Badge variant={currentPlan === 'pro' ? 'default' : 'secondary'}>
-                {currentPlan === 'pro' ? 'Pro Plan' : 'Basic Plan'}
+                {currentPlan === 'pro' ? t('settings.whispers.proPlan') : t('settings.whispers.basicPlan')}
               </Badge>
             </div>
             <p className="text-xs text-gray-600">
               {currentPlan === 'pro' 
-                ? 'Unlimited whispers available' 
-                : `${whisperCount} whispers remaining this month`
+                ? t('settings.whispers.unlimitedWhispers')
+                : `${whisperCount} ${t('settings.whispers.whispersRemaining')}`
               }
             </p>
             {currentPlan === 'basic' && (
               <p className="text-xs text-gray-500 mt-1">
-                Upgrade to Pro for custom whisper messages
+                {t('settings.whispers.upgradeNotice')}
               </p>
             )}
           </div>
@@ -122,9 +256,9 @@ export function SettingsScreen({
       )
     },
     {
-      title: 'Payment Plan',
+      title: t('settings.payment.title'),
       icon: CreditCard,
-      description: 'Manage your subscription and billing',
+      description: t('settings.payment.description'),
       content: (
         <div className="space-y-4">
           {/* Receives Status */}
@@ -132,12 +266,12 @@ export function SettingsScreen({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Receives Left:</span>
+                  <span className="text-sm font-medium">{t('settings.payment.receivesLeft')}</span>
                   <span className="text-sm font-medium text-blue-600">
                     {currentPlan === 'pro' ? '∞' : receivesLeft}
                   </span>
                   {currentPlan === 'basic' && receivesLeft <= 2 && (
-                    <Badge variant="destructive" className="text-xs">Low</Badge>
+                    <Badge variant="destructive" className="text-xs">{t('settings.payment.low')}</Badge>
                   )}
                 </div>
 
@@ -145,7 +279,7 @@ export function SettingsScreen({
                   <div className="w-16 bg-gray-200 rounded-full h-1.5">
                     <div 
                       className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${(receivesLeft / 5) * 100}%` }}
+                      style={{ width: `${Math.min((receivesLeft / 50) * 100, 100)}%` }}
                     />
                   </div>
                 )}
@@ -158,6 +292,8 @@ export function SettingsScreen({
                     size="sm"
                     className="h-6 w-6 p-0"
                     onClick={() => setShowTopUpModal(true)}
+                    disabled={receivesLeft >= 50}
+                    title={receivesLeft >= 50 ? 'Maximum limit reached' : 'Top up receives'}
                   >
                     <Plus size={12} />
                   </Button>
@@ -170,37 +306,37 @@ export function SettingsScreen({
             {/* Basic Plan */}
             <div className={`p-4 rounded-lg border-2 ${currentPlan === 'basic' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-medium">Basic Plan</h4>
+                <h4 className="font-medium">{t('settings.payment.basicPlan')}</h4>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">Free</span>
+                  <span className="text-sm font-medium">{t('settings.payment.free')}</span>
                   {currentPlan === 'basic' && (
-                    <Badge variant="default" className="text-xs">Current</Badge>
+                    <Badge variant="default" className="text-xs">{t('settings.payment.currentPlan')}</Badge>
                   )}
                 </div>
               </div>
-              <p className="text-xs text-gray-600 mb-1">• 5 whispers per month</p>
-              <p className="text-xs text-gray-600 mb-2">• 5 receives per month</p>
-              <p className="text-xs text-gray-500">Perfect for casual networking</p>
+              <p className="text-xs text-gray-600 mb-1">• {t('settings.payment.basicFeature1')}</p>
+              <p className="text-xs text-gray-600 mb-2">• {t('settings.payment.basicFeature2')}</p>
+              <p className="text-xs text-gray-500">{t('settings.payment.basicDesc')}</p>
             </div>
 
             {/* Pro Plan */}
             <div className={`p-4 rounded-lg border-2 ${currentPlan === 'pro' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
-                  <h4 className="font-medium">Pro Plan</h4>
+                  <h4 className="font-medium">{t('settings.payment.proPlan')}</h4>
                   <Crown size={16} className="text-yellow-500" />
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium">¥10/month</span>
+                  <span className="text-sm font-medium">¥10{t('settings.payment.perMonth')}</span>
                   {currentPlan === 'pro' && (
-                    <Badge variant="default" className="text-xs">Current</Badge>
+                    <Badge variant="default" className="text-xs">{t('settings.payment.currentPlan')}</Badge>
                   )}
                 </div>
               </div>
-              <p className="text-xs text-gray-600 mb-1">• Unlimited whispers</p>
-              <p className="text-xs text-gray-600 mb-1">• Unlimited receives</p>
-              <p className="text-xs text-gray-600 mb-2">• Custom whisper messages</p>
-              <p className="text-xs text-gray-500">For active networkers and professionals</p>
+              <p className="text-xs text-gray-600 mb-1">• {t('settings.payment.proFeature1')}</p>
+              <p className="text-xs text-gray-600 mb-1">• {t('settings.payment.proFeature2')}</p>
+              <p className="text-xs text-gray-600 mb-2">• {t('settings.payment.proFeature3')}</p>
+              <p className="text-xs text-gray-500">{t('settings.payment.proDesc')}</p>
             </div>
           </div>
 
@@ -209,7 +345,7 @@ export function SettingsScreen({
               className="w-full" 
               onClick={() => onPlanChange?.('pro')}
             >
-              Upgrade to Pro - ¥10/month
+              {t('settings.payment.upgradeToPro')} - ¥10{t('settings.payment.perMonth')}
             </Button>
           )}
 
@@ -219,22 +355,22 @@ export function SettingsScreen({
               className="w-full"
               onClick={() => onPlanChange?.('basic')}
             >
-              Downgrade to Basic Plan
+              {t('settings.payment.downgradeTo')}
             </Button>
           )}
         </div>
       )
     },
     {
-      title: 'Notifications',
+      title: t('settings.notifications.title'),
       icon: Bell,
-      description: 'Control what notifications you receive',
+      description: t('settings.notifications.description'),
       content: (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
-              <span className="text-sm font-medium">Whisper requests</span>
-              <p className="text-xs text-gray-500">New whisper back requests from others</p>
+              <span className="text-sm font-medium">{t('settings.notifications.whisperRequests')}</span>
+              <p className="text-xs text-gray-500">{t('settings.notifications.whisperRequestsDesc')}</p>
             </div>
             <Switch 
               checked={notifications.whisperRequests}
@@ -245,15 +381,15 @@ export function SettingsScreen({
       )
     },
     {
-      title: 'Terms & Privacy',
+      title: t('settings.terms.title'),
       icon: FileText,
-      description: 'Legal documents and privacy information',
+      description: t('settings.terms.description'),
       content: (
         <div className="space-y-3">
           <Button variant="ghost" className="w-full justify-start p-0 h-auto">
             <div className="text-left">
-              <p className="text-sm font-medium">Terms of Service</p>
-              <p className="text-xs text-gray-500">Read our terms and conditions</p>
+              <p className="text-sm font-medium">{t('settings.terms.termsOfService')}</p>
+              <p className="text-xs text-gray-500">{t('settings.terms.termsDesc')}</p>
             </div>
           </Button>
           
@@ -261,8 +397,8 @@ export function SettingsScreen({
           
           <Button variant="ghost" className="w-full justify-start p-0 h-auto">
             <div className="text-left">
-              <p className="text-sm font-medium">Privacy Policy</p>
-              <p className="text-xs text-gray-500">How we handle your data</p>
+              <p className="text-sm font-medium">{t('settings.terms.privacyPolicy')}</p>
+              <p className="text-xs text-gray-500">{t('settings.terms.privacyDesc')}</p>
             </div>
           </Button>
           
@@ -270,8 +406,8 @@ export function SettingsScreen({
           
           <Button variant="ghost" className="w-full justify-start p-0 h-auto">
             <div className="text-left">
-              <p className="text-sm font-medium">Data Protection</p>
-              <p className="text-xs text-gray-500">GDPR and data rights information</p>
+              <p className="text-sm font-medium">{t('settings.terms.dataProtection')}</p>
+              <p className="text-xs text-gray-500">{t('settings.terms.dataProtectionDesc')}</p>
             </div>
           </Button>
           
@@ -279,8 +415,8 @@ export function SettingsScreen({
           
           <Button variant="ghost" className="w-full justify-start p-0 h-auto">
             <div className="text-left">
-              <p className="text-sm font-medium">Community Guidelines</p>
-              <p className="text-xs text-gray-500">Rules for safe networking</p>
+              <p className="text-sm font-medium">{t('settings.terms.communityGuidelines')}</p>
+              <p className="text-xs text-gray-500">{t('settings.terms.communityDesc')}</p>
             </div>
           </Button>
         </div>
@@ -292,8 +428,8 @@ export function SettingsScreen({
     <div className="h-full overflow-y-auto bg-gray-50">
       {/* Header */}
       <div className="bg-white p-4 border-b border-gray-200 sticky top-0 z-10">
-        <h1 className="text-xl font-medium">Settings</h1>
-        <p className="text-sm text-gray-500">Manage your preferences and privacy</p>
+        <h1 className="text-xl font-medium">{t('settings.title')}</h1>
+        <p className="text-sm text-gray-500">{t('settings.subtitle')}</p>
       </div>
 
       <div className="p-4 space-y-4">
@@ -321,23 +457,22 @@ export function SettingsScreen({
 
         {/* Account Actions */}
         <Card className="p-4">
-          <h3 className="font-medium mb-3">Account</h3>
+          <h3 className="font-medium mb-3">{t('settings.account.title')}</h3>
           <div className="space-y-3">
             <Button variant="outline" className="w-full justify-center gap-2">
               <LogOut size={16} />
-              Sign Out
+              {t('settings.account.signOut')}
             </Button>
             
             <Button variant="destructive" className="w-full justify-center gap-2">
               <Trash2 size={16} />
-              Delete Account
+              {t('settings.account.deleteAccount')}
             </Button>
           </div>
           
           <div className="mt-4 p-3 bg-yellow-50 rounded-lg">
             <p className="text-xs text-yellow-700">
-              <strong>Data Notice:</strong> Ques is designed for professional networking. 
-              Please do not share personal identifying information or sensitive data.
+              <strong>{t('settings.account.dataNotice')}</strong> {t('settings.account.dataNoticeText')}
             </p>
           </div>
         </Card>
@@ -348,42 +483,44 @@ export function SettingsScreen({
 
       {/* Top-up Modal */}
       <Dialog open={showTopUpModal} onOpenChange={setShowTopUpModal}>
-        <DialogContent className="sm:max-w-md mx-4">
+        <DialogContent className="sm:max-w-md mx-auto px-4">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus size={18} className="text-blue-500" />
-              Top Up Receives
+              {t('settings.topUp.title')}
             </DialogTitle>
             <DialogDescription>
-              Enter the number of receives you want to purchase (¥1 per receive)
+              {t('settings.topUp.description')}
             </DialogDescription>
           </DialogHeader>
           
           <div className="space-y-4 py-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Amount</label>
+              <label className="text-sm font-medium mb-2 block">{t('settings.topUp.amountLabel')}</label>
               <Input
                 type="number"
-                placeholder="Enter amount (1-100)"
+                placeholder={t('settings.topUp.amountPlaceholder')}
                 value={topUpAmount}
                 onChange={(e) => setTopUpAmount(e.target.value)}
                 min="1"
-                max="100"
+                max={maxPurchaseAmount}
                 className="w-full"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Maximum 100 receives per transaction
+                {maxPurchaseAmount > 0 
+                  ? `Maximum you can purchase: ${maxPurchaseAmount} (cap at 50 total)`
+                  : 'You have reached the maximum limit of 50 receives'}
               </p>
             </div>
             
             {topUpAmount && parseInt(topUpAmount) > 0 && (
               <div className="bg-blue-50 rounded-lg p-3">
                 <div className="flex justify-between text-sm">
-                  <span>Receives:</span>
+                  <span>{t('settings.topUp.receives')}</span>
                   <span>{topUpAmount}</span>
                 </div>
                 <div className="flex justify-between text-sm font-medium">
-                  <span>Total Cost:</span>
+                  <span>{t('settings.topUp.totalCost')}</span>
                   <span>¥{topUpAmount}</span>
                 </div>
               </div>
@@ -398,14 +535,14 @@ export function SettingsScreen({
                 setTopUpAmount('');
               }}
             >
-              Cancel
+              {t('settings.topUp.cancel')}
             </Button>
             <Button 
               onClick={handleTopUpConfirm}
-              disabled={!topUpAmount || parseInt(topUpAmount) <= 0 || parseInt(topUpAmount) > 100}
+              disabled={!topUpAmount || parseInt(topUpAmount) <= 0 || parseInt(topUpAmount) > maxPurchaseAmount || maxPurchaseAmount <= 0}
               className="bg-blue-500 hover:bg-blue-600"
             >
-              Purchase ¥{topUpAmount || '0'}
+              {t('settings.topUp.purchase')} ¥{topUpAmount || '0'}
             </Button>
           </DialogFooter>
         </DialogContent>
