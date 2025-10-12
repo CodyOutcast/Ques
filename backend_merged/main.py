@@ -15,7 +15,8 @@ from dotenv import load_dotenv
 
 from dependencies.db import get_db, engine
 from models.base import Base
-from routers import auth, users, matches, messages, profile, chats, projects, project_cards, membership, location, user_reports, sms_router, project_ideas, payments, online_users, revenue_analytics, quota_payments, agent_cards, project_slots, admin_project_slots, membership_webhooks
+from routers import auth, users, matches, messages, profile, chats, projects, project_cards, membership, location, user_reports, sms_router, project_ideas, payments, online_users, revenue_analytics, quota_payments, agent_cards, project_slots, membership_webhooks, intelligent_agent, basic_operations, university_verification, settings
+# admin_project_slots commented out - requires get_current_admin_user which isn't implemented
 from config.settings import settings
 try:
     from routers import recommendations
@@ -128,6 +129,8 @@ app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(user_reports.router, prefix="/api/v1", tags=["User Reports"])
 app.include_router(sms_router.router, tags=["SMS Verification"])
+app.include_router(university_verification.router, prefix="/api/v1/university", tags=["University Verification"])
+app.include_router(settings.router, prefix="/api/v1/settings", tags=["Settings Management"])
 app.include_router(project_ideas.router, tags=["Project Ideas"])
 
 # Project Ideas V2 with enhanced features
@@ -149,6 +152,14 @@ try:
 except ImportError as e:
     logger.warning(f"⚠️ Vector recommendations router not available: {e}")
 
+# Intelligent Agent (Search, Inquiry, Chat)
+app.include_router(intelligent_agent.router, tags=["Intelligent Agent"])
+logger.info("✅ Intelligent agent router loaded")
+
+# Basic Operations (User Creation, Whispers, Swiping, Top Profiles)
+app.include_router(basic_operations.router, tags=["Basic Operations"])
+logger.info("✅ Basic operations router loaded")
+
 app.include_router(matches.router, prefix="/api/v1/search", tags=["AI Search"])
 app.include_router(messages.router, prefix="/api/v1/messages", tags=["Messaging"])
 app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
@@ -165,7 +176,7 @@ app.include_router(online_users.router, prefix="/api/v1/online", tags=["Online U
 
 # Project Slots System
 app.include_router(project_slots.router, prefix="/api/v1", tags=["Project Slots"])
-app.include_router(admin_project_slots.router, prefix="/api/v1", tags=["Admin - Project Slots"])
+# app.include_router(admin_project_slots.router, prefix="/api/v1", tags=["Admin - Project Slots"])  # Disabled - requires admin auth
 app.include_router(membership_webhooks.router, prefix="/api/v1", tags=["Webhooks - Membership"])
 
 @app.get("/")

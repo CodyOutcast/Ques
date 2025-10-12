@@ -28,8 +28,14 @@ from services.project_idea_agent import ProjectIdeaAgent, generate_project_ideas
 
 router = APIRouter(prefix="/api/v1/project-ideas", tags=["project-ideas"])
 
-# Initialize the agent
-agent = ProjectIdeaAgent()
+# Lazy initialize the agent on first use
+agent = None
+
+def get_agent():
+    global agent
+    if agent is None:
+        agent = ProjectIdeaAgent()
+    return agent
 
 @router.post("/generate")
 async def generate_ideas_endpoint(
@@ -97,14 +103,15 @@ async def health_check():
     """Health check for the project ideas service"""
     try:
         # Test API connections
-        deepseek_ok = agent._test_deepseek_connection()
+        current_agent = get_agent()
+        deepseek_ok = current_agent._test_deepseek_connection()
         
         return {
             "status": "healthy",
             "services": {
                 "deepseek_api": "connected" if deepseek_ok else "disconnected",
-                "search_api": "configured" if agent.searchapi_key else "not_configured",
-                "crawl4ai": "available" if agent.config else "not_available"
+                "search_api": "configured" if current_agent.searchapi_key else "not_configured",
+                "crawl4ai": "available" if current_agent.config else "not_available"
             },
             "timestamp": datetime.now().isoformat()
         }

@@ -156,7 +156,8 @@ class TencentSMSService:
             req.SmsSdkAppId = self.sms_sdk_app_id
             req.SignName = self.sms_signature
             req.TemplateId = self.verification_template_id
-            req.TemplateParamSet = [verification_code, str(self.code_expiry_minutes)]
+            # Template only expects the verification code (1 parameter)
+            req.TemplateParamSet = [verification_code]
             
             # Send SMS via Tencent Cloud
             resp = self.client.SendSms(req)

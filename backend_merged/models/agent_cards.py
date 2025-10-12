@@ -75,7 +75,7 @@ class AgentCardSwipe(Base):
     swipe_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # User and card info
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     card_id = Column(Integer, ForeignKey("agent_cards.card_id"), nullable=False, index=True)
     
     # Swipe details
@@ -102,7 +102,7 @@ class AgentCardLike(Base):
     like_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # User and card info
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     card_id = Column(Integer, ForeignKey("agent_cards.card_id"), nullable=False, index=True)
     
     # Like metadata
@@ -138,7 +138,7 @@ class AgentCardHistory(Base):
     history_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # User and card info
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     card_id = Column(Integer, ForeignKey("agent_cards.card_id"), nullable=False, index=True)
     
     # History metadata
@@ -165,7 +165,7 @@ class UserAgentCardPreferences(Base):
     preference_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # User relationship
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, index=True)
     
     # Preferences
     preferred_difficulty_levels = Column(JSON, nullable=True)  # Array of preferred difficulty levels

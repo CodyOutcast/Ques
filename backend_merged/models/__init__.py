@@ -1,64 +1,28 @@
 # Import all models to ensure they're registered with SQLAlchemy
+# ✅ Only models with actual database tables are imported
 from .base import Base
 from .users import User
-from .likes import UserSwipe, Like, SwipeDirection
-from .matches import Match
-from .messages import Message
-from .chats import Chat, ChatMessage, ChatStatus
-from .user_auth import UserAuth, RefreshToken, VerificationCode, UserSession, SecurityLog
-from .user_features import UserFeature, UserLink
+from .user_profiles import UserProfile
+from .likes import UserSwipe, SwipeDirection
 from .user_reports import UserReport
-from .project_cards import ProjectCard, UserProject
-from .agent_cards import AgentCard, AgentCardSwipe, AgentCardLike, AgentCardHistory, UserAgentCardPreferences, DifficultyLevel, ProjectScope, SwipeAction
-from .user_membership import UserMembership, UserUsageLog, MembershipType
-from .payments import MembershipTransaction, PaymentRefund, PaymentWebhookLog, PaymentStatus, PaymentMethod
-from .subscriptions import UserSubscription, ProjectIdeaRequest, SubscriptionType
-from .project_slots import ProjectCardSlot, UserSlotConfiguration, AIRecommendationSwipe, SlotStatus, SlotSource
+from .locations import Province, City
+from .whispers import Whisper
+from .user_auth import UserAuth, VerificationCode, RefreshToken, UserSession, ProviderType
 
 # Export all models
 __all__ = [
     "Base",
-    "User", 
+    "User",
+    "UserProfile",
     "UserSwipe", 
-    "Like",
     "SwipeDirection",
-    "Match",
-    "Message",
-    "Chat",
-    "ChatMessage",
-    "ChatStatus",
-    "UserAuth", 
-    "RefreshToken", 
-    "VerificationCode", 
-    "UserSession", 
-    "SecurityLog",
-    "UserFeature",
-    "UserLink",
     "UserReport",
-    "UserProject", 
-    "ProjectCard",
-    "AgentCard",
-    "AgentCardSwipe",
-    "AgentCardLike",
-    "AgentCardHistory",
-    "UserAgentCardPreferences",
-    "DifficultyLevel",
-    "ProjectScope",
-    "SwipeAction",
-    "UserMembership",
-    "UserUsageLog",
-    "MembershipType",
-    "MembershipTransaction",
-    "PaymentRefund", 
-    "PaymentWebhookLog",
-    "PaymentStatus",
-    "PaymentMethod",
-    "UserSubscription",
-    "ProjectIdeaRequest",
-    "SubscriptionType",
-    "ProjectCardSlot",
-    "UserSlotConfiguration", 
-    "AIRecommendationSwipe",
-    "SlotStatus",
-    "SlotSource"
+    "Province",
+    "City",
+    "Whisper",
+    "UserAuth",
+    "VerificationCode", 
+    "RefreshToken",
+    "UserSession",
+    "ProviderType"
 ]

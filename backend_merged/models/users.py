@@ -1,139 +1,130 @@
 """
 User models matching the actual database schema
+Updated to match production database: users table with id, phone_number, wechat_id, user_status
 """
 
-from sqlalchemy import Column, Integer, String, Boolean, JSON
+from sqlalchemy import Column, BigInteger, String, Boolean, TIMESTAMP
 from sqlalchemy.orm import relationship
-from datetime import datetime
+from datetime import datetime, date
 from .base import Base
 
 class User(Base):
     """
-    User model matching the actual database schema
+    User model matching the actual production database schema
+    
+    Database schema:
+    - id: BIGINT (primary key)
+    - phone_number: VARCHAR(20) - UNIQUE
+    - wechat_id: VARCHAR(50) - UNIQUE
+    - user_status: VARCHAR(20) - default 'inactive'
+    - created_at: TIMESTAMP - default CURRENT_TIMESTAMP
+    - updated_at: TIMESTAMP - default CURRENT_TIMESTAMP
     """
     __tablename__ = "users"
 
-    # Primary key (actual column name is user_id)
-    user_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    name = Column(String(255), nullable=False)
-    bio = Column(String(500), nullable=True)
-    verification_status = Column(String(50), nullable=True)
-    is_active = Column(Boolean, nullable=True, default=True)
-    feature_tags = Column(JSON, nullable=True)
-    vector_id = Column(String(255), nullable=True)
-    profile_image_url = Column(String(512), nullable=True)
+    # Primary key - actual column name is 'id' not 'user_id'
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
     
-    # Location fields
-    latitude = Column(String(20), nullable=True)  # e.g., "40.7128"
-    longitude = Column(String(20), nullable=True)  # e.g., "-74.0060"
-    city = Column(String(100), nullable=True)  # e.g., "New York"
-    state = Column(String(100), nullable=True)  # e.g., "New York"
-    country = Column(String(100), nullable=True)  # e.g., "United States"
-    postal_code = Column(String(20), nullable=True)  # e.g., "10001"
-    address = Column(String(500), nullable=True)  # Full address if needed
+    # Authentication fields
+    phone_number = Column(String(20), unique=True, nullable=True, index=True)
+    wechat_id = Column(String(50), unique=True, nullable=True, index=True)
+    
+    # Status field
+    user_status = Column(String(20), nullable=False, default='inactive', index=True)
+    
+    # Timestamps
+    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow, index=True)
+    updated_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     
     # Relationships to other tables
-    auth_records = relationship("UserAuth", back_populates="user")
-    refresh_tokens = relationship("RefreshToken", back_populates="user")
-    sessions = relationship("UserSession", back_populates="user")
-    security_logs = relationship("SecurityLog", back_populates="user")
-    features = relationship("UserFeature", back_populates="user", uselist=False)
-    links = relationship("UserLink", back_populates="user", uselist=False)
+    # Profile relationship (one-to-one with user_profiles table)
+    profile = relationship("UserProfile", back_populates="user", uselist=False)
     
-    # User swipe relationships
+    # Swipe relationships (using actual column names: swiper_id and swiped_user_id)
     sent_swipes = relationship("UserSwipe", foreign_keys="UserSwipe.swiper_id", back_populates="swiper")
-    received_swipes = relationship("UserSwipe", foreign_keys="UserSwipe.target_id", back_populates="target")
+    received_swipes = relationship("UserSwipe", foreign_keys="UserSwipe.swiped_user_id", back_populates="swiped_user")
     
-    # Like relationships
-    given_likes = relationship("Like", foreign_keys="Like.liker_id", back_populates="liker")
-    
-    # Match relationships
-    matches_as_user1 = relationship("Match", foreign_keys="Match.user1_id", back_populates="user1")
-    matches_as_user2 = relationship("Match", foreign_keys="Match.user2_id", back_populates="user2")
-    
-    # Message relationships
-    sent_messages = relationship("Message", back_populates="sender")
-    
-    # Project relationships
-    user_projects = relationship("UserProject", back_populates="user")
-    created_projects = relationship("ProjectCard", foreign_keys="ProjectCard.creator_id", back_populates="creator")
-    
-    # Agent card preferences relationship
-    agent_card_preferences = relationship("UserAgentCardPreferences", back_populates="user", uselist=False)
-    
-    # Membership relationship
-    membership = relationship("UserMembership", back_populates="user", uselist=False)
-    
-    # Payment relationships
-    membership_transactions = relationship("MembershipTransaction", back_populates="user")
+    # Whisper relationships
+    sent_whispers = relationship("Whisper", foreign_keys="Whisper.sender_id", back_populates="sender")
+    received_whispers = relationship("Whisper", foreign_keys="Whisper.recipient_id", back_populates="recipient")
     
     # Report relationships
     reports_made = relationship("UserReport", foreign_keys="UserReport.reporter_id", back_populates="reporter")
     reports_received = relationship("UserReport", foreign_keys="UserReport.reported_user_id", back_populates="reported_user")
+    moderated_reports = relationship("UserReport", foreign_keys="UserReport.moderator_id", back_populates="moderator")
     
-    # Project Slots relationships
-    project_slots = relationship("ProjectCardSlot", back_populates="user")
-    slot_configuration = relationship("UserSlotConfiguration", back_populates="user", uselist=False)
-    ai_recommendation_swipes = relationship("AIRecommendationSwipe", back_populates="user")
+    # University verification relationship
+    university_verification = relationship("UniversityVerification", back_populates="user", uselist=False)
     
-    # Add commonly used fields for compatibility
+    # Settings relationships
+    account_settings = relationship("UserAccountSettings", back_populates="user", uselist=False)
+    security_settings = relationship("UserSecuritySettings", back_populates="user", uselist=False)
+    account_actions = relationship("AccountAction", foreign_keys="AccountAction.user_id", back_populates="user")
+    privacy_consents = relationship("PrivacyConsent", back_populates="user")
+    data_export_requests = relationship("DataExportRequest", back_populates="user")
+    
+    # Compatibility properties - delegate to user_profiles table
     @property
-    def id(self):
-        """Alias for user_id for compatibility"""
-        return self.user_id
+    def user_id(self):
+        """Alias for id for backward compatibility"""
+        return self.id
+    
+    @property
+    def name(self):
+        """Get name from profile"""
+        return self.profile.name if self.profile else None
     
     @property
     def username(self):
-        """Alias for name for compatibility"""
-        return self.name
+        """Get name from profile as username"""
+        return self.profile.name if self.profile else f"user_{self.id}"
     
     @property
     def display_name(self):
-        """Use name as display name"""
-        return self.name
+        """Get display name from profile"""
+        return self.profile.name if self.profile else f"User {self.id}"
     
     @property
-    def email(self):
-        """Email from auth table - placeholder"""
-        return None
-    
-    @property
-    def avatar_url(self):
-        """Avatar URL from profile_image_url or generate default"""
-        return getattr(self, 'profile_image_url', None) or f"https://api.dicebear.com/7.x/avataaars/svg?seed={self.name}"
-    
-    @property
-    def location(self):
-        """Location information"""
-        if self.city and self.state:
-            return f"{self.city}, {self.state}"
-        elif self.city:
-            return self.city
-        elif self.latitude and self.longitude:
-            return f"{self.latitude}, {self.longitude}"
-        return None
+    def bio(self):
+        """Get bio from profile one_sentence_intro"""
+        return self.profile.one_sentence_intro if self.profile else None
     
     @property
     def age(self):
-        """Age - placeholder"""
-        return None
+        """Get age from profile"""
+        return self.profile.age if self.profile else None
+    
+    @property
+    def birthday(self):
+        """Get birthday from profile"""
+        return self.profile.birthday if self.profile else None
     
     @property
     def gender(self):
-        """Gender - placeholder"""
-        return None
+        """Get gender from profile"""
+        return self.profile.gender if self.profile else None
+    
+    @property
+    def location(self):
+        """Get location from profile"""
+        return self.profile.location if self.profile else None
+    
+    @property
+    def avatar_url(self):
+        """Get avatar URL from profile"""
+        if self.profile and self.profile.profile_photo:
+            return self.profile.profile_photo
+        return f"https://api.dicebear.com/7.x/avataaars/svg?seed={self.id}"
     
     @property
     def is_verified(self):
-        """Check if user is verified"""
-        return self.verification_status == "verified"
+        """Check if user's university is verified"""
+        return self.profile.university_verified if self.profile else False
     
     @property
-    def created_at(self):
-        """Created at - placeholder"""
-        return datetime.utcnow()
+    def is_active(self):
+        """Check if user status is active"""
+        return self.user_status == 'active'
     
-    @property
-    def updated_at(self):
-        """Updated at - placeholder"""
-        return datetime.utcnow()
+    def __repr__(self):
+        return f"<User(id={self.id}, phone={self.phone_number}, wechat={self.wechat_id}, status={self.user_status})>"

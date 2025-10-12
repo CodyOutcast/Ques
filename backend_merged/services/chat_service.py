@@ -9,7 +9,7 @@ from datetime import datetime
 
 from models.chats import Chat, ChatMessage, ChatStatus
 from models.users import User
-from models.likes import UserSwipe, Like, SwipeDirection
+from models.likes import UserSwipe, SwipeDirection
 from schemas.chats import (
     GreetingCreate, GreetingResponse, MessageCreate, 
     ChatResponse, MessageResponse, ChatWithMessages, ChatListResponse

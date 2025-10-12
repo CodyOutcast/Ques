@@ -1,0 +1,908 @@
+2025/10/04-14:47:23.760302 3dcc RocksDB version: 8.10.0
+2025/10/04-14:47:23.760756 3dcc Compile date 2023-12-15 13:01:14
+2025/10/04-14:47:23.760780 3dcc DB SUMMARY
+2025/10/04-14:47:23.760796 3dcc Host name (Env):  LAPTOP-9MCODDG3
+2025/10/04-14:47:23.760809 3dcc DB Session ID:  HHZQO2K650D8M6E2MVA9
+2025/10/04-14:47:23.762121 3dcc SST files in ./storage\collections\user_vectors_1024\0\segments\1bd0360b-3909-4c04-81c6-0e47eb570d0a dir, Total Num: 0, files: 
+2025/10/04-14:47:23.762246 3dcc Write Ahead Log file in ./storage\collections\user_vectors_1024\0\segments\1bd0360b-3909-4c04-81c6-0e47eb570d0a: 
+2025/10/04-14:47:23.762308 3dcc                         Options.error_if_exists: 0
+2025/10/04-14:47:23.762348 3dcc                       Options.create_if_missing: 1
+2025/10/04-14:47:23.762500 3dcc                         Options.paranoid_checks: 1
+2025/10/04-14:47:23.762507 3dcc             Options.flush_verify_memtable_count: 1
+2025/10/04-14:47:23.762521 3dcc          Options.compaction_verify_record_count: 1
+2025/10/04-14:47:23.762527 3dcc                               Options.track_and_verify_wals_in_manifest: 0
+2025/10/04-14:47:23.762532 3dcc        Options.verify_sst_unique_id_in_manifest: 1
+2025/10/04-14:47:23.762537 3dcc                                     Options.env: 000001F24A636E50
+2025/10/04-14:47:23.762543 3dcc                                      Options.fs: WinFS
+2025/10/04-14:47:23.762548 3dcc                                Options.info_log: 000001F24BE8BCE0
+2025/10/04-14:47:23.762553 3dcc                Options.max_file_opening_threads: 16
+2025/10/04-14:47:23.762559 3dcc                              Options.statistics: 0000000000000000
+2025/10/04-14:47:23.762564 3dcc                               Options.use_fsync: 0
+2025/10/04-14:47:23.762570 3dcc                       Options.max_log_file_size: 1048576
+2025/10/04-14:47:23.762575 3dcc                  Options.max_manifest_file_size: 1073741824
+2025/10/04-14:47:23.762580 3dcc                   Options.log_file_time_to_roll: 0
+2025/10/04-14:47:23.762585 3dcc                       Options.keep_log_file_num: 1
+2025/10/04-14:47:23.762590 3dcc                    Options.recycle_log_file_num: 0
+2025/10/04-14:47:23.762595 3dcc                         Options.allow_fallocate: 1
+2025/10/04-14:47:23.762599 3dcc                        Options.allow_mmap_reads: 0
+2025/10/04-14:47:23.762604 3dcc                       Options.allow_mmap_writes: 0
+2025/10/04-14:47:23.762609 3dcc                        Options.use_direct_reads: 0
+2025/10/04-14:47:23.762614 3dcc                        Options.use_direct_io_for_flush_and_compaction: 0
+2025/10/04-14:47:23.762618 3dcc          Options.create_missing_column_families: 1
+2025/10/04-14:47:23.762623 3dcc                              Options.db_log_dir: 
+2025/10/04-14:47:23.762629 3dcc                                 Options.wal_dir: 
+2025/10/04-14:47:23.762633 3dcc                Options.table_cache_numshardbits: 6
+2025/10/04-14:47:23.762638 3dcc                         Options.WAL_ttl_seconds: 0
+2025/10/04-14:47:23.762643 3dcc                       Options.WAL_size_limit_MB: 0
+2025/10/04-14:47:23.762648 3dcc                        Options.max_write_batch_group_size_bytes: 1048576
+2025/10/04-14:47:23.762652 3dcc             Options.manifest_preallocation_size: 4194304
+2025/10/04-14:47:23.762657 3dcc                     Options.is_fd_close_on_exec: 1
+2025/10/04-14:47:23.762662 3dcc                   Options.advise_random_on_open: 1
+2025/10/04-14:47:23.762667 3dcc                    Options.db_write_buffer_size: 0
+2025/10/04-14:47:23.762673 3dcc                    Options.write_buffer_manager: 000001F24BF857F0
+2025/10/04-14:47:23.762677 3dcc         Options.access_hint_on_compaction_start: 1
+2025/10/04-14:47:23.762682 3dcc           Options.random_access_max_buffer_size: 1048576
+2025/10/04-14:47:23.762686 3dcc                      Options.use_adaptive_mutex: 0
+2025/10/04-14:47:23.762691 3dcc                            Options.rate_limiter: 0000000000000000
+2025/10/04-14:47:23.762697 3dcc     Options.sst_file_manager.rate_bytes_per_sec: 0
+2025/10/04-14:47:23.762729 3dcc                       Options.wal_recovery_mode: 0
+2025/10/04-14:47:23.762736 3dcc                  Options.enable_thread_tracking: 0
+2025/10/04-14:47:23.762741 3dcc                  Options.enable_pipelined_write: 0
+2025/10/04-14:47:23.762745 3dcc                  Options.unordered_write: 0
+2025/10/04-14:47:23.762750 3dcc         Options.allow_concurrent_memtable_write: 1
+2025/10/04-14:47:23.762755 3dcc      Options.enable_write_thread_adaptive_yield: 1
+2025/10/04-14:47:23.762759 3dcc             Options.write_thread_max_yield_usec: 100
+2025/10/04-14:47:23.762764 3dcc            Options.write_thread_slow_yield_usec: 3
+2025/10/04-14:47:23.762769 3dcc                               Options.row_cache: None
+2025/10/04-14:47:23.762774 3dcc                              Options.wal_filter: None
+2025/10/04-14:47:23.762779 3dcc             Options.avoid_flush_during_recovery: 0
+2025/10/04-14:47:23.762784 3dcc             Options.allow_ingest_behind: 0
+2025/10/04-14:47:23.762789 3dcc             Options.two_write_queues: 0
+2025/10/04-14:47:23.762793 3dcc             Options.manual_wal_flush: 0
+2025/10/04-14:47:23.762798 3dcc             Options.wal_compression: 0
+2025/10/04-14:47:23.762802 3dcc             Options.atomic_flush: 0
+2025/10/04-14:47:23.762807 3dcc             Options.avoid_unnecessary_blocking_io: 0
+2025/10/04-14:47:23.762812 3dcc                 Options.persist_stats_to_disk: 0
+2025/10/04-14:47:23.762817 3dcc                 Options.write_dbid_to_manifest: 0
+2025/10/04-14:47:23.762822 3dcc                 Options.log_readahead_size: 0
+2025/10/04-14:47:23.762827 3dcc                 Options.file_checksum_gen_factory: Unknown
+2025/10/04-14:47:23.762833 3dcc                 Options.best_efforts_recovery: 0
+2025/10/04-14:47:23.762840 3dcc                Options.max_bgerror_resume_count: 2147483647
+2025/10/04-14:47:23.762845 3dcc            Options.bgerror_resume_retry_interval: 1000000
+2025/10/04-14:47:23.762850 3dcc             Options.allow_data_in_errors: 0
+2025/10/04-14:47:23.762854 3dcc             Options.db_host_id: __hostname__
+2025/10/04-14:47:23.762859 3dcc             Options.enforce_single_del_contracts: true
+2025/10/04-14:47:23.762864 3dcc             Options.max_background_jobs: 2
+2025/10/04-14:47:23.762869 3dcc             Options.max_background_compactions: -1
+2025/10/04-14:47:23.762874 3dcc             Options.max_subcompactions: 1
+2025/10/04-14:47:23.762879 3dcc             Options.avoid_flush_during_shutdown: 0
+2025/10/04-14:47:23.762884 3dcc           Options.writable_file_max_buffer_size: 1048576
+2025/10/04-14:47:23.762889 3dcc             Options.delayed_write_rate : 16777216
+2025/10/04-14:47:23.762893 3dcc             Options.max_total_wal_size: 0
+2025/10/04-14:47:23.762905 3dcc             Options.delete_obsolete_files_period_micros: 180000000
+2025/10/04-14:47:23.762910 3dcc                   Options.stats_dump_period_sec: 600
+2025/10/04-14:47:23.762915 3dcc                 Options.stats_persist_period_sec: 600
+2025/10/04-14:47:23.762920 3dcc                 Options.stats_history_buffer_size: 1048576
+2025/10/04-14:47:23.762925 3dcc                          Options.max_open_files: 256
+2025/10/04-14:47:23.762930 3dcc                          Options.bytes_per_sync: 0
+2025/10/04-14:47:23.762935 3dcc                      Options.wal_bytes_per_sync: 0
+2025/10/04-14:47:23.762940 3dcc                   Options.strict_bytes_per_sync: 0
+2025/10/04-14:47:23.762947 3dcc       Options.compaction_readahead_size: 2097152
+2025/10/04-14:47:23.762951 3dcc                  Options.max_background_flushes: -1
+2025/10/04-14:47:23.762956 3dcc Options.daily_offpeak_time_utc: 
+2025/10/04-14:47:23.762961 3dcc Compression algorithms supported:
+2025/10/04-14:47:23.762965 3dcc 	kZSTD supported: 0
+2025/10/04-14:47:23.762970 3dcc 	kSnappyCompression supported: 1
+2025/10/04-14:47:23.762974 3dcc 	kBZip2Compression supported: 0
+2025/10/04-14:47:23.762979 3dcc 	kZlibCompression supported: 0
+2025/10/04-14:47:23.762984 3dcc 	kLZ4Compression supported: 0
+2025/10/04-14:47:23.762988 3dcc 	kXpressCompression supported: 0
+2025/10/04-14:47:23.763026 3dcc 	kLZ4HCCompression supported: 0
+2025/10/04-14:47:23.763032 3dcc 	kZSTDNotFinalCompression supported: 0
+2025/10/04-14:47:23.763037 3dcc Fast CRC32 supported: Not supported on x86
+2025/10/04-14:47:23.763042 3dcc DMutex implementation: std::mutex
+2025/10/04-14:47:23.791506 3dcc               Options.comparator: leveldb.BytewiseComparator
+2025/10/04-14:47:23.791525 3dcc           Options.merge_operator: None
+2025/10/04-14:47:23.791531 3dcc        Options.compaction_filter: None
+2025/10/04-14:47:23.791540 3dcc        Options.compaction_filter_factory: None
+2025/10/04-14:47:23.791545 3dcc  Options.sst_partitioner_factory: None
+2025/10/04-14:47:23.791550 3dcc         Options.memtable_factory: SkipListFactory
+2025/10/04-14:47:23.791555 3dcc            Options.table_factory: BlockBasedTable
+2025/10/04-14:47:23.791604 3dcc            table_factory options:   flush_block_policy_factory: FlushBlockBySizePolicyFactory (000001F24BD2E9F0)
+  cache_index_and_filter_blocks: 0
+  cache_index_and_filter_blocks_with_high_priority: 1
+  pin_l0_filter_and_index_blocks_in_cache: 0
+  pin_top_level_index_and_filter: 1
+  index_type: 0
+  data_block_index_type: 0
+  index_shortening: 1
+  data_block_hash_table_util_ratio: 0.750000
+  checksum: 4
+  no_block_cache: 0
+  block_cache: 000001F24A6377C0
+  block_cache_name: LRUCache
+  block_cache_options:
+    capacity : 33554432
+    num_shard_bits : 6
+    strict_capacity_limit : 0
+    memory_allocator : None
+    high_pri_pool_ratio: 0.500
+    low_pri_pool_ratio: 0.000
+  persistent_cache: 0000000000000000
+  block_size: 4096
+  block_size_deviation: 10
+  block_restart_interval: 16
+  index_block_restart_interval: 1
+  metadata_block_size: 4096
+  partition_filters: 0
+  use_delta_encoding: 1
+  filter_policy: nullptr
+  whole_key_filtering: 1
+  verify_compression: 0
+  read_amp_bytes_per_bit: 0
+  format_version: 5
+  enable_index_compression: 1
+  block_align: 0
+  max_auto_readahead_size: 262144
+  prepopulate_block_cache: 0
+  initial_auto_readahead_size: 8192
+  num_file_reads_for_auto_readahead: 2
+2025/10/04-14:47:23.791612 3dcc        Options.write_buffer_size: 10485760
+2025/10/04-14:47:23.791617 3dcc  Options.max_write_buffer_number: 2
+2025/10/04-14:47:23.791622 3dcc          Options.compression: Snappy
+2025/10/04-14:47:23.791627 3dcc                  Options.bottommost_compression: Disabled
+2025/10/04-14:47:23.791632 3dcc       Options.prefix_extractor: nullptr
+2025/10/04-14:47:23.791637 3dcc   Options.memtable_insert_with_hint_prefix_extractor: nullptr
+2025/10/04-14:47:23.791642 3dcc             Options.num_levels: 7
+2025/10/04-14:47:23.791646 3dcc        Options.min_write_buffer_number_to_merge: 1
+2025/10/04-14:47:23.791651 3dcc     Options.max_write_buffer_number_to_maintain: 0
+2025/10/04-14:47:23.791656 3dcc     Options.max_write_buffer_size_to_maintain: 0
+2025/10/04-14:47:23.791661 3dcc            Options.bottommost_compression_opts.window_bits: -14
+2025/10/04-14:47:23.791666 3dcc                  Options.bottommost_compression_opts.level: 32767
+2025/10/04-14:47:23.791671 3dcc               Options.bottommost_compression_opts.strategy: 0
+2025/10/04-14:47:23.791676 3dcc         Options.bottommost_compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.791681 3dcc         Options.bottommost_compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.791686 3dcc         Options.bottommost_compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.791691 3dcc                  Options.bottommost_compression_opts.enabled: false
+2025/10/04-14:47:23.791697 3dcc         Options.bottommost_compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.791702 3dcc         Options.bottommost_compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.791707 3dcc            Options.compression_opts.window_bits: -14
+2025/10/04-14:47:23.791712 3dcc                  Options.compression_opts.level: 32767
+2025/10/04-14:47:23.791716 3dcc               Options.compression_opts.strategy: 0
+2025/10/04-14:47:23.791721 3dcc         Options.compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.791726 3dcc         Options.compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.791776 3dcc         Options.compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.791784 3dcc         Options.compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.791789 3dcc                  Options.compression_opts.enabled: false
+2025/10/04-14:47:23.791793 3dcc         Options.compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.791798 3dcc      Options.level0_file_num_compaction_trigger: 4
+2025/10/04-14:47:23.791804 3dcc          Options.level0_slowdown_writes_trigger: 20
+2025/10/04-14:47:23.791809 3dcc              Options.level0_stop_writes_trigger: 36
+2025/10/04-14:47:23.791814 3dcc                   Options.target_file_size_base: 67108864
+2025/10/04-14:47:23.791819 3dcc             Options.target_file_size_multiplier: 1
+2025/10/04-14:47:23.791824 3dcc                Options.max_bytes_for_level_base: 268435456
+2025/10/04-14:47:23.791829 3dcc Options.level_compaction_dynamic_level_bytes: 1
+2025/10/04-14:47:23.791835 3dcc          Options.max_bytes_for_level_multiplier: 10.000000
+2025/10/04-14:47:23.791840 3dcc Options.max_bytes_for_level_multiplier_addtl[0]: 1
+2025/10/04-14:47:23.791845 3dcc Options.max_bytes_for_level_multiplier_addtl[1]: 1
+2025/10/04-14:47:23.791850 3dcc Options.max_bytes_for_level_multiplier_addtl[2]: 1
+2025/10/04-14:47:23.791855 3dcc Options.max_bytes_for_level_multiplier_addtl[3]: 1
+2025/10/04-14:47:23.791860 3dcc Options.max_bytes_for_level_multiplier_addtl[4]: 1
+2025/10/04-14:47:23.791864 3dcc Options.max_bytes_for_level_multiplier_addtl[5]: 1
+2025/10/04-14:47:23.791870 3dcc Options.max_bytes_for_level_multiplier_addtl[6]: 1
+2025/10/04-14:47:23.791874 3dcc       Options.max_sequential_skip_in_iterations: 8
+2025/10/04-14:47:23.791879 3dcc                    Options.max_compaction_bytes: 1677721600
+2025/10/04-14:47:23.791884 3dcc   Options.ignore_max_compaction_bytes_for_input: true
+2025/10/04-14:47:23.791889 3dcc                        Options.arena_block_size: 1048576
+2025/10/04-14:47:23.791894 3dcc   Options.soft_pending_compaction_bytes_limit: 68719476736
+2025/10/04-14:47:23.791898 3dcc   Options.hard_pending_compaction_bytes_limit: 274877906944
+2025/10/04-14:47:23.791903 3dcc                Options.disable_auto_compactions: 0
+2025/10/04-14:47:23.791910 3dcc                        Options.compaction_style: kCompactionStyleLevel
+2025/10/04-14:47:23.791916 3dcc                          Options.compaction_pri: kMinOverlappingRatio
+2025/10/04-14:47:23.791920 3dcc Options.compaction_options_universal.size_ratio: 1
+2025/10/04-14:47:23.791925 3dcc Options.compaction_options_universal.min_merge_width: 2
+2025/10/04-14:47:23.791930 3dcc Options.compaction_options_universal.max_merge_width: 4294967295
+2025/10/04-14:47:23.791935 3dcc Options.compaction_options_universal.max_size_amplification_percent: 200
+2025/10/04-14:47:23.791940 3dcc Options.compaction_options_universal.compression_size_percent: -1
+2025/10/04-14:47:23.791946 3dcc Options.compaction_options_universal.stop_style: kCompactionStopStyleTotalSize
+2025/10/04-14:47:23.791951 3dcc Options.compaction_options_fifo.max_table_files_size: 1073741824
+2025/10/04-14:47:23.791956 3dcc Options.compaction_options_fifo.allow_compaction: 0
+2025/10/04-14:47:23.791999 3dcc                   Options.table_properties_collectors: 
+2025/10/04-14:47:23.792011 3dcc                   Options.inplace_update_support: 0
+2025/10/04-14:47:23.792017 3dcc                 Options.inplace_update_num_locks: 10000
+2025/10/04-14:47:23.792023 3dcc               Options.memtable_prefix_bloom_size_ratio: 0.000000
+2025/10/04-14:47:23.792029 3dcc               Options.memtable_whole_key_filtering: 0
+2025/10/04-14:47:23.792033 3dcc   Options.memtable_huge_page_size: 0
+2025/10/04-14:47:23.792044 3dcc                           Options.bloom_locality: 0
+2025/10/04-14:47:23.792049 3dcc                    Options.max_successive_merges: 0
+2025/10/04-14:47:23.792054 3dcc                Options.optimize_filters_for_hits: 0
+2025/10/04-14:47:23.792059 3dcc                Options.paranoid_file_checks: 0
+2025/10/04-14:47:23.792068 3dcc                Options.force_consistency_checks: 1
+2025/10/04-14:47:23.792075 3dcc                Options.report_bg_io_stats: 0
+2025/10/04-14:47:23.792080 3dcc                               Options.ttl: 2592000
+2025/10/04-14:47:23.792085 3dcc          Options.periodic_compaction_seconds: 0
+2025/10/04-14:47:23.792090 3dcc                        Options.default_temperature: kUnknown
+2025/10/04-14:47:23.792095 3dcc  Options.preclude_last_level_data_seconds: 0
+2025/10/04-14:47:23.792100 3dcc    Options.preserve_internal_time_seconds: 0
+2025/10/04-14:47:23.792105 3dcc                       Options.enable_blob_files: false
+2025/10/04-14:47:23.792110 3dcc                           Options.min_blob_size: 0
+2025/10/04-14:47:23.792115 3dcc                          Options.blob_file_size: 268435456
+2025/10/04-14:47:23.792120 3dcc                   Options.blob_compression_type: NoCompression
+2025/10/04-14:47:23.792125 3dcc          Options.enable_blob_garbage_collection: false
+2025/10/04-14:47:23.792131 3dcc      Options.blob_garbage_collection_age_cutoff: 0.250000
+2025/10/04-14:47:23.792137 3dcc Options.blob_garbage_collection_force_threshold: 1.000000
+2025/10/04-14:47:23.792142 3dcc          Options.blob_compaction_readahead_size: 0
+2025/10/04-14:47:23.792147 3dcc                Options.blob_file_starting_level: 0
+2025/10/04-14:47:23.792152 3dcc         Options.experimental_mempurge_threshold: 0.000000
+2025/10/04-14:47:23.792158 3dcc            Options.memtable_max_range_deletions: 0
+2025/10/04-14:47:23.813582 3dcc               Options.comparator: leveldb.BytewiseComparator
+2025/10/04-14:47:23.813599 3dcc           Options.merge_operator: None
+2025/10/04-14:47:23.813607 3dcc        Options.compaction_filter: None
+2025/10/04-14:47:23.813615 3dcc        Options.compaction_filter_factory: None
+2025/10/04-14:47:23.813621 3dcc  Options.sst_partitioner_factory: None
+2025/10/04-14:47:23.813626 3dcc         Options.memtable_factory: SkipListFactory
+2025/10/04-14:47:23.813632 3dcc            Options.table_factory: BlockBasedTable
+2025/10/04-14:47:23.813698 3dcc            table_factory options:   flush_block_policy_factory: FlushBlockBySizePolicyFactory (000001F24BD2E9F0)
+  cache_index_and_filter_blocks: 0
+  cache_index_and_filter_blocks_with_high_priority: 1
+  pin_l0_filter_and_index_blocks_in_cache: 0
+  pin_top_level_index_and_filter: 1
+  index_type: 0
+  data_block_index_type: 0
+  index_shortening: 1
+  data_block_hash_table_util_ratio: 0.750000
+  checksum: 4
+  no_block_cache: 0
+  block_cache: 000001F24A6377C0
+  block_cache_name: LRUCache
+  block_cache_options:
+    capacity : 33554432
+    num_shard_bits : 6
+    strict_capacity_limit : 0
+    memory_allocator : None
+    high_pri_pool_ratio: 0.500
+    low_pri_pool_ratio: 0.000
+  persistent_cache: 0000000000000000
+  block_size: 4096
+  block_size_deviation: 10
+  block_restart_interval: 16
+  index_block_restart_interval: 1
+  metadata_block_size: 4096
+  partition_filters: 0
+  use_delta_encoding: 1
+  filter_policy: nullptr
+  whole_key_filtering: 1
+  verify_compression: 0
+  read_amp_bytes_per_bit: 0
+  format_version: 5
+  enable_index_compression: 1
+  block_align: 0
+  max_auto_readahead_size: 262144
+  prepopulate_block_cache: 0
+  initial_auto_readahead_size: 8192
+  num_file_reads_for_auto_readahead: 2
+2025/10/04-14:47:23.813707 3dcc        Options.write_buffer_size: 10485760
+2025/10/04-14:47:23.813712 3dcc  Options.max_write_buffer_number: 2
+2025/10/04-14:47:23.813717 3dcc          Options.compression: Snappy
+2025/10/04-14:47:23.813721 3dcc                  Options.bottommost_compression: Disabled
+2025/10/04-14:47:23.813726 3dcc       Options.prefix_extractor: nullptr
+2025/10/04-14:47:23.813731 3dcc   Options.memtable_insert_with_hint_prefix_extractor: nullptr
+2025/10/04-14:47:23.813735 3dcc             Options.num_levels: 7
+2025/10/04-14:47:23.813741 3dcc        Options.min_write_buffer_number_to_merge: 1
+2025/10/04-14:47:23.813746 3dcc     Options.max_write_buffer_number_to_maintain: 0
+2025/10/04-14:47:23.813751 3dcc     Options.max_write_buffer_size_to_maintain: 0
+2025/10/04-14:47:23.813760 3dcc            Options.bottommost_compression_opts.window_bits: -14
+2025/10/04-14:47:23.813769 3dcc                  Options.bottommost_compression_opts.level: 32767
+2025/10/04-14:47:23.813779 3dcc               Options.bottommost_compression_opts.strategy: 0
+2025/10/04-14:47:23.813784 3dcc         Options.bottommost_compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.813789 3dcc         Options.bottommost_compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.813795 3dcc         Options.bottommost_compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.813800 3dcc                  Options.bottommost_compression_opts.enabled: false
+2025/10/04-14:47:23.813805 3dcc         Options.bottommost_compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.813811 3dcc         Options.bottommost_compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.813816 3dcc            Options.compression_opts.window_bits: -14
+2025/10/04-14:47:23.813823 3dcc                  Options.compression_opts.level: 32767
+2025/10/04-14:47:23.813828 3dcc               Options.compression_opts.strategy: 0
+2025/10/04-14:47:23.813835 3dcc         Options.compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.813840 3dcc         Options.compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.813845 3dcc         Options.compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.813850 3dcc         Options.compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.813855 3dcc                  Options.compression_opts.enabled: false
+2025/10/04-14:47:23.813859 3dcc         Options.compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.813864 3dcc      Options.level0_file_num_compaction_trigger: 4
+2025/10/04-14:47:23.813869 3dcc          Options.level0_slowdown_writes_trigger: 20
+2025/10/04-14:47:23.813873 3dcc              Options.level0_stop_writes_trigger: 36
+2025/10/04-14:47:23.813878 3dcc                   Options.target_file_size_base: 67108864
+2025/10/04-14:47:23.813882 3dcc             Options.target_file_size_multiplier: 1
+2025/10/04-14:47:23.813887 3dcc                Options.max_bytes_for_level_base: 268435456
+2025/10/04-14:47:23.813891 3dcc Options.level_compaction_dynamic_level_bytes: 1
+2025/10/04-14:47:23.813897 3dcc          Options.max_bytes_for_level_multiplier: 10.000000
+2025/10/04-14:47:23.813908 3dcc Options.max_bytes_for_level_multiplier_addtl[0]: 1
+2025/10/04-14:47:23.813912 3dcc Options.max_bytes_for_level_multiplier_addtl[1]: 1
+2025/10/04-14:47:23.813917 3dcc Options.max_bytes_for_level_multiplier_addtl[2]: 1
+2025/10/04-14:47:23.813921 3dcc Options.max_bytes_for_level_multiplier_addtl[3]: 1
+2025/10/04-14:47:23.813926 3dcc Options.max_bytes_for_level_multiplier_addtl[4]: 1
+2025/10/04-14:47:23.813932 3dcc Options.max_bytes_for_level_multiplier_addtl[5]: 1
+2025/10/04-14:47:23.813936 3dcc Options.max_bytes_for_level_multiplier_addtl[6]: 1
+2025/10/04-14:47:23.813941 3dcc       Options.max_sequential_skip_in_iterations: 8
+2025/10/04-14:47:23.813945 3dcc                    Options.max_compaction_bytes: 1677721600
+2025/10/04-14:47:23.813950 3dcc   Options.ignore_max_compaction_bytes_for_input: true
+2025/10/04-14:47:23.813955 3dcc                        Options.arena_block_size: 1048576
+2025/10/04-14:47:23.813960 3dcc   Options.soft_pending_compaction_bytes_limit: 68719476736
+2025/10/04-14:47:23.813966 3dcc   Options.hard_pending_compaction_bytes_limit: 274877906944
+2025/10/04-14:47:23.813975 3dcc                Options.disable_auto_compactions: 0
+2025/10/04-14:47:23.813982 3dcc                        Options.compaction_style: kCompactionStyleLevel
+2025/10/04-14:47:23.813989 3dcc                          Options.compaction_pri: kMinOverlappingRatio
+2025/10/04-14:47:23.813996 3dcc Options.compaction_options_universal.size_ratio: 1
+2025/10/04-14:47:23.814000 3dcc Options.compaction_options_universal.min_merge_width: 2
+2025/10/04-14:47:23.814005 3dcc Options.compaction_options_universal.max_merge_width: 4294967295
+2025/10/04-14:47:23.814010 3dcc Options.compaction_options_universal.max_size_amplification_percent: 200
+2025/10/04-14:47:23.814017 3dcc Options.compaction_options_universal.compression_size_percent: -1
+2025/10/04-14:47:23.814023 3dcc Options.compaction_options_universal.stop_style: kCompactionStopStyleTotalSize
+2025/10/04-14:47:23.814029 3dcc Options.compaction_options_fifo.max_table_files_size: 1073741824
+2025/10/04-14:47:23.814035 3dcc Options.compaction_options_fifo.allow_compaction: 0
+2025/10/04-14:47:23.814043 3dcc                   Options.table_properties_collectors: 
+2025/10/04-14:47:23.814048 3dcc                   Options.inplace_update_support: 0
+2025/10/04-14:47:23.814054 3dcc                 Options.inplace_update_num_locks: 10000
+2025/10/04-14:47:23.814059 3dcc               Options.memtable_prefix_bloom_size_ratio: 0.000000
+2025/10/04-14:47:23.814064 3dcc               Options.memtable_whole_key_filtering: 0
+2025/10/04-14:47:23.814072 3dcc   Options.memtable_huge_page_size: 0
+2025/10/04-14:47:23.814077 3dcc                           Options.bloom_locality: 0
+2025/10/04-14:47:23.814083 3dcc                    Options.max_successive_merges: 0
+2025/10/04-14:47:23.814093 3dcc                Options.optimize_filters_for_hits: 0
+2025/10/04-14:47:23.814098 3dcc                Options.paranoid_file_checks: 0
+2025/10/04-14:47:23.814104 3dcc                Options.force_consistency_checks: 1
+2025/10/04-14:47:23.814111 3dcc                Options.report_bg_io_stats: 0
+2025/10/04-14:47:23.814116 3dcc                               Options.ttl: 2592000
+2025/10/04-14:47:23.814121 3dcc          Options.periodic_compaction_seconds: 0
+2025/10/04-14:47:23.814128 3dcc                        Options.default_temperature: kUnknown
+2025/10/04-14:47:23.814134 3dcc  Options.preclude_last_level_data_seconds: 0
+2025/10/04-14:47:23.814141 3dcc    Options.preserve_internal_time_seconds: 0
+2025/10/04-14:47:23.814146 3dcc                       Options.enable_blob_files: false
+2025/10/04-14:47:23.814151 3dcc                           Options.min_blob_size: 0
+2025/10/04-14:47:23.814157 3dcc                          Options.blob_file_size: 268435456
+2025/10/04-14:47:23.814162 3dcc                   Options.blob_compression_type: NoCompression
+2025/10/04-14:47:23.814168 3dcc          Options.enable_blob_garbage_collection: false
+2025/10/04-14:47:23.814176 3dcc      Options.blob_garbage_collection_age_cutoff: 0.250000
+2025/10/04-14:47:23.814181 3dcc Options.blob_garbage_collection_force_threshold: 1.000000
+2025/10/04-14:47:23.814188 3dcc          Options.blob_compaction_readahead_size: 0
+2025/10/04-14:47:23.814195 3dcc                Options.blob_file_starting_level: 0
+2025/10/04-14:47:23.814200 3dcc         Options.experimental_mempurge_threshold: 0.000000
+2025/10/04-14:47:23.814208 3dcc            Options.memtable_max_range_deletions: 0
+2025/10/04-14:47:23.818415 3dcc               Options.comparator: leveldb.BytewiseComparator
+2025/10/04-14:47:23.818431 3dcc           Options.merge_operator: None
+2025/10/04-14:47:23.818437 3dcc        Options.compaction_filter: None
+2025/10/04-14:47:23.818442 3dcc        Options.compaction_filter_factory: None
+2025/10/04-14:47:23.818447 3dcc  Options.sst_partitioner_factory: None
+2025/10/04-14:47:23.818452 3dcc         Options.memtable_factory: SkipListFactory
+2025/10/04-14:47:23.818456 3dcc            Options.table_factory: BlockBasedTable
+2025/10/04-14:47:23.818496 3dcc            table_factory options:   flush_block_policy_factory: FlushBlockBySizePolicyFactory (000001F24BD2E9F0)
+  cache_index_and_filter_blocks: 0
+  cache_index_and_filter_blocks_with_high_priority: 1
+  pin_l0_filter_and_index_blocks_in_cache: 0
+  pin_top_level_index_and_filter: 1
+  index_type: 0
+  data_block_index_type: 0
+  index_shortening: 1
+  data_block_hash_table_util_ratio: 0.750000
+  checksum: 4
+  no_block_cache: 0
+  block_cache: 000001F24A6377C0
+  block_cache_name: LRUCache
+  block_cache_options:
+    capacity : 33554432
+    num_shard_bits : 6
+    strict_capacity_limit : 0
+    memory_allocator : None
+    high_pri_pool_ratio: 0.500
+    low_pri_pool_ratio: 0.000
+  persistent_cache: 0000000000000000
+  block_size: 4096
+  block_size_deviation: 10
+  block_restart_interval: 16
+  index_block_restart_interval: 1
+  metadata_block_size: 4096
+  partition_filters: 0
+  use_delta_encoding: 1
+  filter_policy: nullptr
+  whole_key_filtering: 1
+  verify_compression: 0
+  read_amp_bytes_per_bit: 0
+  format_version: 5
+  enable_index_compression: 1
+  block_align: 0
+  max_auto_readahead_size: 262144
+  prepopulate_block_cache: 0
+  initial_auto_readahead_size: 8192
+  num_file_reads_for_auto_readahead: 2
+2025/10/04-14:47:23.818506 3dcc        Options.write_buffer_size: 10485760
+2025/10/04-14:47:23.818514 3dcc  Options.max_write_buffer_number: 2
+2025/10/04-14:47:23.818519 3dcc          Options.compression: Snappy
+2025/10/04-14:47:23.818524 3dcc                  Options.bottommost_compression: Disabled
+2025/10/04-14:47:23.818529 3dcc       Options.prefix_extractor: nullptr
+2025/10/04-14:47:23.818534 3dcc   Options.memtable_insert_with_hint_prefix_extractor: nullptr
+2025/10/04-14:47:23.818539 3dcc             Options.num_levels: 7
+2025/10/04-14:47:23.818544 3dcc        Options.min_write_buffer_number_to_merge: 1
+2025/10/04-14:47:23.818549 3dcc     Options.max_write_buffer_number_to_maintain: 0
+2025/10/04-14:47:23.818553 3dcc     Options.max_write_buffer_size_to_maintain: 0
+2025/10/04-14:47:23.818558 3dcc            Options.bottommost_compression_opts.window_bits: -14
+2025/10/04-14:47:23.818564 3dcc                  Options.bottommost_compression_opts.level: 32767
+2025/10/04-14:47:23.818569 3dcc               Options.bottommost_compression_opts.strategy: 0
+2025/10/04-14:47:23.818574 3dcc         Options.bottommost_compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.818579 3dcc         Options.bottommost_compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.818584 3dcc         Options.bottommost_compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.818589 3dcc                  Options.bottommost_compression_opts.enabled: false
+2025/10/04-14:47:23.818594 3dcc         Options.bottommost_compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.818599 3dcc         Options.bottommost_compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.818604 3dcc            Options.compression_opts.window_bits: -14
+2025/10/04-14:47:23.818608 3dcc                  Options.compression_opts.level: 32767
+2025/10/04-14:47:23.818614 3dcc               Options.compression_opts.strategy: 0
+2025/10/04-14:47:23.818619 3dcc         Options.compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.818623 3dcc         Options.compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.818628 3dcc         Options.compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.818633 3dcc         Options.compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.818638 3dcc                  Options.compression_opts.enabled: false
+2025/10/04-14:47:23.818643 3dcc         Options.compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.818649 3dcc      Options.level0_file_num_compaction_trigger: 4
+2025/10/04-14:47:23.818654 3dcc          Options.level0_slowdown_writes_trigger: 20
+2025/10/04-14:47:23.818659 3dcc              Options.level0_stop_writes_trigger: 36
+2025/10/04-14:47:23.818664 3dcc                   Options.target_file_size_base: 67108864
+2025/10/04-14:47:23.818669 3dcc             Options.target_file_size_multiplier: 1
+2025/10/04-14:47:23.818674 3dcc                Options.max_bytes_for_level_base: 268435456
+2025/10/04-14:47:23.818679 3dcc Options.level_compaction_dynamic_level_bytes: 1
+2025/10/04-14:47:23.818684 3dcc          Options.max_bytes_for_level_multiplier: 10.000000
+2025/10/04-14:47:23.818690 3dcc Options.max_bytes_for_level_multiplier_addtl[0]: 1
+2025/10/04-14:47:23.818695 3dcc Options.max_bytes_for_level_multiplier_addtl[1]: 1
+2025/10/04-14:47:23.818699 3dcc Options.max_bytes_for_level_multiplier_addtl[2]: 1
+2025/10/04-14:47:23.818704 3dcc Options.max_bytes_for_level_multiplier_addtl[3]: 1
+2025/10/04-14:47:23.818709 3dcc Options.max_bytes_for_level_multiplier_addtl[4]: 1
+2025/10/04-14:47:23.818714 3dcc Options.max_bytes_for_level_multiplier_addtl[5]: 1
+2025/10/04-14:47:23.818755 3dcc Options.max_bytes_for_level_multiplier_addtl[6]: 1
+2025/10/04-14:47:23.818761 3dcc       Options.max_sequential_skip_in_iterations: 8
+2025/10/04-14:47:23.818766 3dcc                    Options.max_compaction_bytes: 1677721600
+2025/10/04-14:47:23.818771 3dcc   Options.ignore_max_compaction_bytes_for_input: true
+2025/10/04-14:47:23.818776 3dcc                        Options.arena_block_size: 1048576
+2025/10/04-14:47:23.818781 3dcc   Options.soft_pending_compaction_bytes_limit: 68719476736
+2025/10/04-14:47:23.818786 3dcc   Options.hard_pending_compaction_bytes_limit: 274877906944
+2025/10/04-14:47:23.818791 3dcc                Options.disable_auto_compactions: 0
+2025/10/04-14:47:23.818796 3dcc                        Options.compaction_style: kCompactionStyleLevel
+2025/10/04-14:47:23.818802 3dcc                          Options.compaction_pri: kMinOverlappingRatio
+2025/10/04-14:47:23.818807 3dcc Options.compaction_options_universal.size_ratio: 1
+2025/10/04-14:47:23.818812 3dcc Options.compaction_options_universal.min_merge_width: 2
+2025/10/04-14:47:23.818816 3dcc Options.compaction_options_universal.max_merge_width: 4294967295
+2025/10/04-14:47:23.818821 3dcc Options.compaction_options_universal.max_size_amplification_percent: 200
+2025/10/04-14:47:23.818826 3dcc Options.compaction_options_universal.compression_size_percent: -1
+2025/10/04-14:47:23.818832 3dcc Options.compaction_options_universal.stop_style: kCompactionStopStyleTotalSize
+2025/10/04-14:47:23.818837 3dcc Options.compaction_options_fifo.max_table_files_size: 1073741824
+2025/10/04-14:47:23.818842 3dcc Options.compaction_options_fifo.allow_compaction: 0
+2025/10/04-14:47:23.818966 3dcc                   Options.table_properties_collectors: 
+2025/10/04-14:47:23.818977 3dcc                   Options.inplace_update_support: 0
+2025/10/04-14:47:23.818982 3dcc                 Options.inplace_update_num_locks: 10000
+2025/10/04-14:47:23.818986 3dcc               Options.memtable_prefix_bloom_size_ratio: 0.000000
+2025/10/04-14:47:23.818990 3dcc               Options.memtable_whole_key_filtering: 0
+2025/10/04-14:47:23.818993 3dcc   Options.memtable_huge_page_size: 0
+2025/10/04-14:47:23.818997 3dcc                           Options.bloom_locality: 0
+2025/10/04-14:47:23.819000 3dcc                    Options.max_successive_merges: 0
+2025/10/04-14:47:23.819003 3dcc                Options.optimize_filters_for_hits: 0
+2025/10/04-14:47:23.819007 3dcc                Options.paranoid_file_checks: 0
+2025/10/04-14:47:23.819010 3dcc                Options.force_consistency_checks: 1
+2025/10/04-14:47:23.819013 3dcc                Options.report_bg_io_stats: 0
+2025/10/04-14:47:23.819016 3dcc                               Options.ttl: 2592000
+2025/10/04-14:47:23.819019 3dcc          Options.periodic_compaction_seconds: 0
+2025/10/04-14:47:23.819023 3dcc                        Options.default_temperature: kUnknown
+2025/10/04-14:47:23.819026 3dcc  Options.preclude_last_level_data_seconds: 0
+2025/10/04-14:47:23.819035 3dcc    Options.preserve_internal_time_seconds: 0
+2025/10/04-14:47:23.819038 3dcc                       Options.enable_blob_files: false
+2025/10/04-14:47:23.819042 3dcc                           Options.min_blob_size: 0
+2025/10/04-14:47:23.819045 3dcc                          Options.blob_file_size: 268435456
+2025/10/04-14:47:23.819049 3dcc                   Options.blob_compression_type: NoCompression
+2025/10/04-14:47:23.819052 3dcc          Options.enable_blob_garbage_collection: false
+2025/10/04-14:47:23.819056 3dcc      Options.blob_garbage_collection_age_cutoff: 0.250000
+2025/10/04-14:47:23.819060 3dcc Options.blob_garbage_collection_force_threshold: 1.000000
+2025/10/04-14:47:23.819063 3dcc          Options.blob_compaction_readahead_size: 0
+2025/10/04-14:47:23.819067 3dcc                Options.blob_file_starting_level: 0
+2025/10/04-14:47:23.819070 3dcc         Options.experimental_mempurge_threshold: 0.000000
+2025/10/04-14:47:23.819073 3dcc            Options.memtable_max_range_deletions: 0
+2025/10/04-14:47:23.822637 3dcc               Options.comparator: leveldb.BytewiseComparator
+2025/10/04-14:47:23.822664 3dcc           Options.merge_operator: None
+2025/10/04-14:47:23.822672 3dcc        Options.compaction_filter: None
+2025/10/04-14:47:23.822680 3dcc        Options.compaction_filter_factory: None
+2025/10/04-14:47:23.822687 3dcc  Options.sst_partitioner_factory: None
+2025/10/04-14:47:23.822694 3dcc         Options.memtable_factory: SkipListFactory
+2025/10/04-14:47:23.822701 3dcc            Options.table_factory: BlockBasedTable
+2025/10/04-14:47:23.822752 3dcc            table_factory options:   flush_block_policy_factory: FlushBlockBySizePolicyFactory (000001F24BD2E9F0)
+  cache_index_and_filter_blocks: 0
+  cache_index_and_filter_blocks_with_high_priority: 1
+  pin_l0_filter_and_index_blocks_in_cache: 0
+  pin_top_level_index_and_filter: 1
+  index_type: 0
+  data_block_index_type: 0
+  index_shortening: 1
+  data_block_hash_table_util_ratio: 0.750000
+  checksum: 4
+  no_block_cache: 0
+  block_cache: 000001F24A6377C0
+  block_cache_name: LRUCache
+  block_cache_options:
+    capacity : 33554432
+    num_shard_bits : 6
+    strict_capacity_limit : 0
+    memory_allocator : None
+    high_pri_pool_ratio: 0.500
+    low_pri_pool_ratio: 0.000
+  persistent_cache: 0000000000000000
+  block_size: 4096
+  block_size_deviation: 10
+  block_restart_interval: 16
+  index_block_restart_interval: 1
+  metadata_block_size: 4096
+  partition_filters: 0
+  use_delta_encoding: 1
+  filter_policy: nullptr
+  whole_key_filtering: 1
+  verify_compression: 0
+  read_amp_bytes_per_bit: 0
+  format_version: 5
+  enable_index_compression: 1
+  block_align: 0
+  max_auto_readahead_size: 262144
+  prepopulate_block_cache: 0
+  initial_auto_readahead_size: 8192
+  num_file_reads_for_auto_readahead: 2
+2025/10/04-14:47:23.822758 3dcc        Options.write_buffer_size: 10485760
+2025/10/04-14:47:23.822763 3dcc  Options.max_write_buffer_number: 2
+2025/10/04-14:47:23.822768 3dcc          Options.compression: Snappy
+2025/10/04-14:47:23.822773 3dcc                  Options.bottommost_compression: Disabled
+2025/10/04-14:47:23.822777 3dcc       Options.prefix_extractor: nullptr
+2025/10/04-14:47:23.822782 3dcc   Options.memtable_insert_with_hint_prefix_extractor: nullptr
+2025/10/04-14:47:23.822787 3dcc             Options.num_levels: 7
+2025/10/04-14:47:23.822792 3dcc        Options.min_write_buffer_number_to_merge: 1
+2025/10/04-14:47:23.822797 3dcc     Options.max_write_buffer_number_to_maintain: 0
+2025/10/04-14:47:23.822802 3dcc     Options.max_write_buffer_size_to_maintain: 0
+2025/10/04-14:47:23.822807 3dcc            Options.bottommost_compression_opts.window_bits: -14
+2025/10/04-14:47:23.822813 3dcc                  Options.bottommost_compression_opts.level: 32767
+2025/10/04-14:47:23.822818 3dcc               Options.bottommost_compression_opts.strategy: 0
+2025/10/04-14:47:23.822823 3dcc         Options.bottommost_compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.822828 3dcc         Options.bottommost_compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.822833 3dcc         Options.bottommost_compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.822839 3dcc                  Options.bottommost_compression_opts.enabled: false
+2025/10/04-14:47:23.822844 3dcc         Options.bottommost_compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.822850 3dcc         Options.bottommost_compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.822856 3dcc            Options.compression_opts.window_bits: -14
+2025/10/04-14:47:23.822861 3dcc                  Options.compression_opts.level: 32767
+2025/10/04-14:47:23.822866 3dcc               Options.compression_opts.strategy: 0
+2025/10/04-14:47:23.822870 3dcc         Options.compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.822876 3dcc         Options.compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.822881 3dcc         Options.compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.822886 3dcc         Options.compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.822891 3dcc                  Options.compression_opts.enabled: false
+2025/10/04-14:47:23.822900 3dcc         Options.compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.822906 3dcc      Options.level0_file_num_compaction_trigger: 4
+2025/10/04-14:47:23.822911 3dcc          Options.level0_slowdown_writes_trigger: 20
+2025/10/04-14:47:23.822915 3dcc              Options.level0_stop_writes_trigger: 36
+2025/10/04-14:47:23.822920 3dcc                   Options.target_file_size_base: 67108864
+2025/10/04-14:47:23.822925 3dcc             Options.target_file_size_multiplier: 1
+2025/10/04-14:47:23.822930 3dcc                Options.max_bytes_for_level_base: 268435456
+2025/10/04-14:47:23.822935 3dcc Options.level_compaction_dynamic_level_bytes: 1
+2025/10/04-14:47:23.822941 3dcc          Options.max_bytes_for_level_multiplier: 10.000000
+2025/10/04-14:47:23.822946 3dcc Options.max_bytes_for_level_multiplier_addtl[0]: 1
+2025/10/04-14:47:23.822951 3dcc Options.max_bytes_for_level_multiplier_addtl[1]: 1
+2025/10/04-14:47:23.822956 3dcc Options.max_bytes_for_level_multiplier_addtl[2]: 1
+2025/10/04-14:47:23.822961 3dcc Options.max_bytes_for_level_multiplier_addtl[3]: 1
+2025/10/04-14:47:23.822966 3dcc Options.max_bytes_for_level_multiplier_addtl[4]: 1
+2025/10/04-14:47:23.822971 3dcc Options.max_bytes_for_level_multiplier_addtl[5]: 1
+2025/10/04-14:47:23.822975 3dcc Options.max_bytes_for_level_multiplier_addtl[6]: 1
+2025/10/04-14:47:23.822980 3dcc       Options.max_sequential_skip_in_iterations: 8
+2025/10/04-14:47:23.822986 3dcc                    Options.max_compaction_bytes: 1677721600
+2025/10/04-14:47:23.822991 3dcc   Options.ignore_max_compaction_bytes_for_input: true
+2025/10/04-14:47:23.822996 3dcc                        Options.arena_block_size: 1048576
+2025/10/04-14:47:23.823001 3dcc   Options.soft_pending_compaction_bytes_limit: 68719476736
+2025/10/04-14:47:23.823005 3dcc   Options.hard_pending_compaction_bytes_limit: 274877906944
+2025/10/04-14:47:23.823010 3dcc                Options.disable_auto_compactions: 0
+2025/10/04-14:47:23.823016 3dcc                        Options.compaction_style: kCompactionStyleLevel
+2025/10/04-14:47:23.823022 3dcc                          Options.compaction_pri: kMinOverlappingRatio
+2025/10/04-14:47:23.823027 3dcc Options.compaction_options_universal.size_ratio: 1
+2025/10/04-14:47:23.823033 3dcc Options.compaction_options_universal.min_merge_width: 2
+2025/10/04-14:47:23.823042 3dcc Options.compaction_options_universal.max_merge_width: 4294967295
+2025/10/04-14:47:23.823050 3dcc Options.compaction_options_universal.max_size_amplification_percent: 200
+2025/10/04-14:47:23.823057 3dcc Options.compaction_options_universal.compression_size_percent: -1
+2025/10/04-14:47:23.823065 3dcc Options.compaction_options_universal.stop_style: kCompactionStopStyleTotalSize
+2025/10/04-14:47:23.823071 3dcc Options.compaction_options_fifo.max_table_files_size: 1073741824
+2025/10/04-14:47:23.823079 3dcc Options.compaction_options_fifo.allow_compaction: 0
+2025/10/04-14:47:23.823088 3dcc                   Options.table_properties_collectors: 
+2025/10/04-14:47:23.823099 3dcc                   Options.inplace_update_support: 0
+2025/10/04-14:47:23.823108 3dcc                 Options.inplace_update_num_locks: 10000
+2025/10/04-14:47:23.823116 3dcc               Options.memtable_prefix_bloom_size_ratio: 0.000000
+2025/10/04-14:47:23.823126 3dcc               Options.memtable_whole_key_filtering: 0
+2025/10/04-14:47:23.823141 3dcc   Options.memtable_huge_page_size: 0
+2025/10/04-14:47:23.823149 3dcc                           Options.bloom_locality: 0
+2025/10/04-14:47:23.823156 3dcc                    Options.max_successive_merges: 0
+2025/10/04-14:47:23.823163 3dcc                Options.optimize_filters_for_hits: 0
+2025/10/04-14:47:23.823170 3dcc                Options.paranoid_file_checks: 0
+2025/10/04-14:47:23.823178 3dcc                Options.force_consistency_checks: 1
+2025/10/04-14:47:23.823184 3dcc                Options.report_bg_io_stats: 0
+2025/10/04-14:47:23.823192 3dcc                               Options.ttl: 2592000
+2025/10/04-14:47:23.823200 3dcc          Options.periodic_compaction_seconds: 0
+2025/10/04-14:47:23.823212 3dcc                        Options.default_temperature: kUnknown
+2025/10/04-14:47:23.823221 3dcc  Options.preclude_last_level_data_seconds: 0
+2025/10/04-14:47:23.823229 3dcc    Options.preserve_internal_time_seconds: 0
+2025/10/04-14:47:23.823236 3dcc                       Options.enable_blob_files: false
+2025/10/04-14:47:23.823243 3dcc                           Options.min_blob_size: 0
+2025/10/04-14:47:23.823250 3dcc                          Options.blob_file_size: 268435456
+2025/10/04-14:47:23.823265 3dcc                   Options.blob_compression_type: NoCompression
+2025/10/04-14:47:23.823273 3dcc          Options.enable_blob_garbage_collection: false
+2025/10/04-14:47:23.823282 3dcc      Options.blob_garbage_collection_age_cutoff: 0.250000
+2025/10/04-14:47:23.823290 3dcc Options.blob_garbage_collection_force_threshold: 1.000000
+2025/10/04-14:47:23.823298 3dcc          Options.blob_compaction_readahead_size: 0
+2025/10/04-14:47:23.823305 3dcc                Options.blob_file_starting_level: 0
+2025/10/04-14:47:23.823313 3dcc         Options.experimental_mempurge_threshold: 0.000000
+2025/10/04-14:47:23.823320 3dcc            Options.memtable_max_range_deletions: 0
+2025/10/04-14:47:23.826976 3dcc               Options.comparator: leveldb.BytewiseComparator
+2025/10/04-14:47:23.826990 3dcc           Options.merge_operator: None
+2025/10/04-14:47:23.826996 3dcc        Options.compaction_filter: None
+2025/10/04-14:47:23.827001 3dcc        Options.compaction_filter_factory: None
+2025/10/04-14:47:23.827005 3dcc  Options.sst_partitioner_factory: None
+2025/10/04-14:47:23.827010 3dcc         Options.memtable_factory: SkipListFactory
+2025/10/04-14:47:23.827016 3dcc            Options.table_factory: BlockBasedTable
+2025/10/04-14:47:23.827057 3dcc            table_factory options:   flush_block_policy_factory: FlushBlockBySizePolicyFactory (000001F24BD2E9F0)
+  cache_index_and_filter_blocks: 0
+  cache_index_and_filter_blocks_with_high_priority: 1
+  pin_l0_filter_and_index_blocks_in_cache: 0
+  pin_top_level_index_and_filter: 1
+  index_type: 0
+  data_block_index_type: 0
+  index_shortening: 1
+  data_block_hash_table_util_ratio: 0.750000
+  checksum: 4
+  no_block_cache: 0
+  block_cache: 000001F24A6377C0
+  block_cache_name: LRUCache
+  block_cache_options:
+    capacity : 33554432
+    num_shard_bits : 6
+    strict_capacity_limit : 0
+    memory_allocator : None
+    high_pri_pool_ratio: 0.500
+    low_pri_pool_ratio: 0.000
+  persistent_cache: 0000000000000000
+  block_size: 4096
+  block_size_deviation: 10
+  block_restart_interval: 16
+  index_block_restart_interval: 1
+  metadata_block_size: 4096
+  partition_filters: 0
+  use_delta_encoding: 1
+  filter_policy: nullptr
+  whole_key_filtering: 1
+  verify_compression: 0
+  read_amp_bytes_per_bit: 0
+  format_version: 5
+  enable_index_compression: 1
+  block_align: 0
+  max_auto_readahead_size: 262144
+  prepopulate_block_cache: 0
+  initial_auto_readahead_size: 8192
+  num_file_reads_for_auto_readahead: 2
+2025/10/04-14:47:23.827063 3dcc        Options.write_buffer_size: 10485760
+2025/10/04-14:47:23.827068 3dcc  Options.max_write_buffer_number: 2
+2025/10/04-14:47:23.827073 3dcc          Options.compression: Snappy
+2025/10/04-14:47:23.827078 3dcc                  Options.bottommost_compression: Disabled
+2025/10/04-14:47:23.827083 3dcc       Options.prefix_extractor: nullptr
+2025/10/04-14:47:23.827087 3dcc   Options.memtable_insert_with_hint_prefix_extractor: nullptr
+2025/10/04-14:47:23.827092 3dcc             Options.num_levels: 7
+2025/10/04-14:47:23.827097 3dcc        Options.min_write_buffer_number_to_merge: 1
+2025/10/04-14:47:23.827101 3dcc     Options.max_write_buffer_number_to_maintain: 0
+2025/10/04-14:47:23.827106 3dcc     Options.max_write_buffer_size_to_maintain: 0
+2025/10/04-14:47:23.827111 3dcc            Options.bottommost_compression_opts.window_bits: -14
+2025/10/04-14:47:23.827117 3dcc                  Options.bottommost_compression_opts.level: 32767
+2025/10/04-14:47:23.827122 3dcc               Options.bottommost_compression_opts.strategy: 0
+2025/10/04-14:47:23.827130 3dcc         Options.bottommost_compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.827137 3dcc         Options.bottommost_compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.827142 3dcc         Options.bottommost_compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.827147 3dcc                  Options.bottommost_compression_opts.enabled: false
+2025/10/04-14:47:23.827153 3dcc         Options.bottommost_compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.827159 3dcc         Options.bottommost_compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.827164 3dcc            Options.compression_opts.window_bits: -14
+2025/10/04-14:47:23.827169 3dcc                  Options.compression_opts.level: 32767
+2025/10/04-14:47:23.827175 3dcc               Options.compression_opts.strategy: 0
+2025/10/04-14:47:23.827181 3dcc         Options.compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.827186 3dcc         Options.compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.827192 3dcc         Options.compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.827198 3dcc         Options.compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.827203 3dcc                  Options.compression_opts.enabled: false
+2025/10/04-14:47:23.827208 3dcc         Options.compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.827213 3dcc      Options.level0_file_num_compaction_trigger: 4
+2025/10/04-14:47:23.827222 3dcc          Options.level0_slowdown_writes_trigger: 20
+2025/10/04-14:47:23.827227 3dcc              Options.level0_stop_writes_trigger: 36
+2025/10/04-14:47:23.827232 3dcc                   Options.target_file_size_base: 67108864
+2025/10/04-14:47:23.827237 3dcc             Options.target_file_size_multiplier: 1
+2025/10/04-14:47:23.827242 3dcc                Options.max_bytes_for_level_base: 268435456
+2025/10/04-14:47:23.827246 3dcc Options.level_compaction_dynamic_level_bytes: 1
+2025/10/04-14:47:23.827252 3dcc          Options.max_bytes_for_level_multiplier: 10.000000
+2025/10/04-14:47:23.827258 3dcc Options.max_bytes_for_level_multiplier_addtl[0]: 1
+2025/10/04-14:47:23.827263 3dcc Options.max_bytes_for_level_multiplier_addtl[1]: 1
+2025/10/04-14:47:23.827268 3dcc Options.max_bytes_for_level_multiplier_addtl[2]: 1
+2025/10/04-14:47:23.827273 3dcc Options.max_bytes_for_level_multiplier_addtl[3]: 1
+2025/10/04-14:47:23.827278 3dcc Options.max_bytes_for_level_multiplier_addtl[4]: 1
+2025/10/04-14:47:23.827283 3dcc Options.max_bytes_for_level_multiplier_addtl[5]: 1
+2025/10/04-14:47:23.827288 3dcc Options.max_bytes_for_level_multiplier_addtl[6]: 1
+2025/10/04-14:47:23.827293 3dcc       Options.max_sequential_skip_in_iterations: 8
+2025/10/04-14:47:23.827298 3dcc                    Options.max_compaction_bytes: 1677721600
+2025/10/04-14:47:23.827303 3dcc   Options.ignore_max_compaction_bytes_for_input: true
+2025/10/04-14:47:23.827308 3dcc                        Options.arena_block_size: 1048576
+2025/10/04-14:47:23.827313 3dcc   Options.soft_pending_compaction_bytes_limit: 68719476736
+2025/10/04-14:47:23.827318 3dcc   Options.hard_pending_compaction_bytes_limit: 274877906944
+2025/10/04-14:47:23.827323 3dcc                Options.disable_auto_compactions: 0
+2025/10/04-14:47:23.827329 3dcc                        Options.compaction_style: kCompactionStyleLevel
+2025/10/04-14:47:23.827334 3dcc                          Options.compaction_pri: kMinOverlappingRatio
+2025/10/04-14:47:23.827339 3dcc Options.compaction_options_universal.size_ratio: 1
+2025/10/04-14:47:23.827344 3dcc Options.compaction_options_universal.min_merge_width: 2
+2025/10/04-14:47:23.827349 3dcc Options.compaction_options_universal.max_merge_width: 4294967295
+2025/10/04-14:47:23.827354 3dcc Options.compaction_options_universal.max_size_amplification_percent: 200
+2025/10/04-14:47:23.827359 3dcc Options.compaction_options_universal.compression_size_percent: -1
+2025/10/04-14:47:23.827365 3dcc Options.compaction_options_universal.stop_style: kCompactionStopStyleTotalSize
+2025/10/04-14:47:23.827370 3dcc Options.compaction_options_fifo.max_table_files_size: 1073741824
+2025/10/04-14:47:23.827376 3dcc Options.compaction_options_fifo.allow_compaction: 0
+2025/10/04-14:47:23.827384 3dcc                   Options.table_properties_collectors: 
+2025/10/04-14:47:23.827389 3dcc                   Options.inplace_update_support: 0
+2025/10/04-14:47:23.827394 3dcc                 Options.inplace_update_num_locks: 10000
+2025/10/04-14:47:23.827399 3dcc               Options.memtable_prefix_bloom_size_ratio: 0.000000
+2025/10/04-14:47:23.827404 3dcc               Options.memtable_whole_key_filtering: 0
+2025/10/04-14:47:23.827409 3dcc   Options.memtable_huge_page_size: 0
+2025/10/04-14:47:23.827414 3dcc                           Options.bloom_locality: 0
+2025/10/04-14:47:23.827419 3dcc                    Options.max_successive_merges: 0
+2025/10/04-14:47:23.827424 3dcc                Options.optimize_filters_for_hits: 0
+2025/10/04-14:47:23.827428 3dcc                Options.paranoid_file_checks: 0
+2025/10/04-14:47:23.827433 3dcc                Options.force_consistency_checks: 1
+2025/10/04-14:47:23.827438 3dcc                Options.report_bg_io_stats: 0
+2025/10/04-14:47:23.827443 3dcc                               Options.ttl: 2592000
+2025/10/04-14:47:23.827448 3dcc          Options.periodic_compaction_seconds: 0
+2025/10/04-14:47:23.827453 3dcc                        Options.default_temperature: kUnknown
+2025/10/04-14:47:23.827458 3dcc  Options.preclude_last_level_data_seconds: 0
+2025/10/04-14:47:23.827463 3dcc    Options.preserve_internal_time_seconds: 0
+2025/10/04-14:47:23.827467 3dcc                       Options.enable_blob_files: false
+2025/10/04-14:47:23.827472 3dcc                           Options.min_blob_size: 0
+2025/10/04-14:47:23.827477 3dcc                          Options.blob_file_size: 268435456
+2025/10/04-14:47:23.827482 3dcc                   Options.blob_compression_type: NoCompression
+2025/10/04-14:47:23.827487 3dcc          Options.enable_blob_garbage_collection: false
+2025/10/04-14:47:23.827493 3dcc      Options.blob_garbage_collection_age_cutoff: 0.250000
+2025/10/04-14:47:23.827498 3dcc Options.blob_garbage_collection_force_threshold: 1.000000
+2025/10/04-14:47:23.827504 3dcc          Options.blob_compaction_readahead_size: 0
+2025/10/04-14:47:23.827509 3dcc                Options.blob_file_starting_level: 0
+2025/10/04-14:47:23.827514 3dcc         Options.experimental_mempurge_threshold: 0.000000
+2025/10/04-14:47:23.827519 3dcc            Options.memtable_max_range_deletions: 0
+2025/10/04-14:47:23.832152 3dcc               Options.comparator: leveldb.BytewiseComparator
+2025/10/04-14:47:23.832186 3dcc           Options.merge_operator: None
+2025/10/04-14:47:23.832202 3dcc        Options.compaction_filter: None
+2025/10/04-14:47:23.832214 3dcc        Options.compaction_filter_factory: None
+2025/10/04-14:47:23.832223 3dcc  Options.sst_partitioner_factory: None
+2025/10/04-14:47:23.832232 3dcc         Options.memtable_factory: SkipListFactory
+2025/10/04-14:47:23.832241 3dcc            Options.table_factory: BlockBasedTable
+2025/10/04-14:47:23.832351 3dcc            table_factory options:   flush_block_policy_factory: FlushBlockBySizePolicyFactory (000001F24BD2E9F0)
+  cache_index_and_filter_blocks: 0
+  cache_index_and_filter_blocks_with_high_priority: 1
+  pin_l0_filter_and_index_blocks_in_cache: 0
+  pin_top_level_index_and_filter: 1
+  index_type: 0
+  data_block_index_type: 0
+  index_shortening: 1
+  data_block_hash_table_util_ratio: 0.750000
+  checksum: 4
+  no_block_cache: 0
+  block_cache: 000001F24A6377C0
+  block_cache_name: LRUCache
+  block_cache_options:
+    capacity : 33554432
+    num_shard_bits : 6
+    strict_capacity_limit : 0
+    memory_allocator : None
+    high_pri_pool_ratio: 0.500
+    low_pri_pool_ratio: 0.000
+  persistent_cache: 0000000000000000
+  block_size: 4096
+  block_size_deviation: 10
+  block_restart_interval: 16
+  index_block_restart_interval: 1
+  metadata_block_size: 4096
+  partition_filters: 0
+  use_delta_encoding: 1
+  filter_policy: nullptr
+  whole_key_filtering: 1
+  verify_compression: 0
+  read_amp_bytes_per_bit: 0
+  format_version: 5
+  enable_index_compression: 1
+  block_align: 0
+  max_auto_readahead_size: 262144
+  prepopulate_block_cache: 0
+  initial_auto_readahead_size: 8192
+  num_file_reads_for_auto_readahead: 2
+2025/10/04-14:47:23.832382 3dcc        Options.write_buffer_size: 10485760
+2025/10/04-14:47:23.832393 3dcc  Options.max_write_buffer_number: 2
+2025/10/04-14:47:23.832400 3dcc          Options.compression: Snappy
+2025/10/04-14:47:23.832406 3dcc                  Options.bottommost_compression: Disabled
+2025/10/04-14:47:23.832412 3dcc       Options.prefix_extractor: nullptr
+2025/10/04-14:47:23.832418 3dcc   Options.memtable_insert_with_hint_prefix_extractor: nullptr
+2025/10/04-14:47:23.832429 3dcc             Options.num_levels: 7
+2025/10/04-14:47:23.832438 3dcc        Options.min_write_buffer_number_to_merge: 1
+2025/10/04-14:47:23.832447 3dcc     Options.max_write_buffer_number_to_maintain: 0
+2025/10/04-14:47:23.832458 3dcc     Options.max_write_buffer_size_to_maintain: 0
+2025/10/04-14:47:23.832467 3dcc            Options.bottommost_compression_opts.window_bits: -14
+2025/10/04-14:47:23.832474 3dcc                  Options.bottommost_compression_opts.level: 32767
+2025/10/04-14:47:23.832480 3dcc               Options.bottommost_compression_opts.strategy: 0
+2025/10/04-14:47:23.832487 3dcc         Options.bottommost_compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.832493 3dcc         Options.bottommost_compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.832499 3dcc         Options.bottommost_compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.832505 3dcc                  Options.bottommost_compression_opts.enabled: false
+2025/10/04-14:47:23.832511 3dcc         Options.bottommost_compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.832518 3dcc         Options.bottommost_compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.832524 3dcc            Options.compression_opts.window_bits: -14
+2025/10/04-14:47:23.832530 3dcc                  Options.compression_opts.level: 32767
+2025/10/04-14:47:23.832536 3dcc               Options.compression_opts.strategy: 0
+2025/10/04-14:47:23.832542 3dcc         Options.compression_opts.max_dict_bytes: 0
+2025/10/04-14:47:23.832548 3dcc         Options.compression_opts.zstd_max_train_bytes: 0
+2025/10/04-14:47:23.832553 3dcc         Options.compression_opts.use_zstd_dict_trainer: true
+2025/10/04-14:47:23.832559 3dcc         Options.compression_opts.parallel_threads: 1
+2025/10/04-14:47:23.832565 3dcc                  Options.compression_opts.enabled: false
+2025/10/04-14:47:23.832571 3dcc         Options.compression_opts.max_dict_buffer_bytes: 0
+2025/10/04-14:47:23.832577 3dcc      Options.level0_file_num_compaction_trigger: 4
+2025/10/04-14:47:23.832586 3dcc          Options.level0_slowdown_writes_trigger: 20
+2025/10/04-14:47:23.832595 3dcc              Options.level0_stop_writes_trigger: 36
+2025/10/04-14:47:23.832604 3dcc                   Options.target_file_size_base: 67108864
+2025/10/04-14:47:23.832623 3dcc             Options.target_file_size_multiplier: 1
+2025/10/04-14:47:23.832630 3dcc                Options.max_bytes_for_level_base: 268435456
+2025/10/04-14:47:23.832636 3dcc Options.level_compaction_dynamic_level_bytes: 1
+2025/10/04-14:47:23.832644 3dcc          Options.max_bytes_for_level_multiplier: 10.000000
+2025/10/04-14:47:23.832652 3dcc Options.max_bytes_for_level_multiplier_addtl[0]: 1
+2025/10/04-14:47:23.832662 3dcc Options.max_bytes_for_level_multiplier_addtl[1]: 1
+2025/10/04-14:47:23.832672 3dcc Options.max_bytes_for_level_multiplier_addtl[2]: 1
+2025/10/04-14:47:23.832683 3dcc Options.max_bytes_for_level_multiplier_addtl[3]: 1
+2025/10/04-14:47:23.832703 3dcc Options.max_bytes_for_level_multiplier_addtl[4]: 1
+2025/10/04-14:47:23.832715 3dcc Options.max_bytes_for_level_multiplier_addtl[5]: 1
+2025/10/04-14:47:23.832725 3dcc Options.max_bytes_for_level_multiplier_addtl[6]: 1
+2025/10/04-14:47:23.832735 3dcc       Options.max_sequential_skip_in_iterations: 8
+2025/10/04-14:47:23.832741 3dcc                    Options.max_compaction_bytes: 1677721600
+2025/10/04-14:47:23.832754 3dcc   Options.ignore_max_compaction_bytes_for_input: true
+2025/10/04-14:47:23.832767 3dcc                        Options.arena_block_size: 1048576
+2025/10/04-14:47:23.832845 3dcc   Options.soft_pending_compaction_bytes_limit: 68719476736
+2025/10/04-14:47:23.832852 3dcc   Options.hard_pending_compaction_bytes_limit: 274877906944
+2025/10/04-14:47:23.832858 3dcc                Options.disable_auto_compactions: 0
+2025/10/04-14:47:23.832867 3dcc                        Options.compaction_style: kCompactionStyleLevel
+2025/10/04-14:47:23.832875 3dcc                          Options.compaction_pri: kMinOverlappingRatio
+2025/10/04-14:47:23.832881 3dcc Options.compaction_options_universal.size_ratio: 1
+2025/10/04-14:47:23.832887 3dcc Options.compaction_options_universal.min_merge_width: 2
+2025/10/04-14:47:23.832893 3dcc Options.compaction_options_universal.max_merge_width: 4294967295
+2025/10/04-14:47:23.832899 3dcc Options.compaction_options_universal.max_size_amplification_percent: 200
+2025/10/04-14:47:23.832905 3dcc Options.compaction_options_universal.compression_size_percent: -1
+2025/10/04-14:47:23.832912 3dcc Options.compaction_options_universal.stop_style: kCompactionStopStyleTotalSize
+2025/10/04-14:47:23.832919 3dcc Options.compaction_options_fifo.max_table_files_size: 1073741824
+2025/10/04-14:47:23.832929 3dcc Options.compaction_options_fifo.allow_compaction: 0
+2025/10/04-14:47:23.832941 3dcc                   Options.table_properties_collectors: 
+2025/10/04-14:47:23.832949 3dcc                   Options.inplace_update_support: 0
+2025/10/04-14:47:23.832957 3dcc                 Options.inplace_update_num_locks: 10000
+2025/10/04-14:47:23.832966 3dcc               Options.memtable_prefix_bloom_size_ratio: 0.000000
+2025/10/04-14:47:23.832975 3dcc               Options.memtable_whole_key_filtering: 0
+2025/10/04-14:47:23.832982 3dcc   Options.memtable_huge_page_size: 0
+2025/10/04-14:47:23.832992 3dcc                           Options.bloom_locality: 0
+2025/10/04-14:47:23.833002 3dcc                    Options.max_successive_merges: 0
+2025/10/04-14:47:23.833011 3dcc                Options.optimize_filters_for_hits: 0
+2025/10/04-14:47:23.833021 3dcc                Options.paranoid_file_checks: 0
+2025/10/04-14:47:23.833028 3dcc                Options.force_consistency_checks: 1
+2025/10/04-14:47:23.833036 3dcc                Options.report_bg_io_stats: 0
+2025/10/04-14:47:23.833046 3dcc                               Options.ttl: 2592000
+2025/10/04-14:47:23.833054 3dcc          Options.periodic_compaction_seconds: 0
+2025/10/04-14:47:23.833063 3dcc                        Options.default_temperature: kUnknown
+2025/10/04-14:47:23.833071 3dcc  Options.preclude_last_level_data_seconds: 0
+2025/10/04-14:47:23.833080 3dcc    Options.preserve_internal_time_seconds: 0
+2025/10/04-14:47:23.833091 3dcc                       Options.enable_blob_files: false
+2025/10/04-14:47:23.833100 3dcc                           Options.min_blob_size: 0
+2025/10/04-14:47:23.833114 3dcc                          Options.blob_file_size: 268435456
+2025/10/04-14:47:23.833121 3dcc                   Options.blob_compression_type: NoCompression
+2025/10/04-14:47:23.833127 3dcc          Options.enable_blob_garbage_collection: false
+2025/10/04-14:47:23.833134 3dcc      Options.blob_garbage_collection_age_cutoff: 0.250000
+2025/10/04-14:47:23.833141 3dcc Options.blob_garbage_collection_force_threshold: 1.000000
+2025/10/04-14:47:23.833147 3dcc          Options.blob_compaction_readahead_size: 0
+2025/10/04-14:47:23.833153 3dcc                Options.blob_file_starting_level: 0
+2025/10/04-14:47:23.833159 3dcc         Options.experimental_mempurge_threshold: 0.000000
+2025/10/04-14:47:23.833165 3dcc            Options.memtable_max_range_deletions: 0
+2025/10/04-14:47:23.861187 3dcc DB pointer 000001F24BFC6D00

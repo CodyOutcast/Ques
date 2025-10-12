@@ -24,7 +24,7 @@ class UserMembership(Base):
     membership_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # User relationship
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     
     # Membership details
     membership_type = Column(Enum(MembershipType), nullable=False, default=MembershipType.FREE)
@@ -77,7 +77,7 @@ class UserUsageLog(Base):
     log_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # User and membership relationship
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     membership_id = Column(Integer, ForeignKey("user_memberships.membership_id"), nullable=False)
     
     # Usage tracking

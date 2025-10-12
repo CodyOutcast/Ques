@@ -71,9 +71,18 @@ numpy>=1.24.0
 torch>=2.0.0
 transformers>=4.30.0
 
+# Vector Database (Qdrant for user profile embeddings) ⭐ NEW
+qdrant-client>=1.7.0
+
+# MCP (Model Context Protocol) for AI workflows ⭐ NEW
+mcp>=1.0.0
+
 # Tencent Cloud Services
 tcvectordb
 tencentcloud-sdk-python>=3.0.1000
+
+# ZhipuAI (GLM-4 and GLM-4V for text and image analysis) ⭐ NEW
+zhipuai>=2.0.0
 
 # DeepSeek API for tag extraction and project idea generation ⭐ NEW
 openai>=1.0.0  # Compatible API client for DeepSeek API

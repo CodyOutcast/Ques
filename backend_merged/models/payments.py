@@ -31,7 +31,7 @@ class MembershipTransaction(Base):
     id = Column(Integer, primary_key=True, index=True)
     
     # User and order information
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     order_id = Column(String(100), unique=True, nullable=False, index=True)
     transaction_id = Column(String(100), unique=True, nullable=True, index=True)  # From payment provider
     

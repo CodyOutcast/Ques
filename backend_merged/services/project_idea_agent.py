@@ -43,11 +43,8 @@ class ProjectIdeaAgent:
         self.searchapi_key = os.environ.get("SEARCHAPI_KEY")
         self.deepseek_api_key = os.environ.get("DEEPSEEK_API_KEY_AGENT")
         
-        # Validate API keys
-        if not self.searchapi_key:
-            raise ValueError("SEARCHAPI_KEY environment variable is required")
-        if not self.deepseek_api_key:
-            raise ValueError("DEEPSEEK_API_KEY_AGENT environment variable is required")
+        # Don't validate at initialization - only when actually used
+        # This allows the server to start even if these APIs aren't configured
         
         # API endpoints
         self.searchapi_url = "https://www.searchapi.io/api/v1/search"

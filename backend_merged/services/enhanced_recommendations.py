@@ -11,7 +11,7 @@ from sqlalchemy import text, and_, or_
 
 from models.project_cards import ProjectCard, ModerationStatus
 from models.users import User
-from models.likes import Like, UserSwipe
+from models.likes import UserSwipe
 
 try:
     from db_utils import (

@@ -22,8 +22,8 @@ class Chat(Base):
     __tablename__ = "chats"
     
     chat_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    initiator_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)  # User who sent greeting
-    recipient_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)  # User who received greeting
+    initiator_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # User who sent greeting
+    recipient_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # User who received greeting
     status = Column(Enum(ChatStatus), nullable=False, default=ChatStatus.PENDING)
     
     # Timestamps
@@ -76,7 +76,7 @@ class ChatMessage(Base):
     
     message_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     chat_id = Column(Integer, ForeignKey("chats.chat_id", ondelete="CASCADE"), nullable=False)
-    sender_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(Text, nullable=False)
     
     # Timestamps

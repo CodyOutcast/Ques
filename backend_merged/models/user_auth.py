@@ -21,7 +21,7 @@ class UserAuth(Base):
     __tablename__ = "user_auth"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     provider_type = Column(Enum(ProviderType), nullable=False)
     provider_id = Column(String(255), nullable=False)  # email, wechat_id, phone number
     password_hash = Column(String(255), nullable=True)  # only for EMAIL provider
@@ -41,7 +41,7 @@ class RefreshToken(Base):
     __tablename__ = "refresh_tokens"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     token_hash = Column(String(255), nullable=False)
     device_info = Column(String(255), nullable=True)
     ip_address = Column(String(45), nullable=True)  # Support IPv6
@@ -76,7 +76,7 @@ class UserSession(Base):
     __tablename__ = "user_sessions"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     session_token = Column(String(255), nullable=False)
     device_id = Column(String(255), nullable=True)
     device_name = Column(String(255), nullable=True)
@@ -98,7 +98,7 @@ class SecurityLog(Base):
     __tablename__ = "security_logs"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     event_type = Column(String(50), nullable=False)
     event_status = Column(String(20), nullable=False)
     event_description = Column(String(500), nullable=True)

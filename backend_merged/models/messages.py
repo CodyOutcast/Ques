@@ -15,7 +15,7 @@ class Message(Base):
     
     message_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     match_id = Column(Integer, ForeignKey("matches.match_id"), nullable=False)
-    sender_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     text = Column(Text, nullable=False)
     timestamp = Column(DateTime, nullable=True, default=datetime.utcnow)
     is_read = Column(Boolean, nullable=True, default=False)

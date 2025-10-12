@@ -13,7 +13,7 @@ import math
 
 from dependencies.db import get_db
 from models.users import User
-from models.likes import UserSwipe, Like, SwipeDirection
+from models.likes import UserSwipe, SwipeDirection
 from services.auth_service import AuthService
 from services.monitoring import log_security_event
 from schemas.users import (

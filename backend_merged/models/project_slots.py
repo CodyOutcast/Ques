@@ -37,7 +37,7 @@ class ProjectCardSlot(Base):
     slot_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # User relationship
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     
     # Slot metadata
     slot_number = Column(Integer, nullable=False)  # 1, 2, 3, etc.
@@ -155,7 +155,7 @@ class UserSlotConfiguration(Base):
     config_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # User relationship
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, unique=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True, index=True)
     
     # Configuration settings
     base_slots = Column(Integer, nullable=False, default=2)  # Base slots for free users
@@ -237,7 +237,7 @@ class AIRecommendationSwipe(Base):
     swipe_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # User and recommendation
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     ai_recommendation_id = Column(String(100), nullable=False, index=True)
     
     # Swipe details

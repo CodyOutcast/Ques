@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, func, case
 import json
 
-from models.user_reports import UserReport, ReportType, ReportStatus, ReportAction, ReportStatistics
+from models.user_reports import UserReport, ReportType, ReportStatus, ReportAction
 from models.users import User
 from services.enhanced_moderation import moderate_text_enhanced
 

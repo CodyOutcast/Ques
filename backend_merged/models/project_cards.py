@@ -38,7 +38,7 @@ class ProjectCard(Base):
     project_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     
     # Creator relationship
-    creator_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    creator_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
     # Basic project information
     title = Column(String(200), nullable=False)
@@ -175,7 +175,7 @@ class UserProject(Base):
     __tablename__ = "user_projects"
 
     # Composite primary key
-    user_id = Column(Integer, ForeignKey("users.user_id"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     project_id = Column(Integer, ForeignKey("projects.project_id"), primary_key=True)
     
     # Additional metadata for the relationship

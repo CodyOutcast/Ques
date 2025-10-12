@@ -22,7 +22,7 @@ class UserSubscription(Base):
     __tablename__ = "user_subscriptions"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False, unique=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
     subscription_type = Column(SQLEnum('basic', 'pro', 'ai-powered', name='subscriptiontype'), nullable=False, default='basic')
     monthly_quota_limit = Column(Integer, nullable=False, default=30)
     current_period_start = Column(DateTime, nullable=False, default=datetime.utcnow)
@@ -108,7 +108,7 @@ class ProjectIdeaRequest(Base):
     __tablename__ = "project_idea_requests"
     
     request_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     subscription_id = Column(Integer, ForeignKey("user_subscriptions.id"), nullable=False)
     query = Column(String(500), nullable=False)
     

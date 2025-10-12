@@ -14,8 +14,8 @@ class Match(Base):
     __tablename__ = "matches"
 
     match_id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user1_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
-    user2_id = Column(Integer, ForeignKey("users.user_id"), nullable=False)
+    user1_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    user2_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     timestamp = Column(DateTime, nullable=True, default=datetime.utcnow)
     is_active = Column(Boolean, nullable=True, default=True)
     
