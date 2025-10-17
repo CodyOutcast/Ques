@@ -59,7 +59,7 @@ class SendWhisperRequest(BaseModel):
 class RespondWhisperRequest(BaseModel):
     """Request model for responding to whisper"""
     whisperId: str
-    action: str = Field(..., regex="^(accept|decline)$")
+    action: str = Field(..., pattern="^(accept|decline)$")
     responseMessage: Optional[str] = Field(None, max_length=500)
 
 class WhisperSettings(BaseModel):

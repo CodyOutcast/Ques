@@ -49,6 +49,54 @@ class EmailService:
             logger.error(f"Failed to send welcome email to {email}: {e}")
             return False
     
+    async def send_notification_email(self, email: str, title: str, content: str, 
+                                    custom_data: Optional[dict] = None) -> bool:
+        """Send notification email"""
+        try:
+            logger.info(f"Sending notification email to {email}: {title}")
+            
+            # In a real implementation, you'd format the email with HTML template
+            # and send via SMTP or Tencent Cloud SES
+            
+            # Mock email sending - in reality you'd use proper email service
+            logger.info(f"Email notification sent: {title} -> {content}")
+            
+            return True
+            
+        except Exception as e:
+            logger.error(f"Failed to send notification email to {email}: {e}")
+            return False
+    
+    async def send_friend_request_email(self, email: str, sender_name: str, 
+                                      recipient_name: str, message: Optional[str] = None) -> bool:
+        """Send friend request email notification"""
+        try:
+            subject = f"New friend request from {sender_name}"
+            
+            # Create email content
+            content = f"""
+            Hi {recipient_name},
+            
+            {sender_name} has sent you a friend request on Ques.
+            
+            """
+            
+            if message:
+                content += f'Message: "{message}"\n\n'
+            
+            content += """
+            Open the Ques app to view and respond to this request.
+            
+            Best regards,
+            The Ques Team
+            """
+            
+            return await self.send_notification_email(email, subject, content)
+            
+        except Exception as e:
+            logger.error(f"Failed to send friend request email to {email}: {e}")
+            return False
+    
     async def send_notification_email(
         self, 
         email: str, 

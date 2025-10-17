@@ -15,15 +15,28 @@ from dotenv import load_dotenv
 
 from dependencies.db import get_db, engine
 from models.base import Base
-from routers import auth, users, matches, messages, profile, chats, projects, project_cards, membership, location, user_reports, sms_router, project_ideas, payments, online_users, revenue_analytics, quota_payments, agent_cards, project_slots, membership_webhooks, intelligent_agent, basic_operations, university_verification, settings, swipes, matching, notifications, contacts, whispers, payment_system, card_tracking, ai_services
+from routers import auth, users, user_reports, intelligent_agent, basic_operations, university_verification, notifications, contacts, whispers, payments, ai_services, tpns, project_management, sms_router, swipes, user_settings, chat
+# university_verification - now uses existing UserProfile model
+# Commented out routers that import deleted models:
+# sms_router - phone verification service (field names fixed) 
+# settings as settings_router - imports from models.settings
+# swipes - imports from models.swipes 
+# matching - imports from models.swipes
+# payment_system - imports from models.payments
+# card_tracking - may import from deleted models
+# casual_requests - imports from models.casual_requests 
+# chat_agent - imports from models.casual_requests
+# projects - imports from models.projects
+# membership - imports from models.payments
 # admin_project_slots commented out - requires get_current_admin_user which isn't implemented
 from config.settings import settings
-try:
-    from routers import recommendations
-    RECOMMENDATIONS_AVAILABLE = True
-except ImportError as e:
-    print(f"Warning: Recommendations module not available: {e}")
-    RECOMMENDATIONS_AVAILABLE = False
+# Recommendations disabled - router not available
+# try:
+#     from routers import recommendations
+#     RECOMMENDATIONS_AVAILABLE = True
+# except ImportError as e:
+#     print(f"Warning: Recommendations module not available: {e}")
+RECOMMENDATIONS_AVAILABLE = False
 from services.monitoring import setup_monitoring
 
 # Load environment variables
@@ -103,10 +116,11 @@ if settings.is_production:
     )
 
 # Content moderation middleware (before CORS and other middleware)
-from middleware.content_moderation import ContentModerationMiddleware
+# TODO: Re-enable after creating services.content_moderation
+# from middleware.content_moderation import ContentModerationMiddleware
 from middleware.session_tracking import SessionTrackingMiddleware
-moderation_enabled = getattr(settings, 'enable_content_moderation', True)
-app.add_middleware(ContentModerationMiddleware, enabled=moderation_enabled)
+# moderation_enabled = getattr(settings, 'enable_content_moderation', True)
+# app.add_middleware(ContentModerationMiddleware, enabled=moderation_enabled)
 
 # Session tracking middleware (should be after content moderation but before CORS)
 app.add_middleware(SessionTrackingMiddleware)
@@ -128,29 +142,26 @@ app.add_middleware(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["Authentication"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["Users"])
 app.include_router(user_reports.router, prefix="/api/v1", tags=["User Reports"])
-app.include_router(sms_router.router, tags=["SMS Verification"])
+app.include_router(sms_router.router, prefix="/api/v1/sms", tags=["SMS Verification"])
 app.include_router(university_verification.router, prefix="/api/v1/university", tags=["University Verification"])
-app.include_router(settings.router, prefix="/api/v1/settings", tags=["Settings Management"])
-app.include_router(project_ideas.router, tags=["Project Ideas"])
+app.include_router(project_management.router, prefix="/api/v1", tags=["Project Management"])
+logger.info("✅ Project management router loaded")
+# app.include_router(settings_router.router, prefix="/api/v1/settings", tags=["Settings Management"])  # Commented - imports deleted models
+# app.include_router(project_ideas.router, tags=["Project Ideas"])  # Disabled - router not found
 
-# Project Ideas V2 with enhanced features
-try:
-    from routers import project_ideas_v2
-    app.include_router(project_ideas_v2.router, tags=["Project Ideas V2"])
-    logger.info("✅ Project Ideas V2 router loaded")
-except ImportError as e:
-    logger.warning(f"Project Ideas V2 router not available: {e}")
+# Project Ideas V2 with enhanced features - Disabled (router not found)
+# try:
+#     from routers import project_ideas_v2
+#     app.include_router(project_ideas_v2.router, tags=["Project Ideas V2"])
+#     logger.info("✅ Project Ideas V2 router loaded")
+# except ImportError as e:
+#     logger.warning(f"Project Ideas V2 router not available: {e}")
 
-if RECOMMENDATIONS_AVAILABLE:
-    app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["Recommendations"])
+# Recommendations disabled - router not available
+# if RECOMMENDATIONS_AVAILABLE:
+#     app.include_router(recommendations.router, prefix="/api/v1/recommendations", tags=["Recommendations"])
 
-# Vector-based recommendations (always available)
-try:
-    from routers import vector_recommendations
-    app.include_router(vector_recommendations.router, tags=["Vector Recommendations"])
-    logger.info("✅ Vector recommendations router loaded")
-except ImportError as e:
-    logger.warning(f"⚠️ Vector recommendations router not available: {e}")
+# Vector-based recommendations - REMOVED
 
 # Intelligent Agent (Search, Inquiry, Chat)
 app.include_router(intelligent_agent.router, tags=["Intelligent Agent"])
@@ -160,23 +171,24 @@ logger.info("✅ Intelligent agent router loaded")
 app.include_router(basic_operations.router, tags=["Basic Operations"])
 logger.info("✅ Basic operations router loaded")
 
-app.include_router(matches.router, prefix="/api/v1/search", tags=["AI Search"])
-app.include_router(messages.router, prefix="/api/v1/messages", tags=["Messaging"])
-app.include_router(profile.router, prefix="/api/v1/profile", tags=["Profile"])
-app.include_router(chats.router, prefix="/api/v1", tags=["Chats"])
-app.include_router(projects.router, prefix="/api/v1", tags=["Projects"])
-app.include_router(project_cards.router, tags=["Project Cards"])
-app.include_router(agent_cards.router, tags=["Agent Cards"])
-app.include_router(membership.router, tags=["Membership"])
-app.include_router(payments.router, prefix="/api/v1/payments", tags=["Payments"])
-app.include_router(quota_payments.router, tags=["Quota Payments"])
-app.include_router(revenue_analytics.router, tags=["Revenue Analytics"])
-app.include_router(location.router, prefix="/api/v1", tags=["Location"])
-app.include_router(online_users.router, prefix="/api/v1/online", tags=["Online Users"])
-app.include_router(swipes.router, prefix="/api/v1", tags=["Swipes"])
-logger.info("✅ Swipes router loaded")
-app.include_router(matching.router, prefix="/api/v1", tags=["Matching"])
-logger.info("✅ Matching router loaded")
+
+app.include_router(swipes.router, prefix="/swipes", tags=["swipes"])
+app.include_router(user_settings.router, prefix="/user-settings", tags=["user-settings"])
+app.include_router(user_reports.router, prefix="/user-reports", tags=["user-reports"])
+app.include_router(intelligent_agent.router, prefix="/intelligent-agent", tags=["intelligent-agent"])
+app.include_router(notifications.router, prefix="/notifications", tags=["notifications"])
+app.include_router(contacts.router, prefix="/contacts", tags=["contacts"])
+app.include_router(whispers.router, prefix="/whispers", tags=["whispers"])
+app.include_router(payments.router, prefix="/payments", tags=["payments"])
+app.include_router(ai_services.router, prefix="/ai-services", tags=["ai-services"])
+app.include_router(chat.router, prefix="/chat", tags=["chat"])
+app.include_router(university_verification.router, prefix="/university-verification", tags=["university-verification"])
+app.include_router(tpns.router, prefix="/tpns", tags=["tpns"])
+app.include_router(project_management.router, prefix="/project-management", tags=["project-management"])
+app.include_router(sms_router.router, prefix="/sms", tags=["sms"])  # New swipe system
+# logger.info("✅ Swipes router loaded")
+# app.include_router(matching.router, prefix="/api/v1", tags=["Matching"])  # Commented - imports deleted models.swipes  
+# logger.info("✅ Matching router loaded")
 
 # New Service Routers
 app.include_router(notifications.router, prefix="/api/v1/notifications", tags=["Notification System"])
@@ -185,17 +197,27 @@ app.include_router(contacts.router, prefix="/api/v1/contacts", tags=["Contact Ma
 logger.info("✅ Contact management router loaded")
 app.include_router(whispers.router, prefix="/api/v1/whispers", tags=["Whisper Messaging"])
 logger.info("✅ Whisper messaging router loaded")
-app.include_router(payment_system.router, prefix="/api/v1/payment", tags=["Payment System"])
+app.include_router(payments.router, prefix="/api/v1/payments", tags=["Payment System"])
 logger.info("✅ Payment system router loaded")
-app.include_router(card_tracking.router, prefix="/api/v1/tracking", tags=["Card Tracking"])
-logger.info("✅ Card tracking router loaded")
+# app.include_router(card_tracking.router, prefix="/api/v1/tracking", tags=["Card Tracking"])  # Commented - may import deleted models
+# logger.info("✅ Card tracking router loaded")
 app.include_router(ai_services.router, prefix="/api/v1/ai", tags=["AI Services"])
 logger.info("✅ AI services router loaded")
+# app.include_router(casual_requests.router, prefix="/api/v1/casual-requests", tags=["Casual Requests"])  # Commented - imports deleted models.casual_requests
+# logger.info("✅ Casual requests router loaded")
+# app.include_router(chat_agent.router, prefix="/api/v1", tags=["Chat Agent"])  # Commented - imports deleted models.casual_requests
+# logger.info("✅ Chat agent router loaded")
 
-# Project Slots System
-app.include_router(project_slots.router, prefix="/api/v1", tags=["Project Slots"])
-# app.include_router(admin_project_slots.router, prefix="/api/v1", tags=["Admin - Project Slots"])  # Disabled - requires admin auth
-app.include_router(membership_webhooks.router, prefix="/api/v1", tags=["Webhooks - Membership"])
+# Project and Membership System
+# app.include_router(projects.router, prefix="/api/v1", tags=["Projects"])  # Commented - imports deleted models.projects
+# logger.info("✅ Projects router loaded")
+# app.include_router(membership.router, prefix="/api/v1", tags=["Membership"])  # Commented - imports deleted models.payments
+# logger.info("✅ Membership router loaded")
+
+app.include_router(tpns.router, prefix="/api/v1/tpns", tags=["Push Notifications (TPNS)"])
+logger.info("✅ TPNS router loaded")
+
+
 
 @app.get("/")
 async def root():

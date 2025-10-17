@@ -8,9 +8,8 @@ from .auth import *
 # User-related schemas
 from .users import *
 
-# Chat and messaging schemas
-from .chats import *
-from .messages import *
+# Casual requests schemas
+from .casual_requests import *
 
 # Location schemas
 from .location import *

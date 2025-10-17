@@ -135,19 +135,14 @@ class InstitutionUpdate(BaseModel):
 
 class InstitutionResponse(BaseModel):
     """Schema for institution responses"""
-    id: int
+    institution_id: int
     name: str
-    name_en: Optional[str] = None
-    type: InstitutionType
-    city_id: int
-    province_id: int
+    role: str
     description: Optional[str] = None
-    website: Optional[str] = None
-    logo_url: Optional[str] = None
-    is_verified: bool
-    is_active: bool
+    type: Optional[str] = None
+    verified: bool = False
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
@@ -210,6 +205,34 @@ class UserStatisticsResponse(BaseModel):
     
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class UserLinkCreate(BaseModel):
+    """Schema for creating user links"""
+    url: str = Field(..., max_length=500, description="Link URL")
+    title: Optional[str] = Field(None, max_length=100, description="Link title")
+    description: Optional[str] = Field(None, description="Link description")
+    link_type: Optional[str] = Field(None, max_length=50, description="Link type (portfolio, github, etc.)")
+
+class UserLinkUpdate(BaseModel):
+    """Schema for updating user links"""
+    url: Optional[str] = Field(None, max_length=500)
+    title: Optional[str] = Field(None, max_length=100)
+    description: Optional[str] = None
+    link_type: Optional[str] = Field(None, max_length=50)
+
+class UserLinkResponse(BaseModel):
+    """Schema for user link responses"""
+    link_id: int
+    url: str
+    title: Optional[str] = None
+    description: Optional[str] = None
+    link_type: Optional[str] = None
+    is_verified: bool = False
+    created_at: datetime
+    updated_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True

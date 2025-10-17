@@ -1,52 +1,80 @@
-# Backend Documentation
+# Ques Backend Documentation
 
-This folder contains all documentation for the Ques backend API.
+## 📁 Documentation Structure
 
-## 📁 Folder Structure
+### 🧪 Testing (`../tests/`)
+- **`database/`** - Database verification and checking scripts
+  - `check_db_state.py` - Database state verification
+  - `check_new_tables.py` - New tables validation
+  - `check_user_swipes.py` - User swipes table verification
+  - `verify_chat_tables.py` - Chat system tables verification
 
-### `/api`
-API documentation and endpoint specifications
-- Contains API reference documentation
-- Request/response schemas
-- Authentication guidelines
+- **`integration/`** - Integration testing scripts
+  - `test_api_endpoints.py` - API endpoints testing
+  - `test_chat_integration.py` - Chat system integration tests
+  - `test_final_integration.py` - Complete system integration tests
+  - `test_tpns_integration.py` - TPNS integration testing
 
-### `/database` 
-Database schema and structure documentation
-- Database schema definitions
-- Table relationships
-- Migration guides
+### 📚 API Documentation (`api/`)
+- `api_specification.yaml` - Complete OpenAPI/Swagger specification
+- `AVAILABLE_API_ENDPOINTS.md` - List of all available endpoints
+- `BACKEND_SERVICE_ENDPOINT_MAPPING.md` - Service to endpoint mapping
+- `CURRENT_API_ENDPOINTS_STATUS.md` - Endpoint status and health
 
-### `/implementation`
-Implementation guides and detailed technical documentation
-- Feature implementation guides
-- Step-by-step setup instructions
-- Code examples and patterns
+### 🔧 Implementation Guides (`implementation/`)
+- `CHAT_SYSTEM_COMPLETE.md` - Chat system implementation details
+- `NEW_SWIPE_SYSTEM_IMPLEMENTATION.md` - Swipe mechanics implementation
+- `PAYMENT_SYSTEM_IMPLEMENTATION_COMPLETE.md` - Payment system guide
+- `PROJECT_MANAGEMENT_IMPLEMENTATION.md` - Project management features
+- `TPNS_IMPLEMENTATION_SUMMARY.md` - Push notification system
 
-### `/guides`
-General guides and architecture documentation  
-- Architecture overviews
-- Best practices
-- Setup and configuration guides
+### 📊 Analysis Reports (`analysis/`)
+- `INTEGRATION_ANALYSIS.md` - System integration analysis
+- `PAYMENT_AND_MATCHING_ANALYSIS.md` - Payment and matching logic analysis
+- `UNIVERSITY_VERIFICATION_ANALYSIS.md` - University verification system
+- `FRONTEND_API_REQUIREMENTS_ANALYSIS.md` - Frontend integration requirements
 
-## 📋 Quick Links
+### 🛠️ Maintenance (`maintenance/`)
+- `CLEANUP_SUMMARY.md` - System cleanup and maintenance guide
 
-- [Database Schema](./database/DATABASE_SCHEMA_COMPLETE.md)
-- [Implementation Guides](./implementation/)
-- [Architecture Guides](./guides/)
-- [Backend README](./README_NEW_BACKEND.md)
+## � Quick Start
 
-## 🔧 Development
+### For Developers
+1. **API Documentation**: Start with `api/api_specification.yaml`
+2. **Implementation**: Check `implementation/` for system guides
+3. **Testing**: Use scripts in `../tests/` for verification
 
-For development documentation and testing:
-- See `/tests` folder for testing documentation
-- Check individual implementation guides for specific features
-- Refer to API documentation for endpoint usage
+### For Frontend Developers
+1. **API Spec**: `api/api_specification.yaml` - Complete endpoint documentation
+2. **Requirements**: `analysis/FRONTEND_API_REQUIREMENTS_ANALYSIS.md`
+3. **Integration**: Follow authentication and data model patterns in API spec
 
-## 📝 Contributing
+### For DevOps/Testing
+1. **Database Tests**: `../tests/database/` - Verify database integrity
+2. **Integration Tests**: `../tests/integration/` - End-to-end testing
+3. **Maintenance**: `maintenance/` - System cleanup guides
 
-When adding new documentation:
-1. Place API docs in `/api`
-2. Place database docs in `/database` 
-3. Place implementation guides in `/implementation`
+## 📋 Key Features Documented
+
+- ✅ **AI-Powered Chat System** with intelligent user recommendations
+- ✅ **Swipe Mechanics** with advanced analytics
+- ✅ **Payment System** with subscription management
+- ✅ **Push Notifications** via TPNS integration
+- ✅ **User Authentication** with JWT tokens
+- ✅ **University Verification** system
+- ✅ **Project Management** features
+
+## 🔗 Related Files
+
+- **Main Application**: `../main.py`
+- **Database Models**: `../models/`
+- **API Routers**: `../routers/`
+- **Services**: `../services/`
+- **Configuration**: `../config/`
+
+---
+
+*Last Updated: October 17, 2025*
+*Documentation organized for better maintainability and clarity*
 4. Place general guides and architecture in `/guides`
 5. Update this index file with new content

@@ -50,18 +50,18 @@ class ContactsListResponse(BaseModel):
 class AddContactRequest(BaseModel):
     """Request model for adding a contact"""
     userId: str
-    contactType: str = Field(..., regex="^(friend|blocked|favorite)$")
+    contactType: str = Field(..., pattern="^(friend|blocked|favorite)$")
     notes: Optional[str] = Field(None, max_length=500)
 
 class UpdateContactRequest(BaseModel):
     """Request model for updating a contact"""
-    contactType: Optional[str] = Field(None, regex="^(friend|blocked|favorite)$")
+    contactType: Optional[str] = Field(None, pattern="^(friend|blocked|favorite)$")
     notes: Optional[str] = Field(None, max_length=500)
 
 class ReportContactRequest(BaseModel):
     """Request model for reporting a contact"""
     contactId: str
-    reason: str = Field(..., regex="^(spam|harassment|inappropriate_content|fake_profile|other)$")
+    reason: str = Field(..., pattern="^(spam|harassment|inappropriate_content|fake_profile|other)$")
     description: Optional[str] = Field(None, max_length=1000)
     evidence: Optional[List[str]] = None  # URLs to evidence (screenshots, etc.)
 
@@ -116,7 +116,7 @@ async def get_contacts(
     type: Optional[str] = Query(None, description="Filter by type: friend, blocked, favorite"),
     search: Optional[str] = Query(None, description="Search by name"),
     sort_by: str = Query("connection_date", description="Sort by: name, connection_date, last_interaction"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     token: str = Depends(security),
     db: Session = Depends(get_db)
 ):

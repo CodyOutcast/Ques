@@ -16,6 +16,7 @@ from dependencies.db import get_db
 from models.users import User
 from services.auth_service import AuthService
 from services.email_service import EmailService
+from services.notification_service import notification_service, NotificationType, DeliveryChannel
 
 router = APIRouter()
 security = HTTPBearer()
@@ -79,7 +80,7 @@ class SendFriendRequestRequest(BaseModel):
 class RespondFriendRequestRequest(BaseModel):
     """Request model for responding to friend request"""
     requestId: str
-    action: str = Field(..., regex="^(accept|decline)$")
+    action: str = Field(..., pattern="^(accept|decline)$")
     message: Optional[str] = None
 
 class UnreadCountResponse(BaseModel):
@@ -106,7 +107,7 @@ class ReceivesStatus(BaseModel):
     remaining: int
     total: int
     resetDate: str
-    plan: str = Field(..., regex="^(basic|pro)$")
+    plan: str = Field(..., pattern="^(basic|pro)$")
 
 class TopUpRequest(BaseModel):
     """Top up receives request"""
@@ -122,7 +123,7 @@ class GiftRequest(BaseModel):
 class ReceivesHistoryItem(BaseModel):
     """Receives history item"""
     id: str
-    type: str = Field(..., regex="^(purchase|gift_sent|gift_received|usage)$")
+    type: str = Field(..., pattern="^(purchase|gift_sent|gift_received|usage)$")
     amount: int
     description: str
     relatedUserId: Optional[str] = None
@@ -413,7 +414,7 @@ async def get_unread_count(
 
 @router.post("/notifications/batch")
 async def batch_operate_notifications(
-    operation: str = Query(..., regex="^(read|delete)$"),
+    operation: str = Query(..., pattern="^(read|delete)$"),
     notification_ids: List[str] = Query(...),
     token: str = Depends(security),
     db: Session = Depends(get_db)
@@ -487,6 +488,183 @@ async def get_notification_preferences(
     except Exception as e:
         logger.error(f"Error getting notification preferences: {e}")
         raise HTTPException(status_code=500, detail="Failed to get notification preferences")
+
+
+# ==================== Enhanced Notification Sending ====================
+
+class SendNotificationRequest(BaseModel):
+    """Request model for sending notifications"""
+    target_user_id: int
+    notification_type: str = Field(..., pattern="^(friend_request|message|match|system|gift|payment)$")
+    title: str
+    content: str
+    custom_data: Optional[Dict[str, Any]] = None
+    channels: Optional[List[str]] = ["push", "in_app"]
+    priority: Optional[str] = Field("normal", pattern="^(low|normal|high|urgent)$")
+
+@router.post("/send")
+async def send_notification(
+    request: SendNotificationRequest,
+    token: str = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Send notification to specific user
+    """
+    try:
+        current_user = auth_service.get_current_user(db, token.credentials)
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        # Convert string enums
+        notification_type = NotificationType(request.notification_type)
+        channels = [DeliveryChannel(ch) for ch in request.channels]
+        
+        from services.notification_service import NotificationPriority
+        priority_map = {
+            "low": NotificationPriority.LOW,
+            "normal": NotificationPriority.NORMAL,
+            "high": NotificationPriority.HIGH,
+            "urgent": NotificationPriority.URGENT
+        }
+        priority = priority_map[request.priority]
+
+        # Send notification
+        result = await notification_service.send_notification(
+            db=db,
+            user_id=request.target_user_id,
+            notification_type=notification_type,
+            title=request.title,
+            content=request.content,
+            custom_data=request.custom_data,
+            channels=channels,
+            priority=priority
+        )
+
+        return {
+            "success": True,
+            "message": "Notification sent successfully",
+            "results": result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending notification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send notification")
+
+@router.post("/friend-request/send")
+async def send_friend_request_notification(
+    recipient_id: int,
+    message: Optional[str] = None,
+    token: str = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Send friend request notification with push notification
+    """
+    try:
+        current_user = auth_service.get_current_user(db, token.credentials)
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        # Send enhanced friend request notification
+        result = await notification_service.send_friend_request_notification(
+            db=db,
+            target_user_id=recipient_id,
+            sender_name=current_user.full_name or f"User {current_user.id}",
+            sender_id=current_user.id,
+            message=message
+        )
+
+        return {
+            "success": True,
+            "message": "Friend request notification sent",
+            "results": result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending friend request notification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send friend request notification")
+
+@router.post("/match/send")
+async def send_match_notification(
+    user_id: int,
+    match_name: str,
+    match_id: int,
+    token: str = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Send new match notification
+    """
+    try:
+        current_user = auth_service.get_current_user(db, token.credentials)
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        # Send match notification
+        result = await notification_service.send_match_notification(
+            db=db,
+            user_id=user_id,
+            match_name=match_name,
+            match_id=match_id
+        )
+
+        return {
+            "success": True,
+            "message": "Match notification sent",
+            "results": result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending match notification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send match notification")
+
+@router.post("/broadcast")
+async def send_broadcast_notification(
+    title: str,
+    content: str,
+    user_ids: Optional[List[int]] = None,
+    notification_type: str = "system",
+    token: str = Depends(security),
+    db: Session = Depends(get_db)
+):
+    """
+    Send broadcast notification to multiple users or all users
+    """
+    try:
+        current_user = auth_service.get_current_user(db, token.credentials)
+        if not current_user:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        # Convert notification type
+        notif_type = NotificationType(notification_type)
+
+        # Send broadcast notification
+        result = await notification_service.send_broadcast_notification(
+            db=db,
+            title=title,
+            content=content,
+            user_ids=user_ids,
+            notification_type=notif_type
+        )
+
+        return {
+            "success": True,
+            "message": "Broadcast notification sent",
+            "results": result
+        }
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error sending broadcast notification: {e}")
+        raise HTTPException(status_code=500, detail="Failed to send broadcast notification")
 
 @router.get("/receives/status", response_model=ReceivesStatus)
 async def get_receives_status(

@@ -6,18 +6,19 @@
 
 ## 📋 Tables Overview
 
-Total Tables: 13
+Total Tables: 14
 
 - `cities`
 - `institutions`
 - `memberships`
 - `provinces`
+- `swipe_records` (NEW - Replaces user_swipes)
 - `user_institutions`
 - `user_profiles`
 - `user_projects`
 - `user_quotas`
 - `user_reports`
-- `user_swipes`
+- `user_settings` (NEW)
 - `users`
 - `verification_codes`
 - `whispers`
@@ -311,31 +312,85 @@ Total Tables: 13
 
 ---
 
-### `user_swipes`
+### `user_settings` (NEW)
 
 | Column Name | Data Type | Nullable | Default | Primary Key |
 |-------------|-----------|----------|---------|-------------|
-| `id` | BIGINT | ❌ No | nextval('user_swipes_id_seq'::regclass) | 🔑 Yes |
-| `swiper_id` | BIGINT | ❌ No | None |  |
-| `swiped_user_id` | BIGINT | ❌ No | None |  |
-| `swipe_direction` | VARCHAR(10) | ❌ No | None |  |
-| `match_score` | NUMERIC(5, 4) | ✅ Yes | None |  |
-| `swipe_context` | VARCHAR(200) | ✅ Yes | None |  |
-| `triggered_whisper` | BOOLEAN | ❌ No | false |  |
+| `id` | BIGINT | ❌ No | nextval('user_settings_id_seq'::regclass) | 🔑 Yes |
+| `user_id` | BIGINT | ❌ No | None |  |
+| `email_notifications` | BOOLEAN | ❌ No | true |  |
+| `push_notifications` | BOOLEAN | ❌ No | true |  |
+| `whisper_requests` | BOOLEAN | ❌ No | true |  |
+| `friend_requests` | BOOLEAN | ❌ No | true |  |
+| `matches_notifications` | BOOLEAN | ❌ No | true |  |
+| `messages_notifications` | BOOLEAN | ❌ No | true |  |
+| `system_notifications` | BOOLEAN | ❌ No | true |  |
+| `gifts_notifications` | BOOLEAN | ❌ No | true |  |
+| `search_mode` | VARCHAR(20) | ❌ No | 'inside'::character varying |  |
+| `auto_accept_matches` | BOOLEAN | ❌ No | false |  |
+| `show_online_status` | BOOLEAN | ❌ No | true |  |
+| `custom_message` | TEXT | ✅ Yes | None |  |
+| `whisper_auto_accept` | BOOLEAN | ❌ No | false |  |
+| `whisper_show_status` | BOOLEAN | ❌ No | true |  |
+| `whisper_enable_notifications` | BOOLEAN | ❌ No | true |  |
+| `language` | VARCHAR(10) | ❌ No | 'en'::character varying |  |
+| `theme` | VARCHAR(10) | ❌ No | 'light'::character varying |  |
+| `timezone` | VARCHAR(50) | ❌ No | 'UTC'::character varying |  |
 | `created_at` | TIMESTAMP | ❌ No | CURRENT_TIMESTAMP |  |
+| `updated_at` | TIMESTAMP | ❌ No | CURRENT_TIMESTAMP |  |
 
 **Foreign Keys:**
 
-- `swiped_user_id` → `users.id`
-- `swiper_id` → `users.id`
+- `user_id` → `users.id`
 
 **Indexes:**
 
-- `idx_user_swipes_likes`: swiper_id, swipe_direction, created_at
-- `idx_user_swipes_swiped`: swiped_user_id, swipe_direction
-- `idx_user_swipes_swiper`: swiper_id, created_at
-- `idx_user_swipes_whisper`: triggered_whisper, created_at
-- `unique_swipe`: swiper_id, swiped_user_id (UNIQUE)
+- `ix_user_settings_id`: id
+- `ix_user_settings_user_id`: user_id (UNIQUE)
+
+**Notes:**
+- Comprehensive user preferences and settings management
+- Notification settings: individual control for all notification types
+- User preferences: search mode, auto-accept, online status visibility
+- Whisper settings: auto-accept, status visibility, notifications
+- Account settings: language, theme, timezone, custom message
+- One-to-one relationship with users table
+
+---
+
+### `swipe_records` (NEW - Replaces user_swipes)
+
+| Column Name | Data Type | Nullable | Default | Primary Key |
+|-------------|-----------|----------|---------|-------------|
+| `id` | INTEGER | ❌ No | nextval('swipe_records_id_seq'::regclass) | 🔑 Yes |
+| `user_id` | INTEGER | ❌ No | None |  |
+| `target_user_id` | VARCHAR | ❌ No | None |  |
+| `action` | VARCHAR(20) | ❌ No | None |  |
+| `search_query` | VARCHAR(500) | ✅ Yes | None |  |
+| `search_mode` | VARCHAR(20) | ✅ Yes | None |  |
+| `match_score` | NUMERIC(5, 4) | ✅ Yes | None |  |
+| `source_context` | JSON | ✅ Yes | None |  |
+| `created_at` | TIMESTAMP | ❌ No | CURRENT_TIMESTAMP |  |
+| `updated_at` | TIMESTAMP | ❌ No | CURRENT_TIMESTAMP |  |
+
+**Foreign Keys:**
+
+- `user_id` → `users.id`
+
+**Indexes:**
+
+- `ix_swipe_records_id`: id
+- `ix_swipe_records_user_id`: user_id
+- `ix_swipe_records_target_user_id`: target_user_id
+- `ix_swipe_records_action`: action
+- `ix_swipe_records_created_at`: created_at
+
+**Notes:**
+- Matches frontend API structure exactly
+- `target_user_id` is VARCHAR to support external user IDs
+- `action` values: 'like', 'ignore', 'super_like'
+- `search_mode` values: 'inside', 'global'
+- `source_context` JSON structure: {sessionId, recommendationBatch, cardPosition}
 
 ---
 
@@ -406,7 +461,7 @@ Total Tables: 13
 - `recipient_id` → `users.id`
 - `reply_to_whisper_id` → `whispers.id`
 - `sender_id` → `users.id`
-- `swipe_id` → `user_swipes.id`
+- `swipe_id` → `swipe_records.id`
 
 **Indexes:**
 

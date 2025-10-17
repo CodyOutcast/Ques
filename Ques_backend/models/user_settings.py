@@ -1,119 +1,67 @@
 """
-User settings and configuration models following DATABASE_STRUCTURE_UPDATE.md
+User settings model for managing user preferences and notification settings
 """
 
-from sqlalchemy import Column, Integer, String, TIMESTAMP, Boolean, VARCHAR, ForeignKey, Text, JSON
+from sqlalchemy import Column, BigInteger, String, Boolean, TIMESTAMP, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from datetime import datetime
+from enum import Enum
 from .base import Base
 
-class UserAccountSettings(Base):
-    """
-    User account settings and preferences
-    """
-    __tablename__ = "user_account_settings"
+class SearchMode(str, Enum):
+    """Search mode enum"""
+    INSIDE = "inside"
+    GLOBAL = "global"
 
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
-    language = Column(VARCHAR(10), nullable=False, default='en')
-    timezone = Column(VARCHAR(50), nullable=False, default='UTC')
-    notifications_enabled = Column(Boolean, nullable=False, default=True)
+class Theme(str, Enum):
+    """Theme options"""
+    LIGHT = "light"
+    DARK = "dark"
+    AUTO = "auto"
+
+class UserSettings(Base):
+    """
+    User settings table for managing all user preferences and notification settings
+    Matches frontend API requirements exactly while avoiding data duplication
+    """
+    __tablename__ = "user_settings"
+
+    # Primary key and foreign key
+    id = Column(BigInteger, primary_key=True, index=True, autoincrement=True)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False, unique=True, index=True)
+    
+    # Notification Settings - matching frontend API
     email_notifications = Column(Boolean, nullable=False, default=True)
     push_notifications = Column(Boolean, nullable=False, default=True)
-    sms_notifications = Column(Boolean, nullable=False, default=False)
-    profile_visibility = Column(VARCHAR(20), nullable=False, default='public')  # public, friends, private
-    allow_messages = Column(Boolean, nullable=False, default=True)
-    allow_whispers = Column(Boolean, nullable=False, default=True)
-    show_age = Column(Boolean, nullable=False, default=True)
-    show_location = Column(Boolean, nullable=False, default=True)
-    auto_accept_chats = Column(Boolean, nullable=False, default=False)
-    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, nullable=True)
-
+    whisper_requests = Column(Boolean, nullable=False, default=True)
+    friend_requests = Column(Boolean, nullable=False, default=True)
+    matches_notifications = Column(Boolean, nullable=False, default=True)
+    messages_notifications = Column(Boolean, nullable=False, default=True)
+    system_notifications = Column(Boolean, nullable=False, default=True)
+    gifts_notifications = Column(Boolean, nullable=False, default=True)
+    
+    # User Preferences - matching frontend API
+    search_mode = Column(String(20), nullable=False, default="inside", index=True)  # 'inside' | 'global'
+    auto_accept_matches = Column(Boolean, nullable=False, default=False)
+    show_online_status = Column(Boolean, nullable=False, default=True)
+    
+    # Whisper Settings - matching frontend API (excluding wechatId which is in user_profiles)
+    custom_message = Column(Text, nullable=True)
+    whisper_auto_accept = Column(Boolean, nullable=False, default=False)
+    whisper_show_status = Column(Boolean, nullable=False, default=True)
+    whisper_enable_notifications = Column(Boolean, nullable=False, default=True)
+    
+    # Additional Settings for future expansion
+    language = Column(String(10), nullable=False, default="en")  # 'en', 'cn'
+    theme = Column(String(20), nullable=False, default="light")  # 'light', 'dark', 'auto'
+    timezone = Column(String(50), nullable=False, default="UTC")
+    
+    # Timestamps
+    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow, index=True)
+    updated_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
     # Relationships
-    user = relationship("User", back_populates="account_settings")
+    user = relationship("User", back_populates="settings")
 
-class UserSecuritySettings(Base):
-    """
-    User security and privacy settings
-    """
-    __tablename__ = "user_security_settings"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
-    two_factor_enabled = Column(Boolean, nullable=False, default=False)
-    login_notifications = Column(Boolean, nullable=False, default=True)
-    suspicious_activity_alerts = Column(Boolean, nullable=False, default=True)
-    data_sharing_consent = Column(Boolean, nullable=False, default=False)
-    marketing_consent = Column(Boolean, nullable=False, default=False)
-    location_tracking = Column(Boolean, nullable=False, default=False)
-    session_timeout = Column(Integer, nullable=False, default=3600)  # seconds
-    ip_whitelist = Column(JSON, nullable=True)  # Array of allowed IPs
-    device_limit = Column(Integer, nullable=False, default=5)
-    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, nullable=True)
-
-    # Relationships
-    user = relationship("User", back_populates="security_settings")
-
-class PrivacyConsent(Base):
-    """
-    User privacy consent tracking
-    """
-    __tablename__ = "privacy_consents"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    consent_type = Column(VARCHAR(50), nullable=False)  # data_processing, marketing, analytics, etc.
-    consent_given = Column(Boolean, nullable=False)
-    consent_text = Column(Text, nullable=True)  # Text that was consented to
-    ip_address = Column(VARCHAR(45), nullable=True)
-    user_agent = Column(Text, nullable=True)
-    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    withdrawn_at = Column(TIMESTAMP, nullable=True)
-
-    # Relationships
-    user = relationship("User", back_populates="privacy_consents")
-
-class DataExportRequest(Base):
-    """
-    User data export requests (GDPR compliance)
-    """
-    __tablename__ = "data_export_requests"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    request_type = Column(VARCHAR(20), nullable=False, default='full')  # full, partial, specific
-    status = Column(VARCHAR(20), nullable=False, default='pending')  # pending, processing, completed, failed
-    data_categories = Column(JSON, nullable=True)  # Specific data categories requested
-    export_format = Column(VARCHAR(10), nullable=False, default='json')  # json, csv, pdf
-    file_path = Column(VARCHAR(500), nullable=True)  # Path to generated export file
-    download_url = Column(VARCHAR(500), nullable=True)  # Temporary download URL
-    expires_at = Column(TIMESTAMP, nullable=True)  # When download link expires
-    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    processed_at = Column(TIMESTAMP, nullable=True)
-    downloaded_at = Column(TIMESTAMP, nullable=True)
-
-    # Relationships
-    user = relationship("User", back_populates="data_export_requests")
-
-class AccountAction(Base):
-    """
-    Account actions and lifecycle events
-    """
-    __tablename__ = "account_actions"
-
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    action_type = Column(VARCHAR(30), nullable=False)  # registration, verification, deactivation, deletion
-    status = Column(VARCHAR(20), nullable=False, default='pending')  # pending, completed, failed, cancelled
-    reason = Column(Text, nullable=True)
-    ip_address = Column(VARCHAR(45), nullable=True)
-    user_agent = Column(Text, nullable=True)
-    action_metadata = Column(JSON, nullable=True)  # Additional action-specific data
-    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    processed_at = Column(TIMESTAMP, nullable=True)
-    expires_at = Column(TIMESTAMP, nullable=True)
-
-    # Relationships
-    user = relationship("User", back_populates="account_actions")
+    def __repr__(self):
+        return f"<UserSettings(id={self.id}, user_id={self.user_id}, search_mode={self.search_mode})>"

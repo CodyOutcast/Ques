@@ -48,8 +48,8 @@ class CardInteractionsResponse(BaseModel):
 class TrackInteractionRequest(BaseModel):
     """Request model for tracking card interaction"""
     cardId: str
-    cardType: str = Field(..., regex="^(profile|project|ai_recommendation)$")
-    interactionType: str = Field(..., regex="^(view|swipe_right|swipe_left|share|save|report|skip)$")
+    cardType: str = Field(..., pattern="^(profile|project|ai_recommendation)$")
+    interactionType: str = Field(..., pattern="^(view|swipe_right|swipe_left|share|save|report|skip)$")
     durationSeconds: Optional[int] = Field(None, ge=0, le=3600)
     positionInStack: Optional[int] = Field(None, ge=0)
     sessionId: str
@@ -329,7 +329,7 @@ async def get_card_performance(
     limit: int = Query(20, ge=1, le=100, description="Items per page"),
     card_type: Optional[str] = Query(None, description="Filter by card type"),
     sort_by: str = Query("engagement_rate", description="Sort by: engagement_rate, total_views, conversion_rate"),
-    sort_order: str = Query("desc", regex="^(asc|desc)$"),
+    sort_order: str = Query("desc", pattern="^(asc|desc)$"),
     token: str = Depends(security),
     db: Session = Depends(get_db)
 ):
@@ -398,7 +398,7 @@ async def get_card_performance(
 
 @router.get("/engagement", response_model=EngagementMetricsResponse)
 async def get_engagement_metrics(
-    period: str = Query("week", regex="^(day|week|month|quarter)$"),
+    period: str = Query("week", pattern="^(day|week|month|quarter)$"),
     token: str = Depends(security),
     db: Session = Depends(get_db)
 ):

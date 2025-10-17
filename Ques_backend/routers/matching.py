@@ -14,7 +14,7 @@ import json
 from dependencies.db import get_db
 from dependencies.auth import get_current_user
 from models.users import User
-from models.projects import AIRecommendationSwipe
+from models.swipes import AIRecommendationSwipe
 from models.agent_cards import AgentCardSwipe
 from pydantic import BaseModel, Field
 

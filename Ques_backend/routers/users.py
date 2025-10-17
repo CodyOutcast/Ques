@@ -13,7 +13,7 @@ import math
 
 from dependencies.db import get_db
 from models.users import User
-from models.likes import UserSwipe, SwipeDirection
+from models.user_swipes import UserSwipe, SwipeDirection
 from services.auth_service import AuthService
 from services.monitoring import log_security_event
 from schemas.users import (
@@ -36,6 +36,12 @@ async def get_my_profile(
     if not current_user:
         raise HTTPException(status_code=401, detail="Invalid token")
     
+    # Get user's projects
+    from models.user_projects import UserProject
+    user_projects = db.query(UserProject).filter(
+        UserProject.user_id == current_user.user_id
+    ).order_by(UserProject.project_order.asc(), UserProject.created_at.desc()).all()
+    
     return UserProfileResponse(
         id=current_user.user_id,
         username=current_user.username or f"user_{current_user.user_id}",
@@ -47,7 +53,8 @@ async def get_my_profile(
         age=current_user.age,
         gender=current_user.gender,
         is_verified=current_user.is_verified or False,
-        created_at=current_user.created_at
+        created_at=current_user.created_at,
+        projects=user_projects
     )
 
 @router.put("/profile")

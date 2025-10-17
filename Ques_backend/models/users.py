@@ -51,52 +51,31 @@ class User(Base):
     reports_received = relationship("UserReport", foreign_keys="UserReport.reported_user_id", back_populates="reported_user")
     moderated_reports = relationship("UserReport", foreign_keys="UserReport.moderator_id", back_populates="moderator")
     
-    # University verification relationship
-    university_verification = relationship("UniversityVerification", back_populates="user", uselist=False)
+    # University verification is handled through UserProfile model
+    # (user_profile.university_email, user_profile.university_verified)
     
-    # Settings relationships
-    account_settings = relationship("UserAccountSettings", back_populates="user", uselist=False)
-    security_settings = relationship("UserSecuritySettings", back_populates="user", uselist=False)
-    account_actions = relationship("AccountAction", foreign_keys="AccountAction.user_id", back_populates="user")
-    privacy_consents = relationship("PrivacyConsent", back_populates="user")
-    data_export_requests = relationship("DataExportRequest", back_populates="user")
+    # Settings relationships (removed outdated models)
     
-    # Project relationships
-    projects = relationship("Project", back_populates="creator")
-    project_swipes = relationship("AIRecommendationSwipe", back_populates="user")
+    # Swipe relationships
+    swipe_records = relationship("SwipeRecord", back_populates="user")  # New swipe system
     
     # Institution relationships  
     institutions = relationship("UserInstitution", back_populates="user")
     
-    # Agent card relationships
-    agent_card_swipes = relationship("AgentCardSwipe", back_populates="user")
-    agent_card_likes = relationship("AgentCardLike", back_populates="user") 
-    agent_card_history = relationship("AgentCardHistory", back_populates="user")
-    agent_card_preferences = relationship("UserAgentCardPreferences", back_populates="user", uselist=False)
-    
-    # Match and messaging relationships
-    matches_as_user1 = relationship("Match", foreign_keys="Match.user1_id", back_populates="user1")
-    matches_as_user2 = relationship("Match", foreign_keys="Match.user2_id", back_populates="user2")
-    sent_messages = relationship("Message", back_populates="sender")
-    initiated_chats = relationship("Chat", foreign_keys="Chat.initiator_id", back_populates="initiator")
-    received_chats = relationship("Chat", foreign_keys="Chat.recipient_id", back_populates="recipient") 
-    chat_messages = relationship("ChatMessage", back_populates="sender")
+    # Project relationships
+    projects = relationship("UserProject", back_populates="user")
     
     # Membership and payment relationships
     membership = relationship("Membership", back_populates="user", uselist=False)
-    payments = relationship("Payment", back_populates="user")
+    transactions = relationship("MembershipTransaction", back_populates="user")
     payment_methods = relationship("PaymentMethod", back_populates="user")
-    refund_requests = relationship("RefundRequest", foreign_keys="RefundRequest.user_id", back_populates="user")
-    reviewed_refunds = relationship("RefundRequest", foreign_keys="RefundRequest.reviewer_id", back_populates="reviewer")
-    revenue_contributions = relationship("Revenue", back_populates="user")
     
-    # Security relationships
-    security_logs = relationship("SecurityLog", back_populates="user")
-    blocked_users = relationship("BlockedUser", foreign_keys="BlockedUser.blocker_id", back_populates="blocker")
-    blocked_by_users = relationship("BlockedUser", foreign_keys="BlockedUser.blocked_id", back_populates="blocked")
-    device_tokens = relationship("DeviceToken", back_populates="user")
-    audit_logs = relationship("AuditLog", back_populates="user")
-    api_keys = relationship("APIKey", back_populates="user")
+    # Settings relationship
+    settings = relationship("UserSettings", back_populates="user", uselist=False)
+    
+    # Chat relationships
+    chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
+
     
     # Compatibility properties - delegate to user_profiles table
     @property

@@ -17,10 +17,10 @@ from services.auth_service import AuthService
 from services.email_service import EmailService
 from services.monitoring import log_security_event, setup_monitoring
 from schemas.auth import (
-    RegisterRequest, LoginRequest, VerifyEmailRequest,
+    PhoneRegisterRequest, PhoneLoginRequest, WeChatRegisterRequest, WeChatLoginRequest,
+    SendVerificationCodeRequest, VerifyPhoneRequest,
     RefreshTokenRequest, AuthResponse, UserResponse,
-    EmailRegisterRequest, UserProfile, EmailLoginRequest,
-    ForgotPasswordRequest, ResetPasswordRequest, MessageResponse
+    UserProfile, MessageResponse, LogoutRequest
 )
 
 router = APIRouter(tags=["authentication"])
@@ -31,25 +31,24 @@ logger = logging.getLogger(__name__)
 auth_service = AuthService()
 email_service = EmailService()
 
-@router.post("/register/email", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
-async def register_with_email(
-    request: EmailRegisterRequest,
+@router.post("/register/phone", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+async def register_with_phone(
+    request: PhoneRegisterRequest,
     http_request: Request,
     db: Session = Depends(get_db)
 ):
     """
-    Register a new user with email and password - backend_p12 style
+    Register a new user with phone number and SMS verification
     """
     client_ip = http_request.client.host if http_request.client else "unknown"
-    user_agent = http_request.headers.get("User-Agent", "unknown")
     
     try:
-        # Register user using backend_p12 style
-        user, tokens = auth_service.register_user_email(
+        # Register user using phone
+        user, tokens = auth_service.register_user_phone(
             db=db,
             name=request.name,
-            email=request.email,
-            password=request.password,
+            phone=request.phone,
+            verification_code=request.verification_code,
             bio=request.bio
         )
         
@@ -57,7 +56,7 @@ async def register_with_email(
         log_security_event(
             "USER_REGISTRATION_SUCCESS",
             str(user.user_id),
-            f"User registered with email: {request.email}"
+            f"User registered with phone: {request.phone}"
         )
         
         # Create user profile response
@@ -65,7 +64,7 @@ async def register_with_email(
             id=user.user_id,
             name=user.name,
             bio=user.bio,
-            auth_methods=["email"]
+            auth_methods=["phone"]
         )
         
         return AuthResponse(
@@ -93,31 +92,30 @@ async def register_with_email(
             detail="Registration failed"
         )
 
-@router.post("/login/email", response_model=AuthResponse)
-async def login_with_email(
-    request: EmailLoginRequest,
+@router.post("/login/phone", response_model=AuthResponse)
+async def login_with_phone(
+    request: PhoneLoginRequest,
     http_request: Request,
     db: Session = Depends(get_db)
 ):
     """
-    Login with email and password - backend_p12 style
+    Login with phone number and SMS verification code
     """
     client_ip = http_request.client.host if http_request.client else "unknown"
-    user_agent = http_request.headers.get("User-Agent", "unknown")
     
     try:
-        # Authenticate user
-        user = auth_service.authenticate_user(db, request.email, request.password)
+        # Authenticate user with phone and verification code
+        user = auth_service.authenticate_user_phone(db, request.phone, request.verification_code)
         
         if not user:
             log_security_event(
                 "USER_LOGIN_FAILED",
                 None,
-                f"Invalid credentials for email: {request.email}"
+                f"Invalid credentials for phone: {request.phone}"
             )
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid email or password"
+                detail="Invalid phone number or verification code"
             )
         
         # Generate tokens
@@ -131,7 +129,7 @@ async def login_with_email(
         log_security_event(
             "USER_LOGIN_SUCCESS",
             str(user.user_id),
-            f"User logged in: {request.email}"
+            f"User logged in: {request.phone}"
         )
         
         # Create user profile response
@@ -139,7 +137,7 @@ async def login_with_email(
             id=user.user_id,
             name=user.name,
             bio=user.bio,
-            auth_methods=["email"]
+            auth_methods=["phone"]
         )
         
         return AuthResponse(
@@ -159,26 +157,26 @@ async def login_with_email(
             detail="Login failed"
         )
 
-@router.post("/verify-email")
-async def verify_email(
-    verify_data: VerifyEmailRequest,
+@router.post("/verify-phone")
+async def verify_phone(
+    verify_data: VerifyPhoneRequest,
     request: Request,
     db: Session = Depends(get_db)
 ):
     """
-    Verify user email with verification code
+    Verify user phone number with SMS verification code
     """
     try:
         is_verified = auth_service.verify_code(
-            db, ProviderType.EMAIL, verify_data.email, 
-            verify_data.code, "EMAIL_VERIFICATION"
+            db, ProviderType.PHONE, verify_data.phone, 
+            verify_data.verification_code, "PHONE_VERIFICATION"
         )
         
         if not is_verified:
             log_security_event(
-                "EMAIL_VERIFICATION_FAILED",
+                "PHONE_VERIFICATION_FAILED",
                 None,
-                f"Invalid verification code for: {verify_data.email}"
+                f"Invalid verification code for: {verify_data.phone}"
             )
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -187,25 +185,25 @@ async def verify_email(
         
         # Log successful verification
         user_auth = db.query(UserAuth).filter(
-            UserAuth.provider_id == verify_data.email
+            UserAuth.provider_id == verify_data.phone
         ).first()
         
         if user_auth:
             log_security_event(
-                "EMAIL_VERIFICATION_SUCCESS",
+                "PHONE_VERIFICATION_SUCCESS",
                 str(user_auth.user_id),
-                f"Email verified: {verify_data.email}"
+                f"Phone verified: {verify_data.phone}"
             )
         
-        return {"message": "Email verified successfully"}
+        return {"message": "Phone number verified successfully"}
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Email verification error: {e}")
+        logger.error(f"Phone verification error: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Email verification failed"
+            detail="Phone verification failed"
         )
 
 @router.post("/refresh", response_model=dict)
@@ -342,91 +340,4 @@ async def resend_verification_email(
             detail="Failed to send verification email"
         )
 
-@router.post("/forgot-password", response_model=MessageResponse)
-async def forgot_password(
-    request: ForgotPasswordRequest,
-    http_request: Request,
-    db: Session = Depends(get_db)
-):
-    """
-    Send password reset email with verification code
-    """
-    client_ip = http_request.client.host if http_request.client else "unknown"
-    
-    try:
-        # Send password reset email
-        success = auth_service.send_password_reset_email(db, request.email)
-        
-        # Log the security event
-        log_security_event(
-            event_type="password_reset_requested",
-            user_id=None,  # Don't reveal if user exists
-            ip_address=client_ip,
-            details={"email_domain": request.email.split("@")[1] if "@" in request.email else "unknown"}
-        )
-        
-        # Always return success to prevent email enumeration
-        return MessageResponse(
-            message="If the email exists, a password reset code has been sent.",
-            success=True
-        )
-        
-    except Exception as e:
-        logger.error(f"Forgot password error: {e}")
-        # Still return success to prevent email enumeration
-        return MessageResponse(
-            message="If the email exists, a password reset code has been sent.",
-            success=True
-        )
-
-@router.post("/reset-password", response_model=MessageResponse)
-async def reset_password(
-    request: ResetPasswordRequest,
-    http_request: Request,
-    db: Session = Depends(get_db)
-):
-    """
-    Reset password using verification code
-    """
-    client_ip = http_request.client.host if http_request.client else "unknown"
-    
-    try:
-        # Reset password
-        success = auth_service.reset_password_with_code(
-            db, request.email, request.reset_code, request.new_password
-        )
-        
-        if success:
-            # Log successful password reset
-            log_security_event(
-                event_type="password_reset_successful",
-                user_id=None,  # We could get user_id but keep it simple for now
-                ip_address=client_ip,
-                details={"email": request.email}
-            )
-            
-            return MessageResponse(
-                message="Password reset successfully. Please log in with your new password.",
-                success=True
-            )
-        else:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Failed to reset password"
-            )
-        
-    except HTTPException:
-        # Log failed attempt
-        log_security_event(
-            event_type="password_reset_failed",
-            user_id=None,
-            ip_address=client_ip,
-            details={"email": request.email, "reason": "invalid_code_or_email"}
-        )
-        raise
-    except Exception as e:
-        logger.error(f"Reset password error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to reset password"
-        )
+# Password reset functionality removed - using phone/SMS authentication only

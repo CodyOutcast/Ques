@@ -28,7 +28,7 @@ auth_service = AuthService()
 class PurchaseReceivesRequest(BaseModel):
     """Request model for purchasing receives"""
     amount: int = Field(..., ge=1, le=1000, description="Number of receives to purchase")
-    package_type: str = Field(..., regex="^(basic|standard|premium|custom)$")
+    package_type: str = Field(..., pattern="^(basic|standard|premium|custom)$")
     payment_method: str = Field(..., description="Payment method ID")
     promo_code: Optional[str] = Field(None, max_length=50)
 
@@ -45,8 +45,8 @@ class PurchaseReceivesResponse(BaseModel):
 
 class ChangePlanRequest(BaseModel):
     """Request model for changing subscription plan"""
-    new_plan: str = Field(..., regex="^(basic|pro|premium|enterprise)$")
-    billing_cycle: str = Field(..., regex="^(monthly|yearly)$")
+    new_plan: str = Field(..., pattern="^(basic|pro|premium|enterprise)$")
+    billing_cycle: str = Field(..., pattern="^(monthly|yearly)$")
     payment_method: Optional[str] = None
     promo_code: Optional[str] = Field(None, max_length=50)
 
@@ -109,9 +109,9 @@ class PaymentSession(BaseModel):
 
 class CreatePaymentSessionRequest(BaseModel):
     """Request model for creating payment session"""
-    transaction_type: str = Field(..., regex="^(receives_purchase|plan_change)$")
+    transaction_type: str = Field(..., pattern="^(receives_purchase|plan_change)$")
     amount: float = Field(..., gt=0)
-    currency: str = Field("USD", regex="^(USD|CNY|EUR)$")
+    currency: str = Field("USD", pattern="^(USD|CNY|EUR)$")
     payment_method_id: str
     metadata: Optional[Dict[str, Any]] = None
     return_url: Optional[str] = None
@@ -459,7 +459,7 @@ async def create_payment_session(
 
 @router.get("/pricing", response_model=PricingResponse)
 async def get_pricing(
-    currency: str = Query("USD", regex="^(USD|CNY|EUR)$"),
+    currency: str = Query("USD", pattern="^(USD|CNY|EUR)$"),
     token: str = Depends(security),
     db: Session = Depends(get_db)
 ):

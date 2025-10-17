@@ -20,9 +20,10 @@ import logging
 
 from dependencies.db import get_db
 from dependencies.auth import get_current_user
-from models.users import User, UserProfile
+from models.users import User
+from models.user_profiles import UserProfile
 from models.whispers import Whisper
-from models.likes import UserSwipe, SwipeDirection
+from models.user_swipes import UserSwipe, SwipeDirection
 from services.auth_service import AuthService
 
 # Setup logging

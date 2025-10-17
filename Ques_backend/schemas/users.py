@@ -6,6 +6,22 @@ from pydantic import BaseModel, HttpUrl
 from typing import Optional, List
 from datetime import datetime
 
+# Project schema
+class UserProjectSchema(BaseModel):
+    """User project schema"""
+    id: int
+    title: str
+    role: Optional[str] = None
+    description: Optional[str] = None
+    reference_links: Optional[List[str]] = None
+    project_order: int = 0
+    is_featured: bool = False
+    created_at: datetime
+    updated_at: datetime
+    
+    class Config:
+        from_attributes = True
+
 # User profile schemas
 class UserProfileBase(BaseModel):
     """Base user profile information"""
@@ -23,6 +39,7 @@ class UserProfileResponse(UserProfileBase):
     email: Optional[str] = None
     is_verified: bool = False
     created_at: Optional[datetime] = None
+    projects: Optional[List[UserProjectSchema]] = []
     
     class Config:
         from_attributes = True
@@ -76,6 +93,20 @@ class UserSearchResponse(BaseModel):
         from_attributes = True
 
 # Update profile schema
+class UserSummary(BaseModel):
+    """Summary user information for swipes and recommendations"""
+    id: int
+    username: str
+    display_name: Optional[str] = None
+    age: Optional[int] = None
+    location: Optional[str] = None
+    avatar_url: Optional[str] = None
+    bio: Optional[str] = None
+    is_verified: bool = False
+    
+    class Config:
+        from_attributes = True
+
 class UpdateProfileRequest(BaseModel):
     """Request to update user profile"""
     display_name: Optional[str] = None

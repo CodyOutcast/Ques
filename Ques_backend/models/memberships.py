@@ -9,74 +9,31 @@ from .base import Base
 
 class Membership(Base):
     """
-    User membership subscriptions
+    User membership subscriptions - aligned with actual database schema
     """
     __tablename__ = "memberships"
 
-    membership_id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True)  # Changed from membership_id to id
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, unique=True)
-    type = Column(VARCHAR(10), nullable=False, default='free')  # free, premium, vip
-    start_date = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    end_date = Column(TIMESTAMP, nullable=True)
-    is_active = Column(Boolean, nullable=False, default=True)
-    auto_renew = Column(Boolean, nullable=False, default=False)
-    billing_cycle = Column(VARCHAR(12), nullable=True)  # monthly, annual
-    price = Column(DECIMAL(10, 2), nullable=True)
-    currency = Column(VARCHAR(3), nullable=False, default='CNY')
+    plan_type = Column(VARCHAR(20), nullable=False, default='basic')  # Changed from type to plan_type
+    receives_total = Column(Integer, nullable=False, default=3)
+    receives_used = Column(Integer, nullable=False, default=0)
+    receives_remaining = Column(Integer, nullable=True)
+    monthly_price = Column(DECIMAL(10, 2), nullable=False, default=0.00)
+    plan_start_date = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)  # Changed from start_date
+    plan_end_date = Column(TIMESTAMP, nullable=True)  # Changed from end_date
+    status = Column(VARCHAR(20), nullable=False, default='active')  # Changed from is_active
+    auto_renewal = Column(Boolean, nullable=False, default=True)  # Changed from auto_renew
+    payment_method = Column(VARCHAR(20), nullable=True)
+    last_payment_date = Column(TIMESTAMP, nullable=True)
+    last_reset_date = Column(TIMESTAMP, nullable=True)
+    next_reset_date = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
     created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, nullable=True)
+    updated_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
 
     # Relationships
     user = relationship("User", back_populates="membership")
-    payments = relationship("Payment", back_populates="membership")
+    transactions = relationship("MembershipTransaction", back_populates="membership")
 
-class MembershipPlan(Base):
-    """
-    Available membership plans
-    """
-    __tablename__ = "membership_plans"
-
-    plan_id = Column(Integer, primary_key=True, index=True)
-    name = Column(VARCHAR(50), nullable=False, unique=True)
-    type = Column(VARCHAR(10), nullable=False)  # free, premium, vip
-    price_monthly = Column(DECIMAL(10, 2), nullable=True)
-    price_annual = Column(DECIMAL(10, 2), nullable=True)
-    currency = Column(VARCHAR(3), nullable=False, default='CNY')
-    description = Column(Text, nullable=True)
-    features = Column(Text, nullable=True)  # JSON string of features
-    max_swipes_daily = Column(Integer, nullable=True)
-    max_matches_monthly = Column(Integer, nullable=True)
-    video_calls_enabled = Column(Boolean, nullable=False, default=False)
-    priority_support = Column(Boolean, nullable=False, default=False)
-    is_active = Column(Boolean, nullable=False, default=True)
-    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    updated_at = Column(TIMESTAMP, nullable=True)
-
-class MembershipTransaction(Base):
-    """
-    Membership subscription transactions
-    """
-    __tablename__ = "membership_transactions"
-
-    transaction_id = Column(Integer, primary_key=True, index=True)
-    membership_id = Column(Integer, ForeignKey("memberships.membership_id"), nullable=False)
-    payment_id = Column(Integer, ForeignKey("payments.payment_id"), nullable=True)
-    plan_id = Column(Integer, ForeignKey("membership_plans.plan_id"), nullable=False)
-    transaction_type = Column(VARCHAR(20), nullable=False)  # subscription, renewal, upgrade, cancellation
-    amount = Column(DECIMAL(10, 2), nullable=False)
-    currency = Column(VARCHAR(3), nullable=False, default='CNY')
-    status = Column(VARCHAR(20), nullable=False, default='pending')  # pending, completed, failed, refunded
-    billing_cycle = Column(VARCHAR(12), nullable=False)  # monthly, annual
-    start_date = Column(TIMESTAMP, nullable=False)
-    end_date = Column(TIMESTAMP, nullable=False)
-    created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
-    processed_at = Column(TIMESTAMP, nullable=True)
-
-    # Relationships
-    membership = relationship("Membership", back_populates="transactions")
-    payment = relationship("Payment", back_populates="membership_transaction")
-    plan = relationship("MembershipPlan", back_populates="transactions")
-
-# Add relationships to existing models
-Membership.transactions = relationship("MembershipTransaction", back_populates="membership")
-MembershipPlan.transactions = relationship("MembershipTransaction", back_populates="plan")
+# MembershipPlan and MembershipTransaction models removed - tables don't exist in DATABASE_SCHEMA_COMPLETE.md
+# Only the 'memberships' table exists in the database schema

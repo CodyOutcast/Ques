@@ -1,0 +1,1055 @@
+openapi: 3.0.3
+info:
+  title: Ques Backend API
+  description: |
+    Complete API specification for the Ques application backend.
+    Includes AI-powered user discovery, chat system, swipe mechanics, payments, and more.
+  version: 1.0.0
+  contact:
+    name: Ques Backend Team
+    email: backend@ques.app
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Development server
+  - url: https://api.ques.app
+    description: Production server
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    # Common response schemas
+    ApiResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+        data:
+          type: object
+
+    PaginatedResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items: {}
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+            limit:
+              type: integer
+            total:
+              type: integer
+            totalPages:
+              type: integer
+
+    # User related schemas
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        age:
+          type: integer
+        bio:
+          type: string
+        phone_number:
+          type: string
+        wechat_id:
+          type: string
+        profile_picture_url:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    UserRecommendation:
+      type: object
+      properties:
+        userId:
+          type: integer
+        name:
+          type: string
+        age:
+          type: integer
+        bio:
+          type: string
+        profilePicture:
+          type: string
+        matchScore:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        whyMatch:
+          type: string
+        isOnline:
+          type: boolean
+        mutualConnections:
+          type: integer
+
+    # Chat related schemas
+    SendMessageRequest:
+      type: object
+      required:
+        - message
+      properties:
+        message:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        sessionId:
+          type: string
+          nullable: true
+        searchMode:
+          type: string
+          enum: [inside, global]
+          default: global
+        quotedContacts:
+          type: array
+          items:
+            type: string
+
+    SendMessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        sessionId:
+          type: string
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserRecommendation'
+        suggestedQueries:
+          type: array
+          items:
+            type: string
+
+    # Swipe related schemas
+    SwipeRecordRequest:
+      type: object
+      required:
+        - targetUserId
+        - action
+      properties:
+        targetUserId:
+          type: string
+        action:
+          type: string
+          enum: [like, ignore, super_like]
+        searchQuery:
+          type: string
+        searchMode:
+          type: string
+          enum: [inside, global]
+        matchScore:
+          type: number
+          format: float
+        sourceContext:
+          type: object
+
+    SwipeStatistics:
+      type: object
+      properties:
+        totalSwipes:
+          type: integer
+        likes:
+          type: integer
+        ignores:
+          type: integer
+        superLikes:
+          type: integer
+        matchRate:
+          type: number
+          format: float
+        mostSwipedSkills:
+          type: array
+          items:
+            type: string
+        averageMatchScore:
+          type: number
+          format: float
+
+    # Authentication schemas
+    RegisterRequest:
+      type: object
+      required:
+        - name
+        - phone_number
+        - verification_code
+      properties:
+        name:
+          type: string
+        phone_number:
+          type: string
+        verification_code:
+          type: string
+        age:
+          type: integer
+        bio:
+          type: string
+        wechat_id:
+          type: string
+
+    LoginRequest:
+      type: object
+      required:
+        - phone_number
+        - verification_code
+      properties:
+        phone_number:
+          type: string
+        verification_code:
+          type: string
+
+    AuthResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        token_type:
+          type: string
+        user:
+          $ref: '#/components/schemas/UserProfile'
+
+    # Whisper schemas
+    SendWhisperRequest:
+      type: object
+      required:
+        - recipientId
+      properties:
+        recipientId:
+          type: string
+        message:
+          type: string
+        senderProfile:
+          $ref: '#/components/schemas/UserProfile'
+        context:
+          type: object
+
+    WhisperMessage:
+      type: object
+      properties:
+        id:
+          type: string
+        senderId:
+          type: string
+        recipientId:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, declined, expired]
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+
+    # Payment schemas
+    PurchaseReceivesRequest:
+      type: object
+      required:
+        - amount
+      properties:
+        amount:
+          type: integer
+          minimum: 1
+          maximum: 100
+        paymentMethod:
+          type: string
+          enum: [wechat_pay, alipay, credit_card]
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        amount:
+          type: integer
+        cost:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [pending, completed, failed, cancelled]
+        createdAt:
+          type: string
+          format: date-time
+
+paths:
+  # Authentication endpoints
+  /api/v1/auth/register/phone:
+    post:
+      tags:
+        - Authentication
+      summary: Register new user with phone number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Bad request
+        '422':
+          description: Validation error
+
+  /api/v1/auth/login/phone:
+    post:
+      tags:
+        - Authentication
+      summary: Login with phone number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+
+  /api/v1/auth/verify-phone:
+    post:
+      tags:
+        - Authentication
+      summary: Send phone verification code
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                phone_number:
+                  type: string
+      responses:
+        '200':
+          description: Verification code sent
+
+  /api/v1/auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        '200':
+          description: Token refreshed
+
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      responses:
+        '200':
+          description: Logout successful
+
+  /api/v1/auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+  # Chat endpoints
+  /chat/message:
+    post:
+      tags:
+        - Chat
+      summary: Send message to AI and get user recommendations
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendMessageRequest'
+      responses:
+        '200':
+          description: Message processed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SendMessageResponse'
+
+  /chat/session:
+    post:
+      tags:
+        - Chat
+      summary: Create new chat session
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+      responses:
+        '200':
+          description: Session created
+
+  /chat/session/{session_id}:
+    get:
+      tags:
+        - Chat
+      summary: Get session details
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Session details retrieved
+
+    delete:
+      tags:
+        - Chat
+      summary: Delete chat session
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Session deleted
+
+  /chat/session/{session_id}/history:
+    get:
+      tags:
+        - Chat
+      summary: Get chat history with pagination
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 50
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Chat history retrieved
+
+  # Swipe endpoints
+  /swipes/record:
+    post:
+      tags:
+        - Swipes
+      summary: Record a swipe action
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SwipeRecordRequest'
+      responses:
+        '200':
+          description: Swipe recorded
+
+  /swipes/record/batch:
+    post:
+      tags:
+        - Swipes
+      summary: Record multiple swipes
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                swipes:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SwipeRecordRequest'
+      responses:
+        '200':
+          description: Swipes recorded
+
+  /swipes/history:
+    get:
+      tags:
+        - Swipes
+      summary: Get swipe history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: [like, ignore, super_like]
+      responses:
+        '200':
+          description: Swipe history retrieved
+
+  /swipes/stats:
+    get:
+      tags:
+        - Swipes
+      summary: Get swipe statistics
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [day, week, month, year]
+      responses:
+        '200':
+          description: Statistics retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SwipeStatistics'
+
+  /swipes/stats/preferences:
+    get:
+      tags:
+        - Swipes
+      summary: Get user swipe preferences
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Preferences retrieved
+
+  /swipes/stats/suggestions/{targetUserId}:
+    get:
+      tags:
+        - Swipes
+      summary: Get AI swipe suggestions for a user
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: targetUserId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Suggestions retrieved
+
+  # User endpoints
+  /api/v1/users/profile:
+    get:
+      tags:
+        - Users
+      summary: Get user profile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+
+    put:
+      tags:
+        - Users
+      summary: Update user profile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfile'
+      responses:
+        '200':
+          description: Profile updated
+
+  /api/v1/users/discover:
+    get:
+      tags:
+        - Users
+      summary: Discover users for swiping
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        '200':
+          description: Users retrieved
+
+  /api/v1/users/search:
+    get:
+      tags:
+        - Users
+      summary: Search users
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+        - name: skills
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+        - name: location
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+
+  # Whisper endpoints
+  /whispers/send:
+    post:
+      tags:
+        - Whispers
+      summary: Send whisper message
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendWhisperRequest'
+      responses:
+        '200':
+          description: Whisper sent
+
+  /whispers:
+    get:
+      tags:
+        - Whispers
+      summary: Get received whispers
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, accepted, declined, expired]
+      responses:
+        '200':
+          description: Whispers retrieved
+
+  /whispers/sent:
+    get:
+      tags:
+        - Whispers
+      summary: Get sent whispers
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Sent whispers retrieved
+
+  /whispers/respond:
+    post:
+      tags:
+        - Whispers
+      summary: Respond to whisper
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                whisperId:
+                  type: string
+                action:
+                  type: string
+                  enum: [accept, decline]
+                responseMessage:
+                  type: string
+      responses:
+        '200':
+          description: Response recorded
+
+  /whispers/settings:
+    get:
+      tags:
+        - Whispers
+      summary: Get whisper settings
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Settings retrieved
+
+    put:
+      tags:
+        - Whispers
+      summary: Update whisper settings
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                wechatId:
+                  type: string
+                customMessage:
+                  type: string
+                autoAccept:
+                  type: boolean
+      responses:
+        '200':
+          description: Settings updated
+
+  # Payment endpoints
+  /payments/receives:
+    post:
+      tags:
+        - Payments
+      summary: Purchase receives
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PurchaseReceivesRequest'
+      responses:
+        '200':
+          description: Purchase initiated
+
+  /payments/plan:
+    post:
+      tags:
+        - Payments
+      summary: Change subscription plan
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                newPlan:
+                  type: string
+                  enum: [basic, pro]
+                paymentMethod:
+                  type: string
+      responses:
+        '200':
+          description: Plan change initiated
+
+  /payments/transactions:
+    get:
+      tags:
+        - Payments
+      summary: Get transaction history
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Transaction history retrieved
+
+  /payments/methods:
+    get:
+      tags:
+        - Payments
+      summary: Get available payment methods
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Payment methods retrieved
+
+  # Notification endpoints
+  /notifications:
+    get:
+      tags:
+        - Notifications
+      summary: Get notifications
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: type
+          in: query
+          schema:
+            type: string
+        - name: unreadOnly
+          in: query
+          schema:
+            type: boolean
+      responses:
+        '200':
+          description: Notifications retrieved
+
+  # Contact endpoints
+  /contacts:
+    get:
+      tags:
+        - Contacts
+      summary: Get contact list
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Contacts retrieved
+
+    post:
+      tags:
+        - Contacts
+      summary: Add contact
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                contactId:
+                  type: string
+                notes:
+                  type: string
+                tags:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Contact added
+
+  # User Settings endpoints
+  /user-settings:
+    get:
+      tags:
+        - User Settings
+      summary: Get user settings
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: Settings retrieved
+
+    put:
+      tags:
+        - User Settings
+      summary: Update user settings
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                notifications:
+                  type: object
+                preferences:
+                  type: object
+      responses:
+        '200':
+          description: Settings updated
+
+  # AI Services endpoints
+  /ai-services/profile/suggestions:
+    post:
+      tags:
+        - AI Services
+      summary: Get AI profile suggestions
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                sections:
+                  type: array
+                  items:
+                    type: string
+                suggestionTypes:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: Suggestions generated
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization
+  - name: Chat
+    description: AI-powered chat system with user recommendations
+  - name: Swipes
+    description: Card swiping mechanics and analytics
+  - name: Users
+    description: User profile management and discovery
+  - name: Whispers
+    description: Messaging system between users
+  - name: Payments
+    description: Payment processing and subscription management
+  - name: Notifications
+    description: Notification management
+  - name: Contacts
+    description: Contact list management
+  - name: User Settings
+    description: User preferences and settings
+  - name: AI Services
+    description: AI-powered features and recommendations
