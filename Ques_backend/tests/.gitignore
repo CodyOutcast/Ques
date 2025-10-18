@@ -1,0 +1,18 @@
+# Test artifacts and coverage
+tests/.pytest_cache/
+tests/__pycache__/
+.coverage
+htmlcov/
+.tox/
+.coverage.*
+coverage.xml
+*.cover
+.hypothesis/
+
+# Test databases
+test.db
+test_*.db
+
+# Test logs
+tests/logs/
+test_*.log
