@@ -5,13 +5,14 @@ import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Dialog } from './ui/dialog';
 import { Textarea } from './ui/textarea';
-import { X, Flag, User, Quote, Trash2, Upload, File, Image, Eye, Share2, ChevronDown, ChevronUp, Gift } from 'lucide-react';
+import { X, Flag, User, Quote, Trash2, Upload, File, Image, Eye, Share2, ChevronDown, ChevronUp, Gift, MessageSquare } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { calculateAge } from '../utils/dateUtils';
 
 export interface ContactedUser {
   id: string;
   name: string;
-  age: string;
+  birthday: string;
   gender: string;
   avatar: string;
   location: string;
@@ -46,6 +47,7 @@ export interface ContactedUser {
   reported?: boolean;
   reportReason?: string;
   reportAttachments?: FileAttachment[];
+  message?: string; // Whisper message sent to this user
 }
 
 export interface FileAttachment {
@@ -334,7 +336,7 @@ export function ContactHistory({ isOpen, onClose, contacts, onReportContact, onQ
                             </div>
                             <div>
                               <h3 className="font-semibold text-gray-900">{viewingProfile.name}</h3>
-                              <p className="text-sm text-gray-600">{viewingProfile.location} • {viewingProfile.age}</p>
+                              <p className="text-sm text-gray-600">{viewingProfile.location} • {calculateAge(viewingProfile.birthday)}岁</p>
                             </div>
                           </div>
                           <div className="flex gap-2 relative z-50">
@@ -589,6 +591,17 @@ export function ContactHistory({ isOpen, onClose, contacts, onReportContact, onQ
                           {formatRelativeTime(contact.contactedAt)}
                         </span>
                       </div>
+                      
+                      {contact.message && (
+                        <div className="mt-2 bg-blue-50 border border-blue-200 rounded-lg p-2">
+                          <div className="flex items-start gap-2">
+                            <MessageSquare size={12} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                            <p className="text-xs text-blue-900 leading-relaxed break-words line-clamp-2">
+                              {contact.message}
+                            </p>
+                          </div>
+                        </div>
+                      )}
                       
                       {contact.reported && (
                         <div className="mt-2">

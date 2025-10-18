@@ -20,7 +20,7 @@ export function ProfileSetupWizardAPI({ onComplete, onBack }: ProfileSetupWizard
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
-    age: '',
+    birthday: '',
     gender: '',
     location: '',
     hobbies: [],
@@ -56,9 +56,11 @@ export function ProfileSetupWizardAPI({ onComplete, onBack }: ProfileSetupWizard
   const [universityEmail, setUniversityEmail] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [selectedUniversity, setSelectedUniversity] = useState('');
+  const [selectedUniversityId, setSelectedUniversityId] = useState('');
   const [verificationId, setVerificationId] = useState('');
   const [universitySearchQuery, setUniversitySearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isValidSelection, setIsValidSelection] = useState(false);
 
   // 处理头像上传
   const handlePhotoUpload = useCallback(async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -74,23 +76,30 @@ export function ProfileSetupWizardAPI({ onComplete, onBack }: ProfileSetupWizard
   // 处理大学搜索
   const handleUniversitySearch = useCallback(async (query: string) => {
     setUniversitySearchQuery(query);
+    // 当用户输入时，清除之前的有效选择
+    if (query !== selectedUniversity) {
+      setIsValidSelection(false);
+      setSelectedUniversity('');
+      setSelectedUniversityId('');
+    }
+    
     if (query.length > 1) {
       const results = await searchUniversities(query);
       setSearchResults(results);
     } else {
       setSearchResults([]);
     }
-  }, [searchUniversities]);
+  }, [searchUniversities, selectedUniversity]);
 
   // 发送大学验证邮件
   const handleSendVerification = useCallback(async () => {
-    if (!selectedUniversity || !universityEmail) return;
+    if (!selectedUniversity || !universityEmail || !isValidSelection) return;
 
     const success = await sendUniversityVerification(selectedUniversity, universityEmail);
     if (success) {
       setVerificationId('mock_verification_id'); // 实际应从API响应获取
     }
-  }, [selectedUniversity, universityEmail, sendUniversityVerification]);
+  }, [selectedUniversity, universityEmail, isValidSelection, sendUniversityVerification]);
 
   // 验证邮箱
   const handleVerifyEmail = useCallback(async () => {
@@ -188,12 +197,14 @@ export function ProfileSetupWizardAPI({ onComplete, onBack }: ProfileSetupWizard
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <Label>{t('profileSetup.age')} *</Label>
+            <Label>{t('profileSetup.birthday')} *</Label>
             <Input
-              type="number"
-              value={profile.age}
-              onChange={(e) => setProfile(prev => ({ ...prev, age: e.target.value }))}
-              placeholder="25"
+              type="date"
+              value={profile.birthday}
+              onChange={(e) => setProfile(prev => ({ ...prev, birthday: e.target.value }))}
+              max={new Date(new Date().setFullYear(new Date().getFullYear() - 13)).toISOString().split('T')[0]}
+              min={new Date(new Date().setFullYear(new Date().getFullYear() - 120)).toISOString().split('T')[0]}
+              className="w-full"
             />
           </div>
           <div>
@@ -245,33 +256,60 @@ export function ProfileSetupWizardAPI({ onComplete, onBack }: ProfileSetupWizard
       {/* 大学搜索 */}
       <div>
         <Label>{t('profileSetup.selectUniversity')}</Label>
-        <Input
-          value={universitySearchQuery}
-          onChange={(e) => handleUniversitySearch(e.target.value)}
-          placeholder={t('profileSetup.universitySearchPlaceholder')}
-        />
+        <div className="relative">
+          <Input
+            value={universitySearchQuery}
+            onChange={(e) => handleUniversitySearch(e.target.value)}
+            placeholder={t('profileSetup.universitySearchPlaceholder')}
+            disabled={isValidSelection}
+            className={isValidSelection ? 'pr-10' : ''}
+          />
+          {isValidSelection && (
+            <button
+              onClick={() => {
+                setSelectedUniversity('');
+                setSelectedUniversityId('');
+                setUniversitySearchQuery('');
+                setIsValidSelection(false);
+                setSearchResults([]);
+              }}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              title="清除选择"
+            >
+              <X size={18} />
+            </button>
+          )}
+        </div>
         
-        {isLoading && universitySearchQuery && (
-                     <div className="mt-2">
-             <InlineLoading message="Searching..." />
-           </div>
+        {isLoading && universitySearchQuery && !isValidSelection && (
+          <div className="mt-2">
+            <InlineLoading message="Searching..." />
+          </div>
         )}
 
-        {searchResults.length > 0 && (
-          <div className="mt-2 border rounded-md max-h-40 overflow-y-auto">
+        {searchResults.length > 0 && !isValidSelection && (
+          <div className="mt-2 border rounded-md max-h-40 overflow-y-auto shadow-lg">
             {searchResults.map((uni) => (
               <button
                 key={uni.id}
-                className="w-full text-left px-3 py-2 hover:bg-gray-50 border-b last:border-b-0"
+                className="w-full text-left px-3 py-2 hover:bg-blue-50 border-b last:border-b-0 transition-colors"
                 onClick={() => {
                   setSelectedUniversity(uni.name);
+                  setSelectedUniversityId(uni.id);
                   setUniversitySearchQuery(uni.name);
                   setSearchResults([]);
+                  setIsValidSelection(true);
                 }}
               >
-                {uni.name}
+                <div className="font-medium">{uni.name}</div>
               </button>
             ))}
+          </div>
+        )}
+        
+        {universitySearchQuery.length > 1 && searchResults.length === 0 && !isLoading && !isValidSelection && (
+          <div className="mt-2 text-sm text-gray-500 p-2 bg-gray-50 rounded">
+            未找到匹配的大学，请尝试其他关键词
           </div>
         )}
       </div>
@@ -296,7 +334,7 @@ export function ProfileSetupWizardAPI({ onComplete, onBack }: ProfileSetupWizard
           {!verificationSent && (
             <Button
               onClick={handleSendVerification}
-              disabled={!universityEmail || isLoading}
+              disabled={!universityEmail || !isValidSelection || isLoading}
             >
               {isLoading ? <InlineLoading /> : t('profileSetup.sendVerificationCode')}
             </Button>
@@ -441,7 +479,10 @@ export function ProfileSetupWizardAPI({ onComplete, onBack }: ProfileSetupWizard
         {currentStep < steps.length - 1 && (
           <Button
             onClick={() => setCurrentStep(prev => prev + 1)}
-            disabled={currentStep === 0 && (!profile.name || !profile.age || !profile.gender || !profile.location)}
+            disabled={
+              (currentStep === 0 && (!profile.name || !profile.birthday || !profile.gender || !profile.location)) ||
+              (currentStep === 1 && !isValidSelection)
+            }
             className="flex-1"
           >
             {t('profileSetup.next')}

@@ -271,7 +271,7 @@ class PaymentService {
       },
       pro: {
         monthlyFee: 10,
-        features: ['Unlimited whispers', 'Unlimited receives', 'Custom whisper messages']
+        features: ['Unlimited whispers', 'Unlimited receives']
       }
     };
 

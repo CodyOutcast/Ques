@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
@@ -8,7 +8,7 @@ import logoIcon from '../assets/icon.jpg';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { UserProfile } from '../App';
 import type { FriendRequest } from './NotificationPanel';
-import ChatCards from './ChatCards';
+import ChatCards, { ChatCardsRef } from './ChatCards';
 
 interface Message {
   id: string;
@@ -61,7 +61,8 @@ interface UserRecommendation {
   matchScore: number;
   bio: string;
   oneSentenceIntro?: string;
-  whyMatch: string;
+  whyMatch: string; // Why we match message shown to the user (receiver's perspective)
+  whisperDefaultMessage?: string; // AI-generated message from user's perspective for whisper
   receivesLeft?: number;
 }
 
@@ -69,7 +70,7 @@ interface ChatInterfaceProps {
   userProfile: UserProfile;
   onShowHistory: () => void;
   onShowNotifications: () => void;
-  onAddContact: (contact: UserRecommendation) => void;
+  onRequestWhisper: (contact: UserRecommendation) => void;
   addedContactIds: Set<string>;
   unreadNotifications: number;
   quotedFromNotification: FriendRequest | null;
@@ -80,6 +81,10 @@ interface ChatInterfaceProps {
   onGiftReceives?: (recipientName: string, amount: number) => void;
   singleCardInChat?: any;
   onClearSingleCard?: () => void;
+}
+
+export interface ChatInterfaceRef {
+  resetLastSwipe: () => void;
 }
 
 const MOCK_RECOMMENDATIONS: UserRecommendation[] = [
@@ -126,6 +131,7 @@ const MOCK_RECOMMENDATIONS: UserRecommendation[] = [
     bio: 'AI researcher passionate about ethical machine learning and startup innovation. PhD in Computer Science with 5 years of industry experience at Google AI.',
     oneSentenceIntro: 'I build AI systems that solve real-world problems while keeping humans at the center.',
     whyMatch: 'Perfect co-founder match! 🚀 You both have strong Python skills and share a passion for AI innovation. Sarah has the ML expertise to complement your technical background, and she\'s actively seeking a co-founder for her next venture.',
+    whisperDefaultMessage: 'Hi Sarah! I noticed we both share a passion for ethical AI and have strong Python skills. I\'m really impressed by your ML Ethics Framework project. I believe my technical background could complement your ML expertise perfectly, and I\'d love to explore potential collaboration opportunities!',
     receivesLeft: 5,
   },
   {
@@ -171,6 +177,7 @@ const MOCK_RECOMMENDATIONS: UserRecommendation[] = [
     bio: 'Serial entrepreneur with 3 successful exits, now mentoring and building. Former Product Director at Alibaba, expert in scaling 0-to-1 products.',
     oneSentenceIntro: 'I turn technical innovations into market-winning products that users love.',
     whyMatch: 'Excellent bidirectional match! 🤝 He brings the product management and startup scaling experience you need, while you offer the technical Python skills he\'s seeking for his next venture. Both actively looking for co-founders in the China market.',
+    whisperDefaultMessage: 'Hi Alex! Your experience scaling EdTech to $10M ARR is incredibly inspiring. I have strong technical Python skills and I\'m looking for someone with your product and scaling expertise. I think we could build something amazing together in the China market!',
     receivesLeft: 3,
   },
   {
@@ -216,6 +223,7 @@ const MOCK_RECOMMENDATIONS: UserRecommendation[] = [
     bio: 'Data scientist passionate about AI ethics and open source contributions. Published researcher with 20+ papers in top-tier journals.',
     oneSentenceIntro: 'I use data science to solve real-world problems with ethical AI solutions.',
     whyMatch: 'Strong mutual interest! 🤝 Your AI ethics values align perfectly with her research focus, while your technical skills complement her data science background. She\'s looking for collaborators who share her values-driven approach to AI development.',
+    whisperDefaultMessage: 'Hi Maria! I\'m deeply interested in AI ethics and your Bias Detection Framework research caught my attention. I share your values-driven approach to AI development and would love to discuss how we might collaborate on ethical AI solutions, especially in healthcare applications.',
     receivesLeft: 8,
   }
 ];
@@ -227,11 +235,11 @@ const AI_RESPONSES = [
   "Would you like me to refine these results or search for different criteria?"
 ];
 
-export function ChatInterface({ 
+export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({ 
   userProfile, 
   onShowHistory, 
   onShowNotifications, 
-  onAddContact, 
+  onRequestWhisper, 
   addedContactIds, 
   unreadNotifications, 
   quotedFromNotification, 
@@ -242,12 +250,13 @@ export function ChatInterface({
   onGiftReceives,
   singleCardInChat,
   onClearSingleCard
-}: ChatInterfaceProps) {
+}, ref) => {
   const { t } = useLanguage();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [searchInside, setSearchInside] = useState(true);
+  const chatCardsRef = useRef<ChatCardsRef>(null);
   const [showCardStack, setShowCardStack] = useState(false);
   const [currentRecommendations, setCurrentRecommendations] = useState<UserRecommendation[]>([]);
   const [showCards, setShowCards] = useState(false);
@@ -269,6 +278,14 @@ export function ChatInterface({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
+
+  // 暴露重置方法给父组件
+  useImperativeHandle(ref, () => ({
+    resetLastSwipe: () => {
+      console.log('🔄 ChatInterface: Calling resetLastSwipe on ChatCards');
+      chatCardsRef.current?.resetLastSwipe();
+    }
+  }), []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -521,7 +538,11 @@ export function ChatInterface({
 
   // Handle card stack actions
   const handleCardWhisper = (contact: UserRecommendation) => {
-    onAddContact(contact);
+    console.log('💬 ChatInterface handleCardWhisper:', contact.name);
+    // 延迟弹窗，等待卡片飞出动画完成（300ms动画 + 50ms缓冲）
+    setTimeout(() => {
+      onRequestWhisper(contact);
+    }, 200);
   };
 
   const handleCardIgnore = (contact: UserRecommendation) => {
@@ -692,6 +713,7 @@ export function ChatInterface({
                   className="flex justify-center w-full my-6"
                 >
                   <ChatCards
+                    ref={chatCardsRef}
                     profiles={currentRecommendations}
                     onSwipeLeft={handleCardIgnore}
                     onSwipeRight={handleCardWhisper}
@@ -851,4 +873,6 @@ export function ChatInterface({
       </div>
     </div>
   );
-}
+});
+
+ChatInterface.displayName = 'ChatInterface';

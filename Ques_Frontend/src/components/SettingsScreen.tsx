@@ -6,7 +6,6 @@ import { Switch } from './ui/switch';
 import { Separator } from './ui/separator';
 import { Badge } from './ui/badge';
 import { Input } from './ui/input';
-import { Textarea } from './ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
 import { useLanguage } from '../contexts/LanguageContext';
 
@@ -28,6 +27,7 @@ import {
 interface SettingsScreenProps {
   currentPlan?: 'basic' | 'pro';
   receivesLeft?: number;
+  whispersLeft?: number;
   onPlanChange?: (plan: 'basic' | 'pro') => void;
   onTopUpReceives?: (amount: number) => void;
   onGiftReceives?: (recipientName: string, amount: number) => void;
@@ -36,6 +36,7 @@ interface SettingsScreenProps {
 export function SettingsScreen({ 
   currentPlan = 'basic', 
   receivesLeft = 3,
+  whispersLeft = 3,
   onPlanChange,
   onTopUpReceives,
   onGiftReceives
@@ -51,11 +52,6 @@ export function SettingsScreen({
   const [wechatId, setWechatId] = useState(() => {
     // 从localStorage加载保存的微信ID
     return localStorage.getItem('user_wechat_id') || 'your_wechat_id';
-  });
-  const [whisperCount, setWhisperCount] = useState(3); // Remaining whispers for basic plan
-  const [customWhisperMessage, setCustomWhisperMessage] = useState(() => {
-    // 从localStorage加载保存的自定义消息
-    return localStorage.getItem('custom_whisper_message') || 'Hi! I found your profile through Ques and would love to connect. Looking forward to chatting!';
   });
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState('');
@@ -206,33 +202,6 @@ export function SettingsScreen({
             />
           </div>
 
-          {currentPlan === 'pro' && (
-            <div>
-              <h4 className="text-sm font-medium mb-2">{t('settings.whispers.customMessageTitle')}</h4>
-              <p className="text-xs text-gray-500 mb-3">
-                {t('settings.whispers.customMessageDesc')}
-              </p>
-              <Textarea
-                placeholder={t('settings.whispers.customMessagePlaceholder')}
-                value={customWhisperMessage}
-                onChange={(e) => {
-                  const newValue = e.target.value;
-                  if (newValue.length <= 200) {
-                    setCustomWhisperMessage(newValue);
-                    // 立即保存到localStorage
-                    localStorage.setItem('custom_whisper_message', newValue);
-                  }
-                }}
-                rows={3}
-                maxLength={200}
-                className="resize-none"
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                {customWhisperMessage.length}/200 {t('settings.whispers.charactersCount')}
-              </p>
-            </div>
-          )}
-          
           <div className="p-3 bg-blue-50 rounded-lg">
             <div className="flex items-center justify-between mb-1">
               <span className="text-sm font-medium">{t('settings.whispers.usageTitle')}</span>
@@ -241,16 +210,8 @@ export function SettingsScreen({
               </Badge>
             </div>
             <p className="text-xs text-gray-600">
-              {currentPlan === 'pro' 
-                ? t('settings.whispers.unlimitedWhispers')
-                : `${whisperCount} ${t('settings.whispers.whispersRemaining')}`
-              }
+              {`${whispersLeft} ${t('settings.whispers.whispersRemaining')}`}
             </p>
-            {currentPlan === 'basic' && (
-              <p className="text-xs text-gray-500 mt-1">
-                {t('settings.whispers.upgradeNotice')}
-              </p>
-            )}
           </div>
         </div>
       )
@@ -261,6 +222,30 @@ export function SettingsScreen({
       description: t('settings.payment.description'),
       content: (
         <div className="space-y-4">
+          {/* Whispers Status */}
+          <div className="bg-gray-50 rounded-lg p-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium">{t('settings.payment.whispersLeft')}</span>
+                  <span className="text-sm font-medium text-purple-600">
+                    {whispersLeft}
+                  </span>
+                  {whispersLeft <= 2 && (
+                    <Badge variant="destructive" className="text-xs">{t('settings.payment.low')}</Badge>
+                  )}
+                </div>
+
+                <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                  <div 
+                    className="bg-purple-500 h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min((whispersLeft / 50) * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Receives Status */}
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="flex items-center justify-between">
@@ -268,36 +253,32 @@ export function SettingsScreen({
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium">{t('settings.payment.receivesLeft')}</span>
                   <span className="text-sm font-medium text-blue-600">
-                    {currentPlan === 'pro' ? '∞' : receivesLeft}
+                    {receivesLeft}
                   </span>
-                  {currentPlan === 'basic' && receivesLeft <= 2 && (
+                  {receivesLeft <= 2 && (
                     <Badge variant="destructive" className="text-xs">{t('settings.payment.low')}</Badge>
                   )}
                 </div>
 
-                {currentPlan === 'basic' && (
-                  <div className="w-16 bg-gray-200 rounded-full h-1.5">
-                    <div 
-                      className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
-                      style={{ width: `${Math.min((receivesLeft / 50) * 100, 100)}%` }}
-                    />
-                  </div>
-                )}
+                <div className="w-16 bg-gray-200 rounded-full h-1.5">
+                  <div 
+                    className="bg-blue-500 h-1.5 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min((receivesLeft / 50) * 100, 100)}%` }}
+                  />
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
-                {currentPlan === 'basic' && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-6 w-6 p-0"
-                    onClick={() => setShowTopUpModal(true)}
-                    disabled={receivesLeft >= 50}
-                    title={receivesLeft >= 50 ? 'Maximum limit reached' : 'Top up receives'}
-                  >
-                    <Plus size={12} />
-                  </Button>
-                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                  onClick={() => setShowTopUpModal(true)}
+                  disabled={receivesLeft >= 50}
+                  title={receivesLeft >= 50 ? 'Maximum limit reached' : 'Top up receives'}
+                >
+                  <Plus size={12} />
+                </Button>
               </div>
             </div>
           </div>
@@ -334,8 +315,7 @@ export function SettingsScreen({
                 </div>
               </div>
               <p className="text-xs text-gray-600 mb-1">• {t('settings.payment.proFeature1')}</p>
-              <p className="text-xs text-gray-600 mb-1">• {t('settings.payment.proFeature2')}</p>
-              <p className="text-xs text-gray-600 mb-2">• {t('settings.payment.proFeature3')}</p>
+              <p className="text-xs text-gray-600 mb-2">• {t('settings.payment.proFeature2')}</p>
               <p className="text-xs text-gray-500">{t('settings.payment.proDesc')}</p>
             </div>
           </div>

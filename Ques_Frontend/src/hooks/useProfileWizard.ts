@@ -25,7 +25,7 @@ function convertToApiProfile(profile: UserProfile): ApiUserProfile {
   return {
     demographics: {
       name: profile.name,
-      age: profile.age,
+      birthday: profile.birthday,
       gender: profile.gender as 'male' | 'female' | 'other',
       location: profile.location,
       hobbies: profile.hobbies,
@@ -136,10 +136,6 @@ export function useProfileWizard() {
         return response.data.data.map(uni => ({
           id: uni.id,
           name: uni.name,
-          domain: [uni.domain],
-          country: uni.country,
-          verified: uni.verified,
-          type: 'university' as const,
         }));
       }
 

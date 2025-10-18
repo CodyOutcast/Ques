@@ -1,0 +1,34 @@
+照片4:3 √
+tag限制 √
+卡片叠起来的效果 3张 √
+注册页面的添加tag 俄罗斯方块掉落+弹跳效果 √
+dark mode
+中英文版 √
+首页图标变logo √
+当前state上下文，最新一张卡片，query的时候后端查询 √
+整体美化
+最大50whisper √
+
+生活模式：有时效性或不涵盖在profile里的东西，只给一张卡片
+发送方的why we match，默认代替whisper的一句话
+
+右滑弹窗填写whisper消息，默认为ai生成的接收方视角的why we match √
+
+age改成生日 √
+location改成省市选择-中国 √
+国内大学list
+教育邮箱认证-首先检测edu.cn，然后检测验证码
+内容审核（之后再搞）
+goal和demands分两层 √
+basic plan两个东西都是10次， pro plan两个都是50次 √
+
+首页的聊天框上面的提示气泡，在一个池子里随机挑4个
+弹窗样式优化，减少宽度，减少说明文字
+消息页面的message藏在按钮里查看
+contact不用显示message
+在json删除superlike
+增加条款
+底部导航栏索引不需要文字
+主页只保留每一条的编辑，不用save all
+关于搜索结果的stream，同时request两个东西（搜索结果和思考流），
+如果有thinking stream就显示出来，request搜索结果会等待思考流

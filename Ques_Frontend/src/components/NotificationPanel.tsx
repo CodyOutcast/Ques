@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Quote, User, Copy, MessageCircle, Check, Eye, Gift, Share2, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Quote, User, Copy, MessageCircle, Check, Eye, Gift, Share2, ChevronDown, ChevronUp, MessageSquare } from 'lucide-react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { toast } from 'sonner';
 import { useLanguage } from '../contexts/LanguageContext';
+import { WhisperMessageDialog } from './WhisperMessageDialog';
+import { calculateAge } from '../utils/dateUtils';
 
 export interface FriendRequest {
   id: string;
   name: string;
-  age: string;
+  birthday: string;
   gender: string;
   avatar: string;
   location: string;
@@ -43,6 +45,7 @@ export interface FriendRequest {
   mutualInterest: string;
   wechatId?: string; // WeChat ID they whispered to you
   giftedReceives?: number; // Number of receives this person gifted to you
+  message?: string; // Whisper message from sender
 }
 
 interface NotificationPanelProps {
@@ -51,9 +54,11 @@ interface NotificationPanelProps {
   friendRequests: FriendRequest[];
   onQuoteContact: (contact: FriendRequest) => void;
   onRemoveRequest: (requestId: string) => void;
-  onAddToHistory: (request: FriendRequest) => void;
+  onAddToHistory: (request: FriendRequest, message?: string) => void;
   onViewOriginalCard?: (contact: FriendRequest) => void;
   onGiftReceives?: (recipientName: string, amount: number) => void;
+  whispersLeft?: number;
+  onWhisperSent?: () => void;
 }
 
 export function NotificationPanel({ 
@@ -64,10 +69,19 @@ export function NotificationPanel({
   onRemoveRequest,
   onAddToHistory,
   onViewOriginalCard,
-  onGiftReceives
+  onGiftReceives,
+  whispersLeft = 0,
+  onWhisperSent
 }: NotificationPanelProps) {
   const { t } = useLanguage();
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
+  
+  // Debug: Log friend requests to verify message field
+  useEffect(() => {
+    if (friendRequests.length > 0) {
+      console.log('Friend Requests:', friendRequests.map(r => ({ name: r.name, hasMessage: !!r.message, message: r.message })));
+    }
+  }, [friendRequests]);
   const [animatingRequests, setAnimatingRequests] = useState<Set<string>>(new Set());
   const [copiedIds, setCopiedIds] = useState<Set<string>>(new Set());
   const [viewingProfile, setViewingProfile] = useState<FriendRequest | null>(null);
@@ -75,6 +89,8 @@ export function NotificationPanel({
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [selectedForGift, setSelectedForGift] = useState<FriendRequest | null>(null);
   const [giftAmount, setGiftAmount] = useState('');
+  const [showWhisperDialog, setShowWhisperDialog] = useState(false);
+  const [pendingWhisperRequest, setPendingWhisperRequest] = useState<FriendRequest | null>(null);
 
   const formatTimeAgo = (date: Date) => {
     const now = new Date();
@@ -111,26 +127,53 @@ export function NotificationPanel({
   };
 
   const handleWhisperBack = (request: FriendRequest) => {
+    // Show whisper dialog before sending
+    setPendingWhisperRequest(request);
+    setShowWhisperDialog(true);
+  };
+
+  const handleWhisperSend = (message: string) => {
+    if (!pendingWhisperRequest) return;
+
+    // Check if user has whispers left
+    if (whispersLeft <= 0) {
+      toast.error('You have no whispers left this month. Please upgrade to Pro or wait for next month.');
+      setShowWhisperDialog(false);
+      setPendingWhisperRequest(null);
+      return;
+    }
+
+    // Decrease whisper count
+    onWhisperSent?.();
+    console.log('💬 Whisper back sent! Whispers left:', whispersLeft - 1);
+
     // Add to animating requests set to trigger animation
-    setAnimatingRequests(prev => new Set(prev).add(request.id));
+    setAnimatingRequests(prev => new Set(prev).add(pendingWhisperRequest.id));
+    setShowWhisperDialog(false);
     
     // Wait for animation to complete, then remove the request permanently
     setTimeout(() => {
-      toast.success(`${t('notifications.whisperBackSuccess')} ${request.name}`);
+      toast.success(`${t('notifications.whisperBackSuccess')} ${pendingWhisperRequest.name}`);
       
-      // Add to contact history before removing
-      onAddToHistory(request);
+      // Add to contact history before removing (with message)
+      onAddToHistory(pendingWhisperRequest, message);
       
       // Remove from animating set and remove from requests list
       setAnimatingRequests(prev => {
         const newSet = new Set(prev);
-        newSet.delete(request.id);
+        newSet.delete(pendingWhisperRequest.id);
         return newSet;
       });
       
       // Remove the request from the parent state
-      onRemoveRequest(request.id);
+      onRemoveRequest(pendingWhisperRequest.id);
+      setPendingWhisperRequest(null);
     }, 2500);
+  };
+
+  const handleWhisperDialogClose = () => {
+    setShowWhisperDialog(false);
+    setPendingWhisperRequest(null);
   };
 
   const handleViewOriginalCard = (request: FriendRequest) => {
@@ -304,6 +347,19 @@ export function NotificationPanel({
                               </div>
                             )}
                             
+                            {/* Whisper Message Section */}
+                            {request.message && (
+                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-2 mb-2">
+                                <div className="flex items-start gap-2">
+                                  <MessageSquare size={14} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-xs text-blue-600 mb-1 font-medium">{t('notifications.whisperMessage')}</p>
+                                    <p className="text-xs text-blue-900 leading-relaxed break-words">{request.message}</p>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
                             {/* WeChat ID Section */}
                             {request.wechatId && (
                               <div className="bg-gray-50 rounded-lg p-2 mb-2">
@@ -548,7 +604,7 @@ export function NotificationPanel({
                                 </div>
                                 <div>
                                   <h3 className="font-semibold text-gray-900">{viewingProfile.name}</h3>
-                                  <p className="text-sm text-gray-600">{viewingProfile.location} • {viewingProfile.age}</p>
+                                  <p className="text-sm text-gray-600">{viewingProfile.location} • {calculateAge(viewingProfile.birthday)}岁</p>
                                 </div>
                               </div>
                               <div className="flex gap-2 relative z-50">
@@ -764,6 +820,17 @@ export function NotificationPanel({
           </div>
         )}
       </AnimatePresence>
+
+      {/* Whisper Message Dialog */}
+      {pendingWhisperRequest && (
+        <WhisperMessageDialog
+          isOpen={showWhisperDialog}
+          recipientName={pendingWhisperRequest.name}
+          recipientAvatar={pendingWhisperRequest.avatar}
+          onClose={handleWhisperDialogClose}
+          onSend={handleWhisperSend}
+        />
+      )}
     </AnimatePresence>
   );
 }

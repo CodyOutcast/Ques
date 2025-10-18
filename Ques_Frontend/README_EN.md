@@ -6,7 +6,6 @@ Ques is the first AI-powered social network designed to connect people based on 
 
 Ques Frontend is a modern, responsive web application that provides:
 - **AI Smart Matching** - Connect users based on compatibility algorithms
-- **Swipeable Card Interface** - Tinder-like interaction for discovering connections
 - **Comprehensive User Profiles** - Detailed profiles with skills, projects, goals, and institutions
 - **Intelligent Chat System** - AI-integrated messaging and recommendation system
 - **Notification System** - Friend requests and interaction alerts
@@ -38,7 +37,6 @@ Ques_Frontend/
 │   │   ├── ProfileView.tsx               # Profile view
 │   │   ├── ReceivesBar.tsx               # Receives status bar
 │   │   ├── SettingsScreen.tsx            # Settings page
-│   │   ├── SwipeableCardStack.tsx        # Swipeable card stack
 │   │   └── WelcomeScreen.tsx             # Welcome screen
 │   ├── services/                # API service layer
 │   │   ├── authService.ts              # Authentication service
@@ -61,8 +59,7 @@ Ques_Frontend/
 │   ├── hooks/                   # Custom React Hooks
 │   │   ├── useChatInterface.ts         # Chat interface logic
 │   │   ├── useProfileWizard.ts         # Profile setup logic
-│   │   ├── useSettings.ts              # Settings management logic
-│   │   └── useSwipeActions.ts          # Swipe action logic
+│   │   └── useSettings.ts              # Settings management logic
 │   ├── contexts/                # React Context
 │   │   ├── LanguageContext.tsx         # Language switching context
 │   │   └── index.ts
@@ -138,15 +135,6 @@ Ques_Frontend/
   - `ChatInterface.tsx`: Local simulation version
   - `ChatInterfaceAPI.tsx`: Full API integration version
 
-#### **SwipeableCardStack.tsx** - Swipeable Card Stack
-- **Purpose**: Main card-swiping interface for discovering connections
-- **Features**:
-  - Tinder-like swipe gestures (left to ignore, right to send Whisper)
-  - Expandable profile cards with detailed information
-  - Match score display and reasoning
-  - Plan-based receives tracking
-  - Integrated Whisper message sending
-
 #### **ProfileView.tsx** - Profile View
 - **Purpose**: User's own profile display and editing
 - **Features**:
@@ -196,8 +184,8 @@ Ques_Frontend/
   - Account actions (logout, delete account)
 
 #### **ChatCards.tsx** - Chat Cards
-- **Purpose**: Alternative card display component for chat contexts
-- **Features**: Similar to SwipeableCardStack but optimized for messaging flow
+- **Purpose**: Card display component for chat contexts
+- **Features**: Optimized card display for messaging flow with swipe interactions
 
 #### **PersonReceivesBar.tsx & ReceivesBar.tsx** - Receives Status Bar
 - **Purpose**: Display and manage user's monthly "receives" (connection attempts)
@@ -529,7 +517,6 @@ GET /api/payments/transactions
 
 ### Completed Features ✅
 - ✅ User onboarding and profile setup
-- ✅ Swipeable card interface
 - ✅ AI chat system
 - ✅ Contact history management
 - ✅ Notification system UI

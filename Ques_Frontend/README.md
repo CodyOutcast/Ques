@@ -38,7 +38,6 @@ Ques_Frontend/
 │   │   ├── ProfileView.tsx               # 档案查看
 │   │   ├── ReceivesBar.tsx               # Receives 状态栏
 │   │   ├── SettingsScreen.tsx            # 设置页面
-│   │   ├── SwipeableCardStack.tsx        # 卡片滑动堆栈
 │   │   └── WelcomeScreen.tsx             # 欢迎屏幕
 │   ├── services/                # API 服务层
 │   │   ├── authService.ts              # 认证服务
@@ -61,8 +60,7 @@ Ques_Frontend/
 │   ├── hooks/                   # 自定义 React Hooks
 │   │   ├── useChatInterface.ts         # 聊天界面逻辑
 │   │   ├── useProfileWizard.ts         # 档案设置逻辑
-│   │   ├── useSettings.ts              # 设置管理逻辑
-│   │   └── useSwipeActions.ts          # 滑动操作逻辑
+│   │   └── useSettings.ts              # 设置管理逻辑
 │   ├── contexts/                # React Context
 │   │   ├── LanguageContext.tsx         # 语言切换上下文
 │   │   └── index.ts
@@ -138,15 +136,6 @@ Ques_Frontend/
   - `ChatInterface.tsx`: 本地模拟版本
   - `ChatInterfaceAPI.tsx`: 完整 API 集成版本
 
-#### **SwipeableCardStack.tsx** - 卡片滑动堆栈
-- **功能**: 主要的卡片滑动界面用于发现连接
-- **特性**:
-  - 类似 Tinder 的滑动手势（左滑忽略，右滑发送 Whisper）
-  - 可展开的档案卡片，包含详细信息
-  - 匹配分数显示和推理
-  - 基于计划的 receives 跟踪
-  - 集成 Whisper 消息发送
-
 #### **ProfileView.tsx** - 档案查看
 - **功能**: 用户自己的档案显示和编辑
 - **特性**:
@@ -196,8 +185,8 @@ Ques_Frontend/
   - 账户操作（登出、删除账户）
 
 #### **ChatCards.tsx** - 聊天卡片
-- **功能**: 用于聊天上下文的替代卡片显示组件
-- **特性**: 类似于 SwipeableCardStack 但针对消息流程优化
+- **功能**: 用于聊天上下文的卡片显示组件
+- **特性**: 针对消息流程优化的卡片展示，支持滑动交互
 
 #### **PersonReceivesBar.tsx & ReceivesBar.tsx** - Receives 状态栏
 - **功能**: 显示和管理用户的月度 "receives"（连接尝试）

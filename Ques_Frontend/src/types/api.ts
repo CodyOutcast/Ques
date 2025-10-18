@@ -9,7 +9,7 @@ export interface ApiResponse<T = any> {
 // 用户基本信息类型
 export interface UserDemographics {
   name: string;
-  age: string;
+  birthday: string; // 格式：YYYY-MM-DD
   gender: 'male' | 'female' | 'other';
   location: string;
   hobbies: string[];
@@ -193,7 +193,7 @@ export interface ChatResponse {
 export interface UserRecommendation {
   id: string;
   name: string;
-  age: string;
+  birthday: string;
   gender: string;
   avatar: string;
   location: string;
@@ -238,7 +238,7 @@ export interface RecommendationRequest {
 export interface ContactedUser {
   id: string;
   name: string;
-  age: string;
+  birthday: string;
   gender: string;
   avatar: string;
   location: string;
@@ -291,7 +291,7 @@ export interface ReportContactRequest {
 export interface FriendRequest {
   id: string;
   name: string;
-  age: string;
+  birthday: string;
   gender: string;
   avatar: string;
   location: string;
@@ -650,7 +650,7 @@ export interface SendWhisperRequest {
     id: string;
     name: string;
     avatar: string;
-    age?: string;
+    birthday?: string;
     gender?: string;
     location: string;
     skills: string[];

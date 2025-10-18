@@ -1,14 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WelcomeScreen } from './components/WelcomeScreen';
 import { ProfileSetupWizard } from './components/ProfileSetupWizard';
-import { ChatInterface } from './components/ChatInterface';
+import { ChatInterface, ChatInterfaceRef } from './components/ChatInterface';
 import { ProfileView } from './components/ProfileView';
 import { SettingsScreen } from './components/SettingsScreen';
 import { BottomNavigation } from './components/BottomNavigation';
 import { ContactHistory, type ContactedUser } from './components/ContactHistory';
 import { NotificationPanel, type FriendRequest } from './components/NotificationPanel';
-import { SwipeableCardStack } from './components/SwipeableCardStack';
+import { WhisperMessageDialog } from './components/WhisperMessageDialog';
 import { LanguageProvider } from './contexts/LanguageContext';
 
 export type Screen = 'welcome' | 'profile-setup' | 'home' | 'profile' | 'settings';
@@ -17,7 +17,7 @@ export interface UserProfile {
   // Demographic info
   profilePhoto?: string;
   name: string;
-  age: string;
+  birthday: string; // 存储生日，格式：YYYY-MM-DD
   gender: string;
   location: string;
   hobbies: string[];
@@ -70,11 +70,12 @@ export interface UserProfile {
 }
 
 export default function App() {
+  const chatInterfaceRef = useRef<ChatInterfaceRef>(null);
   const [currentScreen, setCurrentScreen] = useState<Screen>('welcome');
   const [userProfile, setUserProfile] = useState<UserProfile>({
     // Demographic info
     name: '',
-    age: '',
+    birthday: '',
     gender: '',
     location: '',
     hobbies: [],
@@ -108,8 +109,11 @@ export default function App() {
   const [showOriginalCard, setShowOriginalCard] = useState<any>(null);
   const [currentPlan, setCurrentPlan] = useState<'basic' | 'pro'>('basic');
   const [receivesLeft, setReceivesLeft] = useState(3); // Remaining receives for the month
+  const [whispersLeft, setWhispersLeft] = useState(3); // Remaining whispers for the month
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [singleCardInChat, setSingleCardInChat] = useState<any>(null);
+  const [showWhisperDialog, setShowWhisperDialog] = useState(false);
+  const [pendingWhisperProfile, setPendingWhisperProfile] = useState<any>(null);
 
   const handleScreenChange = (screen: Screen) => {
     setCurrentScreen(screen);
@@ -125,37 +129,76 @@ export default function App() {
     setUserProfile(profile);
   };
 
-  const handleAddContact = (recommendation: any) => {
+  const handleRequestWhisper = (recommendation: any) => {
+    // Store the profile and show dialog
+    console.log('🔥 handleRequestWhisper called:', { 
+      name: recommendation.name, 
+      showWhisperDialog: showWhisperDialog,
+      hasPendingProfile: !!pendingWhisperProfile 
+    });
+    setPendingWhisperProfile(recommendation);
+    setShowWhisperDialog(true);
+    console.log('🔥 After setState - showWhisperDialog should be true');
+  };
+  
+  const handleWhisperSend = (message: string) => {
+    if (!pendingWhisperProfile) return;
+    
+    // Check if user has whispers left
+    if (whispersLeft <= 0) {
+      alert('You have no whispers left this month. Please upgrade to Pro or wait for next month.');
+      return;
+    }
+    
+    // Decrease whisper count
+    setWhispersLeft(prev => Math.max(0, prev - 1));
+    console.log('💬 Whisper sent! Whispers left:', whispersLeft - 1);
+    
+    // Add to contact history with message
     const newContact: ContactedUser = {
-      id: recommendation.id,
-      name: recommendation.name,
-      age: recommendation.age,
-      gender: recommendation.gender,
-      avatar: recommendation.avatar,
-      location: recommendation.location,
-      hobbies: recommendation.hobbies || [],
-      languages: recommendation.languages || [],
-      skills: recommendation.skills,
-      resources: recommendation.resources || [],
-      projects: recommendation.projects || [],
-      goals: recommendation.goals || [],
-      demands: recommendation.demands || [],
-      institutions: recommendation.institutions || [],
-      university: recommendation.university,
-      matchScore: recommendation.matchScore,
-      bio: recommendation.bio,
-      oneSentenceIntro: recommendation.oneSentenceIntro,
-      whyMatch: recommendation.whyMatch,
-      receivesLeft: recommendation.receivesLeft,
+      id: pendingWhisperProfile.id,
+      name: pendingWhisperProfile.name,
+      birthday: pendingWhisperProfile.birthday,
+      gender: pendingWhisperProfile.gender,
+      avatar: pendingWhisperProfile.avatar,
+      location: pendingWhisperProfile.location,
+      hobbies: pendingWhisperProfile.hobbies || [],
+      languages: pendingWhisperProfile.languages || [],
+      skills: pendingWhisperProfile.skills,
+      resources: pendingWhisperProfile.resources || [],
+      projects: pendingWhisperProfile.projects || [],
+      goals: pendingWhisperProfile.goals || [],
+      demands: pendingWhisperProfile.demands || [],
+      institutions: pendingWhisperProfile.institutions || [],
+      university: pendingWhisperProfile.university,
+      matchScore: pendingWhisperProfile.matchScore,
+      bio: pendingWhisperProfile.bio,
+      oneSentenceIntro: pendingWhisperProfile.oneSentenceIntro,
+      whyMatch: pendingWhisperProfile.whyMatch,
+      receivesLeft: pendingWhisperProfile.receivesLeft,
       contactedAt: new Date(),
       reported: false,
+      message: message, // Add whisper message
     };
     
     // Add to contact history
     setContactHistory(prev => [newContact, ...prev]);
     
     // Track this contact as added to prevent it from appearing again
-    setAddedContactIds(prev => new Set(prev).add(recommendation.id));
+    setAddedContactIds(prev => new Set(prev).add(pendingWhisperProfile.id));
+    
+    // Close dialog and reset
+    setShowWhisperDialog(false);
+    setPendingWhisperProfile(null);
+  };
+  
+  const handleWhisperDialogClose = () => {
+    console.log('❌ User cancelled whisper - resetting card');
+    setShowWhisperDialog(false);
+    setPendingWhisperProfile(null);
+    
+    // 重置卡片，让它回到原位
+    chatInterfaceRef.current?.resetLastSwipe();
   };
 
   const handleReportContact = (contactId: string, reason: string, attachments?: any[]) => {
@@ -177,8 +220,8 @@ export default function App() {
     const quotedRequest = {
       id: contact.id,
       name: contact.name,
-      age: '25', // Default age since ContactedUser doesn't have this
-      gender: 'Unknown', // Default gender since ContactedUser doesn't have this
+      birthday: contact.birthday || '1999-01-01', // Default birthday
+      gender: contact.gender || 'Unknown', // Default gender
       avatar: contact.avatar,
       location: contact.location,
       hobbies: [], // Default empty array
@@ -233,7 +276,7 @@ export default function App() {
     const newContact: ContactedUser = {
       id: request.id,
       name: request.name,
-      age: request.age,
+      birthday: request.birthday,
       gender: request.gender,
       avatar: request.avatar,
       location: request.location,
@@ -267,7 +310,7 @@ export default function App() {
     const cardData: any = {
       id: contact.id,
       name: contact.name,
-      age: contact.age || '25', // 默认年龄
+      birthday: contact.birthday || '1999-01-01', // 默认生日
       gender: contact.gender || 'Unknown', // 默认性别
       avatar: contact.avatar,
       location: contact.location,
@@ -311,9 +354,11 @@ export default function App() {
   const handlePlanChange = (plan: 'basic' | 'pro') => {
     setCurrentPlan(plan);
     if (plan === 'pro') {
-      setReceivesLeft(999); // Unlimited for pro
+      setReceivesLeft(50); // Pro plan: 50 receives per month
+      setWhispersLeft(50); // Pro plan: 50 whispers per month
     } else {
-      setReceivesLeft(Math.min(receivesLeft, 50)); // Cap at 50 for basic plan
+      setReceivesLeft(Math.min(receivesLeft, 10)); // Basic plan: cap at 10
+      setWhispersLeft(Math.min(whispersLeft, 10)); // Basic plan: cap at 10
     }
   };
 
@@ -327,11 +372,17 @@ export default function App() {
   // Mock friend requests data - only initialize once
   useEffect(() => {
     if (isProfileComplete && friendRequests.length === 0) {
+      // Check if user has receives left
+      if (receivesLeft <= 0) {
+        console.log('📭 No receives left - cannot accept new whispers');
+        return;
+      }
+      
       const mockRequests: FriendRequest[] = [
         {
           id: 'req_1',
           name: 'Emma Zhang',
-          age: '26',
+          birthday: '1998-05-15',
           gender: 'Female',
           avatar: '👩‍💼',
           location: 'Shanghai, China',
@@ -374,12 +425,13 @@ export default function App() {
           requestedAt: new Date(Date.now() - 2 * 60 * 60 * 1000), // 2 hours ago
           mutualInterest: 'Perfect design-tech match! 🎨 You have the Python skills she needs for her design tool project, while she offers the UX expertise for your AI platform. Both looking for co-founders in China.',
           wechatId: 'Emma_Designer2024',
-          giftedReceives: 2 // She gifted you 2 receives
+          giftedReceives: 2, // She gifted you 2 receives
+          message: 'Hi! I noticed you\'re working on AI projects. I\'m looking for a technical co-founder and would love to discuss collaboration opportunities!'
         },
         {
           id: 'req_2', 
           name: 'David Liu',
-          age: '31',
+          birthday: '1993-08-22',
           gender: 'Male',
           avatar: '👨‍💻',
           location: 'Beijing, China',
@@ -421,11 +473,17 @@ export default function App() {
           receivesLeft: 12,
           requestedAt: new Date(Date.now() - 5 * 60 * 60 * 1000), // 5 hours ago
           mutualInterest: 'Great tech synergy! ⚡ Your AI background complements his blockchain expertise perfectly for building next-gen fintech solutions. He\'s seeking technical co-founders with your skill set.',
-          wechatId: 'DavidLiu_BlockDev'
+          wechatId: 'DavidLiu_BlockDev',
           // No giftedReceives - will not show gift label
+          message: 'Hey! Saw your profile and think we could build something amazing together. Are you interested in blockchain-AI integration?'
         }
       ];
       setFriendRequests(mockRequests);
+      
+      // Decrease receive count for each incoming whisper
+      const receivedCount = mockRequests.length;
+      setReceivesLeft(prev => Math.max(0, prev - receivedCount));
+      console.log(`📬 Received ${receivedCount} whispers! Receives left:`, receivesLeft - receivedCount);
     }
   }, [isProfileComplete, friendRequests.length]);
 
@@ -487,10 +545,11 @@ export default function App() {
               className="absolute inset-0"
             >
               <ChatInterface 
+                ref={chatInterfaceRef}
                 userProfile={userProfile} 
                 onShowHistory={() => setShowHistory(true)}
                 onShowNotifications={handleShowNotifications}
-                onAddContact={handleAddContact}
+                onRequestWhisper={handleRequestWhisper}
                 addedContactIds={addedContactIds}
                 unreadNotifications={unreadNotifications}
                 quotedFromNotification={quotedFromNotification}
@@ -533,6 +592,7 @@ export default function App() {
               <SettingsScreen 
               currentPlan={currentPlan}
               receivesLeft={receivesLeft}
+              whispersLeft={whispersLeft}
               onPlanChange={handlePlanChange}
               onTopUpReceives={handleTopUpReceives}
               onGiftReceives={handleGiftReceives}
@@ -582,8 +642,28 @@ export default function App() {
         onAddToHistory={handleAddWhisperToHistory}
         onViewOriginalCard={handleViewOriginalCard}
         onGiftReceives={handleGiftReceives}
+        whispersLeft={whispersLeft}
+        onWhisperSent={() => setWhispersLeft(prev => Math.max(0, prev - 1))}
       />
       </div>
+      
+      {/* Whisper Message Dialog - Outside overflow-hidden container */}
+      {pendingWhisperProfile && showWhisperDialog && (
+        <WhisperMessageDialog
+          isOpen={showWhisperDialog}
+          recipientName={pendingWhisperProfile.name}
+          recipientAvatar={pendingWhisperProfile.avatar}
+          onClose={handleWhisperDialogClose}
+          onSend={handleWhisperSend}
+          defaultMessage={pendingWhisperProfile.whisperDefaultMessage || pendingWhisperProfile.whyMatch || ''}
+        />
+      )}
+      {/* Debug info */}
+      {console.log('🎯 App render:', { 
+        showWhisperDialog, 
+        hasPendingProfile: !!pendingWhisperProfile,
+        pendingName: pendingWhisperProfile?.name 
+      })}
     </LanguageProvider>
   );
 }

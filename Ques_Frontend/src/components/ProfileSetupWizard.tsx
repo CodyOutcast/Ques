@@ -29,6 +29,7 @@ import {
   CheckCircle
 } from 'lucide-react';
 import type { UserProfile } from '../App';
+import { universityService } from '../services/universityService';
 
 interface ProfileSetupWizardProps {
   onComplete: (profile: UserProfile) => void;
@@ -40,7 +41,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
   const [currentStep, setCurrentStep] = useState(0);
   const [profile, setProfile] = useState<UserProfile>({
     name: '',
-    age: '',
+    birthday: '',
     gender: '',
     location: '',
     hobbies: [],
@@ -70,7 +71,11 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
   const [showUniversityDropdown, setShowUniversityDropdown] = useState(false);
   const [isUniversitySelected, setIsUniversitySelected] = useState(false);
   const [wechatAuthenticated, setWechatAuthenticated] = useState(false);
-  const [ageError, setAgeError] = useState(false);
+  const [birthdayError, setBirthdayError] = useState(false);
+  
+  // Location selection states
+  const [selectedProvince, setSelectedProvince] = useState('');
+  const [selectedCity, setSelectedCity] = useState('');
   
   // Word count error states for tag inputs
   const [hobbyWordError, setHobbyWordError] = useState(false);
@@ -80,10 +85,15 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
   const [goalWordError, setGoalWordError] = useState(false);
   const [demandWordError, setDemandWordError] = useState(false);
 
-  const validateAge = useCallback((age: string) => {
-    // Check if it's a positive integer
-    const ageNumber = parseInt(age, 10);
-    return age === ageNumber.toString() && ageNumber > 0 && ageNumber <= 120;
+  const validateBirthday = useCallback((birthday: string) => {
+    if (!birthday) return false;
+    
+    const birthDate = new Date(birthday);
+    const today = new Date();
+    const minDate = new Date(today.getFullYear() - 120, today.getMonth(), today.getDate());
+    const maxDate = new Date(today.getFullYear() - 13, today.getMonth(), today.getDate());
+    
+    return birthDate >= minDate && birthDate <= maxDate;
   }, []);
 
   const steps = useMemo(() => [
@@ -98,39 +108,48 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
     t('profileSetup.authentication')
   ], [t]);
 
-  // Chinese universities list - memoized to prevent recreating on each render
-  const chineseUniversities = useMemo(() => [
-    'Tsinghua University',
-    'Peking University', 
-    'Fudan University',
-    'Shanghai Jiao Tong University',
-    'Zhejiang University',
-    'University of Science and Technology of China',
-    'Nanjing University',
-    'Xi\'an Jiaotong University',
-    'Harbin Institute of Technology',
-    'Beijing Institute of Technology',
-    'Huazhong University of Science and Technology',
-    'Sun Yat-sen University',
-    'Beihang University',
-    'Tianjin University',
-    'Southeast University',
-    'Beijing Normal University',
-    'Dalian University of Technology',
-    'Sichuan University',
-    'South China University of Technology',
-    'Central South University',
-    'Northwestern Polytechnical University',
-    'East China Normal University',
-    'Beijing University of Technology',
-    'Tongji University',
-    'Xidian University',
-    'Wuhan University',
-    'Renmin University of China',
-    'Beijing Jiaotong University',
-    'Northeastern University',
-    'Lanzhou University'
-  ], []);
+  // China provinces and cities data
+  const chinaRegions = useMemo(() => ({
+    '北京': ['北京'],
+    '上海': ['上海'],
+    '天津': ['天津'],
+    '重庆': ['重庆'],
+    '港澳台': ['香港', '澳门', '台湾'],
+    '河北省': ['石家庄市', '唐山市', '秦皇岛市', '邯郸市', '邢台市', '保定市', '张家口市', '承德市', '沧州市', '廊坊市', '衡水市'],
+    '山西省': ['太原市', '大同市', '阳泉市', '长治市', '晋城市', '朔州市', '晋中市', '运城市', '忻州市', '临汾市', '吕梁市'],
+    '内蒙古自治区': ['呼和浩特市', '包头市', '乌海市', '赤峰市', '通辽市', '鄂尔多斯市', '呼伦贝尔市', '巴彦淖尔市', '乌兰察布市'],
+    '辽宁省': ['沈阳市', '大连市', '鞍山市', '抚顺市', '本溪市', '丹东市', '锦州市', '营口市', '阜新市', '辽阳市', '盘锦市', '铁岭市', '朝阳市', '葫芦岛市'],
+    '吉林省': ['长春市', '吉林市', '四平市', '辽源市', '通化市', '白山市', '松原市', '白城市'],
+    '黑龙江省': ['哈尔滨市', '齐齐哈尔市', '鸡西市', '鹤岗市', '双鸭山市', '大庆市', '伊春市', '佳木斯市', '七台河市', '牡丹江市', '黑河市', '绥化市'],
+    '江苏省': ['南京市', '无锡市', '徐州市', '常州市', '苏州市', '南通市', '连云港市', '淮安市', '盐城市', '扬州市', '镇江市', '泰州市', '宿迁市'],
+    '浙江省': ['杭州市', '宁波市', '温州市', '嘉兴市', '湖州市', '绍兴市', '金华市', '衢州市', '舟山市', '台州市', '丽水市'],
+    '安徽省': ['合肥市', '芜湖市', '蚌埠市', '淮南市', '马鞍山市', '淮北市', '铜陵市', '安庆市', '黄山市', '阜阳市', '宿州市', '滁州市', '六安市', '宣城市', '池州市', '亳州市'],
+    '福建省': ['福州市', '厦门市', '莆田市', '三明市', '泉州市', '漳州市', '南平市', '龙岩市', '宁德市'],
+    '江西省': ['南昌市', '景德镇市', '萍乡市', '九江市', '抚州市', '鹰潭市', '赣州市', '吉安市', '宜春市', '新余市', '上饶市'],
+    '山东省': ['济南市', '青岛市', '淄博市', '枣庄市', '东营市', '烟台市', '潍坊市', '济宁市', '泰安市', '威海市', '日照市', '临沂市', '德州市', '聊城市', '滨州市', '菏泽市'],
+    '河南省': ['郑州市', '开封市', '洛阳市', '平顶山市', '安阳市', '鹤壁市', '新乡市', '焦作市', '濮阳市', '许昌市', '漯河市', '三门峡市', '南阳市', '商丘市', '信阳市', '周口市', '驻马店市'],
+    '湖北省': ['武汉市', '黄石市', '十堰市', '宜昌市', '襄阳市', '鄂州市', '荆门市', '孝感市', '荆州市', '黄冈市', '咸宁市', '随州市'],
+    '湖南省': ['长沙市', '株洲市', '湘潭市', '衡阳市', '邵阳市', '岳阳市', '常德市', '张家界市', '益阳市', '郴州市', '永州市', '怀化市', '娄底市'],
+    '广东省': ['广州市', '韶关市', '深圳市', '珠海市', '汕头市', '佛山市', '江门市', '湛江市', '茂名市', '肇庆市', '惠州市', '梅州市', '汕尾市', '河源市', '阳江市', '清远市', '东莞市', '中山市', '潮州市', '揭阳市', '云浮市'],
+    '广西壮族自治区': ['南宁市', '柳州市', '桂林市', '梧州市', '北海市', '防城港市', '钦州市', '贵港市', '玉林市', '百色市', '贺州市', '河池市', '来宾市', '崇左市'],
+    '海南省': ['海口市', '三亚市', '三沙市', '儋州市'],
+    '四川省': ['成都市', '自贡市', '攀枝花市', '泸州市', '德阳市', '绵阳市', '广元市', '遂宁市', '内江市', '乐山市', '南充市', '眉山市', '宜宾市', '广安市', '达州市', '雅安市', '巴中市', '资阳市'],
+    '贵州省': ['贵阳市', '六盘水市', '遵义市', '安顺市', '毕节市', '铜仁市'],
+    '云南省': ['昆明市', '曲靖市', '玉溪市', '保山市', '昭通市', '丽江市', '普洱市', '临沧市'],
+    '西藏自治区': ['拉萨市', '日喀则市', '昌都市', '林芝市', '山南市', '那曲市'],
+    '陕西省': ['西安市', '铜川市', '宝鸡市', '咸阳市', '渭南市', '延安市', '汉中市', '榆林市', '安康市', '商洛市'],
+    '甘肃省': ['兰州市', '嘉峪关市', '金昌市', '白银市', '天水市', '武威市', '张掖市', '平凉市', '酒泉市', '庆阳市', '定西市', '陇南市'],
+    '青海省': ['西宁市', '海东市'],
+    '宁夏回族自治区': ['银川市', '石嘴山市', '吴忠市', '固原市', '中卫市'],
+    '新疆维吾尔自治区': ['乌鲁木齐市', '克拉玛依市', '吐鲁番市', '哈密市']
+  }), []);
+
+  const provinces = useMemo(() => Object.keys(chinaRegions), [chinaRegions]);
+
+  // Chinese universities list - loaded from universityService
+  const chineseUniversities = useMemo(() => {
+    return universityService.getChineseUniversities().map(uni => uni.name);
+  }, []);
 
   const handleInputChange = useCallback((field: keyof UserProfile, value: any) => {
     setProfile(prev => ({ ...prev, [field]: value }));
@@ -140,7 +159,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
       const skipProfile: UserProfile = {
         profilePhoto: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjY0IiBoZWlnaHQ9IjY0IiBmaWxsPSIjRTVFN0VCIi8+CjxwYXRoIGQ9Ik0zMiA0MEMzNi40MTgzIDQwIDQwIDM2LjQxODMgNDAgMzJTMzYuNDE4MyAyNCAzMiAyNFMyNCAyNy41ODE3IDI0IDMyUzI3LjU4MTcgNDAgMzIgNDBaIiBmaWxsPSIjOUI5Qjk2Ii8+Cjwvc3ZnPgo=',
         name: 'Skip User',
-        age: '25',
+        birthday: '1999-01-01',
         gender: 'other',
         location: 'Skip City',
         hobbies: ['Testing'],
@@ -164,6 +183,21 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
       }, 500); // Small delay for smooth transition
     }
   }, [onComplete]);
+
+  const handleProvinceChange = useCallback((province: string) => {
+    setSelectedProvince(province);
+    setSelectedCity('');
+    setProfile(prev => ({ ...prev, location: '' }));
+  }, []);
+
+  const handleCityChange = useCallback((city: string) => {
+    setSelectedCity(city);
+    const locationString = selectedProvince === '北京' || selectedProvince === '上海' || 
+                          selectedProvince === '天津' || selectedProvince === '重庆'
+                          ? city
+                          : `${city}, ${selectedProvince}`;
+    setProfile(prev => ({ ...prev, location: locationString }));
+  }, [selectedProvince]);
 
   const handlePhotoUpload = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -306,21 +340,26 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
   const handleUniversitySearch = useCallback((value: string) => {
     setUniversitySearchInput(value);
     setShowUniversityDropdown(value.length > 0);
-  }, []);
+    // 当用户修改输入时，清除选择状态
+    if (isUniversitySelected && value !== currentUniversity) {
+      setIsUniversitySelected(false);
+      setCurrentUniversity('');
+    }
+  }, [isUniversitySelected, currentUniversity]);
 
   const selectUniversity = useCallback((university: string) => {
     setCurrentUniversity(university);
-    setUniversitySearchInput('');
+    setUniversitySearchInput(university);
     setShowUniversityDropdown(false);
     setIsUniversitySelected(true);
   }, []);
 
   const filteredUniversities = useMemo(() => {
-    if (!universitySearchInput) return [];
+    if (!universitySearchInput || isUniversitySelected) return [];
     return chineseUniversities.filter(uni => 
       uni.toLowerCase().includes(universitySearchInput.toLowerCase())
-    ).slice(0, 5); // Show max 5 suggestions
-  }, [universitySearchInput, chineseUniversities]);
+    ).slice(0, 50); // Show max 50 suggestions
+  }, [universitySearchInput, chineseUniversities, isUniversitySelected]);
 
   const handleNext = useCallback(() => {
     // Filter out empty projects and institutions before proceeding
@@ -353,7 +392,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
 
   const canProceed = useCallback(() => {
     switch (currentStep) {
-      case 0: return profile.name && profile.age && validateAge(profile.age) && profile.gender && profile.location && profile.profilePhoto;
+      case 0: return profile.name && profile.birthday && validateBirthday(profile.birthday) && profile.gender && profile.location && profile.profilePhoto;
       case 1: return true;
       case 2: return true;
       case 3: return true;
@@ -364,7 +403,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
       case 8: return true; // WeChat authentication is now optional (can skip)
       default: return false;
     }
-  }, [currentStep, profile, validateAge]);
+  }, [currentStep, profile, validateBirthday]);
 
   // Render functions for each step
   const renderDemographics = useCallback(() => (
@@ -434,26 +473,25 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <Label className="text-sm">{t('profileSetup.age')} *</Label>
+              <Label className="text-sm">{t('profileSetup.birthday')} *</Label>
               <Input
-                value={profile.age}
+                value={profile.birthday}
                 onChange={(e) => {
-                  const age = e.target.value;
-                  handleInputChange('age', age);
-                  if (age && !validateAge(age)) {
-                    setAgeError(true);
+                  const birthday = e.target.value;
+                  handleInputChange('birthday', birthday);
+                  if (birthday && !validateBirthday(birthday)) {
+                    setBirthdayError(true);
                   } else {
-                    setAgeError(false);
+                    setBirthdayError(false);
                   }
                 }}
-                placeholder="25"
-                type="number"
-                min="1"
-                max="120"
-                className={`h-8 ${ageError ? 'border-red-500 bg-red-50' : ''}`}
+                type="date"
+                max={new Date(new Date().setFullYear(new Date().getFullYear() - 13)).toISOString().split('T')[0]}
+                min={new Date(new Date().setFullYear(new Date().getFullYear() - 120)).toISOString().split('T')[0]}
+                className={`h-8 ${birthdayError ? 'border-red-500 bg-red-50' : ''}`}
               />
-              {ageError && (
-                <p className="text-xs text-red-500 mt-1">{t('profileSetup.validAgeError')}</p>
+              {birthdayError && (
+                <p className="text-xs text-red-500 mt-1">{t('profileSetup.validBirthdayError')}</p>
               )}
             </div>
             <div>
@@ -473,17 +511,42 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
         </div>
       </div>
 
-      {/* Location */}
+      {/* Location - Province and City Selection */}
       <div>
         <Label className="text-sm">{t('profileSetup.location')} *</Label>
-        <div className="relative">
-          <MapPin size={14} className="absolute left-3 top-2 text-gray-400" />
-          <Input
-            value={profile.location}
-            onChange={(e) => handleInputChange('location', e.target.value)}
-            placeholder={t('profileSetup.locationPlaceholder')}
-            className="pl-9 h-8"
-          />
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Select value={selectedProvince} onValueChange={handleProvinceChange}>
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="选择省份" />
+              </SelectTrigger>
+              <SelectContent>
+                {provinces.map((province) => (
+                  <SelectItem key={province} value={province}>
+                    {province}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select 
+              value={selectedCity} 
+              onValueChange={handleCityChange}
+              disabled={!selectedProvince}
+            >
+              <SelectTrigger className="h-8">
+                <SelectValue placeholder="选择城市" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedProvince && chinaRegions[selectedProvince]?.map((city) => (
+                  <SelectItem key={city} value={city}>
+                    {city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       </div>
 
@@ -617,7 +680,7 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
         </div>
       </div>
     </div>
-  ), [profile, tempHobby, tempLanguage, handleInputChange, addToArray, removeFromArray, checkWordCount, hobbyWordError, languageWordError, t]);
+  ), [profile, tempHobby, tempLanguage, handleInputChange, addToArray, removeFromArray, checkWordCount, hobbyWordError, languageWordError, selectedProvince, selectedCity, handleProvinceChange, handleCityChange, provinces, chinaRegions, handlePhotoUpload, validateBirthday, birthdayError, t]);
 
   const renderSkills = useCallback(() => {
     const skillSuggestions = [
@@ -1234,11 +1297,36 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
               <Input
                 value={universitySearchInput}
                 onChange={(e) => handleUniversitySearch(e.target.value)}
-                onFocus={() => setShowUniversityDropdown(universitySearchInput.length > 0)}
+                onFocus={() => !isUniversitySelected && setShowUniversityDropdown(universitySearchInput.length > 0)}
                 onBlur={() => setTimeout(() => setShowUniversityDropdown(false), 200)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (filteredUniversities.length > 0) {
+                      selectUniversity(filteredUniversities[0]);
+                    }
+                  }
+                }}
                 placeholder={t('profileSetup.universitySearchPlaceholder')}
-                className="pl-9 h-9"
+                className="pl-9 pr-9 h-9"
+                disabled={isUniversitySelected}
               />
+              {isUniversitySelected && universitySearchInput && (
+                <button
+                  onClick={() => {
+                    setCurrentUniversity('');
+                    setUniversitySearchInput('');
+                    setIsUniversitySelected(false);
+                    setUniversityEmail('');
+                    setCodeSent(false);
+                    setEmailVerified(false);
+                  }}
+                  className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
+                  title="清除选择"
+                >
+                  <X size={14} />
+                </button>
+              )}
               
               {/* Auto-completion dropdown */}
               <AnimatePresence>
@@ -1262,19 +1350,14 @@ export function ProfileSetupWizard({ onComplete, onBack }: ProfileSetupWizardPro
                 )}
               </AnimatePresence>
             </div>
-            <Button
-              type="button"
-              onClick={() => {
-                if (universitySearchInput.trim()) {
-                  selectUniversity(universitySearchInput.trim());
-                }
-              }}
-              disabled={!universitySearchInput.trim()}
-              className="h-9 w-9 p-0"
-            >
-              <CheckCircle size={16} />
-            </Button>
           </div>
+          
+          {/* 提示信息 */}
+          {universitySearchInput.trim() && filteredUniversities.length === 0 && !isUniversitySelected && (
+            <div className="mt-2 text-xs text-gray-500 p-2 bg-gray-50 rounded">
+              未找到匹配的大学，请从列表中选择
+            </div>
+          )}
         </div>
       </div>
     </div>

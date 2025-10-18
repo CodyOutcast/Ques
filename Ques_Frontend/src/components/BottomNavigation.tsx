@@ -18,7 +18,7 @@ export function BottomNavigation({ currentScreen, onScreenChange }: BottomNaviga
   ];
 
   return (
-    <div className="bg-white border-t border-gray-200 px-4 py-2" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 1.25rem))' }}>
+    <div className="bg-white border-t border-gray-200 px-4 py-2 relative z-10" style={{ paddingBottom: 'max(1.25rem, env(safe-area-inset-bottom, 1.25rem))' }}>
       <div className="flex items-center justify-around">
         {navItems.map((item) => {
           const Icon = item.icon;

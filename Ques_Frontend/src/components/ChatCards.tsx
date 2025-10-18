@@ -1,12 +1,13 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { motion, AnimatePresence, PanInfo, useMotionValue, useTransform, animate } from 'framer-motion';
 import { Share2, ChevronDown, ChevronUp, Gift } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
+import { calculateAge } from '../utils/dateUtils';
 
 interface Profile {
   id: string;
   name: string;
-  age: string;
+  birthday: string;
   gender: string;
   avatar: string;
   location: string;
@@ -47,7 +48,11 @@ interface ChatCardsProps {
   onGiftReceives?: (name: string, amount: number) => void;
 }
 
-export default function ChatCards({ profiles, onSwipeLeft, onSwipeRight, onAllCardsFinished, onGiftReceives }: ChatCardsProps) {
+export interface ChatCardsRef {
+  resetLastSwipe: () => void;
+}
+
+const ChatCards = forwardRef<ChatCardsRef, ChatCardsProps>(({ profiles, onSwipeLeft, onSwipeRight, onAllCardsFinished, onGiftReceives }, ref) => {
   const { t } = useLanguage();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showFullProfile, setShowFullProfile] = useState(false);
@@ -58,6 +63,7 @@ export default function ChatCards({ profiles, onSwipeLeft, onSwipeRight, onAllCa
   const [showGiftModal, setShowGiftModal] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<Profile | null>(null);
   const [giftAmount, setGiftAmount] = useState('');
+  const [pendingSwipe, setPendingSwipe] = useState<{ profile: Profile; direction: 'left' | 'right' } | null>(null);
   const constraintsRef = useRef(null);
   
   // Motion values for smooth dragging
@@ -75,6 +81,27 @@ export default function ChatCards({ profiles, onSwipeLeft, onSwipeRight, onAllCa
       onAllCardsFinished();
     }
   }, [currentIndex, profiles.length, onAllCardsFinished]);
+
+  // 暴露重置方法给父组件
+  useImperativeHandle(ref, () => ({
+    resetLastSwipe: () => {
+      console.log('🔄 Resetting last swipe', pendingSwipe);
+      if (pendingSwipe && currentIndex > 0) {
+        // 回退到上一张卡片
+        setCurrentIndex(prev => Math.max(0, prev - 1));
+        
+        // 取消退出动画
+        setExitDirection(null);
+        setPendingSwipe(null);
+        setShowFullProfile(false);
+        
+        // 将卡片位置重置到中心
+        x.set(0);
+        
+        console.log('✅ Card reset successfully - returning to previous card');
+      }
+    }
+  }), [pendingSwipe, currentIndex, x]);
 
   if (profiles.length === 0 || currentIndex >= profiles.length) {
     return null;
@@ -117,23 +144,36 @@ export default function ChatCards({ profiles, onSwipeLeft, onSwipeRight, onAllCa
       // Set exit direction immediately for instant response
       const direction = offset.x > 0 ? 'right' : 'left';
       
-      // Trigger swipe callback first
+      console.log('💫 ChatCards handleDragEnd:', { 
+        direction, 
+        profileName: currentProfile.name,
+        offset: offset.x 
+      });
+      
+      // 保存待处理的滑动状态（用于可能的重置）
+      setPendingSwipe({ profile: currentProfile, direction });
+      
+      // Reset drag states
+      setDragDirection(null);
+      setIsDragging(false);
+      
+      // Call appropriate callback
       if (direction === 'right') {
+        console.log('➡️ Calling onSwipeRight for:', currentProfile.name);
         onSwipeRight(currentProfile);
       } else {
+        console.log('⬅️ Calling onSwipeLeft for:', currentProfile.name);
         onSwipeLeft(currentProfile);
       }
       
-      // Animate the x motion value directly for smooth exit (rotate will follow automatically)
-      animate(x, direction === 'left' ? -500 : 500, {
+      // Animate the card exit
+      animate(x, direction === 'right' ? 500 : -500, {
         duration: 0.3,
         ease: [0.32, 0.72, 0, 1]
       });
       
       // Set exit direction for opacity and scale animation
       setExitDirection(direction);
-      setDragDirection(null);
-      setIsDragging(false);
       
       // Update state after animation completes
       setTimeout(() => {
@@ -438,7 +478,7 @@ export default function ChatCards({ profiles, onSwipeLeft, onSwipeRight, onAllCa
                         </div>
                         <div>
                           <h3 className="font-semibold text-gray-900">{currentProfile.name}</h3>
-                          <p className="text-sm text-gray-600">{currentProfile.location} • {currentProfile.age}</p>
+                          <p className="text-sm text-gray-600">{currentProfile.location} • {calculateAge(currentProfile.birthday)}岁</p>
                         </div>
                       </div>
                       <div className="flex gap-2 relative z-50">
@@ -544,7 +584,7 @@ export default function ChatCards({ profiles, onSwipeLeft, onSwipeRight, onAllCa
                       )}
 
                       {/* Goals & Demands */}
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-4">
                         <div>
                           <h4 className="font-semibold text-gray-900 text-sm mb-2">{t('cards.goals')}</h4>
                           <div className="space-y-1">
@@ -667,4 +707,8 @@ export default function ChatCards({ profiles, onSwipeLeft, onSwipeRight, onAllCa
       )}
     </div>
   );
-}
+});
+
+ChatCards.displayName = 'ChatCards';
+
+export default ChatCards;

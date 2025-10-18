@@ -279,7 +279,7 @@ class WhisperService {
         id: senderProfile.id || 'user_' + Date.now(),
         name: senderProfile.name,
         avatar: senderProfile.profilePhoto || senderProfile.avatar || '👤',
-        age: senderProfile.age,
+        birthday: senderProfile.birthday,
         gender: senderProfile.gender,
         location: senderProfile.location,
         skills: senderProfile.skills || [],
