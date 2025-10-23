@@ -1,3 +1,5 @@
+以下是需要实现的功能，后面有√说明目前实现了
+
 照片4:3 √
 tag限制 √
 卡片叠起来的效果 3张 √
@@ -22,13 +24,15 @@ location改成省市选择-中国 √
 goal和demands分两层 √
 basic plan两个东西都是10次， pro plan两个都是50次 √
 
-首页的聊天框上面的提示气泡，在一个池子里随机挑4个
-弹窗样式优化，减少宽度，减少说明文字
+首页的聊天框上面的提示气泡，在一个池子里随机挑4个 √
+弹窗样式优化，减少宽度，减少说明文字 √
 消息页面的message藏在按钮里查看
-contact不用显示message
-在json删除superlike
+contact不用显示message √
+在json删除superlike √
 增加条款
-底部导航栏索引不需要文字
-主页只保留每一条的编辑，不用save all
+底部导航栏索引不需要文字 √
+主页只保留每一条的编辑，不用save all √
 关于搜索结果的stream，同时request两个东西（搜索结果和思考流），
-如果有thinking stream就显示出来，request搜索结果会等待思考流
+如果有thinking stream就显示出来，request搜索结果会等待思考流 √
+
+下个阶段，完成优化和API测试，上传之后转战小程序

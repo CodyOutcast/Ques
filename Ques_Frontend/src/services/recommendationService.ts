@@ -521,52 +521,6 @@ class RecommendationService {
   }
 
   /**
-   * 处理超级喜欢
-   */
-  async handleCardSuperLike(
-    recommendation: UserRecommendation,
-    context?: {
-      searchQuery?: string;
-      searchMode?: 'inside' | 'global';
-      sessionId?: string;
-      cardPosition?: number;
-    }
-  ): Promise<void> {
-    try {
-      const swipeRequest: RecordSwipeRequest = {
-        targetUserId: recommendation.id,
-        action: 'super_like',
-        searchQuery: context?.searchQuery,
-        searchMode: context?.searchMode || 'inside',
-        matchScore: recommendation.matchScore,
-        sourceContext: {
-          sessionId: context?.sessionId,
-          cardPosition: context?.cardPosition,
-        }
-      };
-
-      // 记录滑动行为
-      await swipeService.recordSwipe(swipeRequest);
-
-      console.log(`Super liked user: ${recommendation.name} (ID: ${recommendation.id})`);
-    } catch (error) {
-      console.error('Failed to record super like:', error);
-      // 如果网络失败，添加到本地缓存
-      swipeService.addToLocalCache({
-        targetUserId: recommendation.id,
-        action: 'super_like',
-        searchQuery: context?.searchQuery,
-        searchMode: context?.searchMode || 'inside',
-        matchScore: recommendation.matchScore,
-        sourceContext: {
-          sessionId: context?.sessionId,
-          cardPosition: context?.cardPosition,
-        }
-      });
-    }
-  }
-
-  /**
    * 批量处理滑动行为（用于快速滑动场景）
    */
   async handleBatchSwipes(swipes: Array<{

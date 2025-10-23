@@ -20,7 +20,6 @@ interface ProfileViewProps {
 
 export function ProfileView({ userProfile, onUpdate }: ProfileViewProps) {
   const { t } = useLanguage();
-  const [isEditing, setIsEditing] = useState(false);
   const [showPhotoTip, setShowPhotoTip] = useState(false);
   const [showCompletenessTip, setShowCompletenessTip] = useState(false);
   const [activeSuggestions, setActiveSuggestions] = useState<Set<string>>(new Set());
@@ -214,51 +213,6 @@ export function ProfileView({ userProfile, onUpdate }: ProfileViewProps) {
     cancelEditing(sectionId);
   };
 
-  const saveAllEditing = () => {
-    // Create a copy of editing sections to avoid modifying the set during iteration
-    const sectionsToSave = Array.from(editingSections);
-    
-    // Merge all changes into one update
-    let updatedProfile = { ...userProfile };
-    
-    sectionsToSave.forEach(sectionId => {
-      const sectionKeys = getSectionKeys(sectionId);
-      
-      sectionKeys.forEach(key => {
-        if (tempValues[key] !== undefined) {
-          (updatedProfile as any)[key] = tempValues[key];
-        }
-      });
-    });
-    
-    // Single update call
-    onUpdate(updatedProfile);
-    
-    // Clear all editing states
-    setEditingSections(new Set());
-    setTempValues({});
-    
-    // Reset all temp input states
-    setTempSkill('');
-    setTempResource('');
-    setTempDemand('');
-    setTempGoal('');
-    setTempHobby('');
-    setTempLanguage('');
-    
-    // Exit global editing mode
-    setIsEditing(false);
-  };
-
-  const toggleEditing = () => {
-    if (isEditing) {
-      // Save all and exit editing mode
-      saveAllEditing();
-    } else {
-      // Enter editing mode
-      setIsEditing(true);
-    }
-  };
 
   const getSectionKeys = (sectionId: string): (keyof UserProfile)[] => {
     switch (sectionId) {
@@ -1778,14 +1732,6 @@ export function ProfileView({ userProfile, onUpdate }: ProfileViewProps) {
             >
               <Sparkles size={16} />
             </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={toggleEditing}
-              className="w-10 h-10 p-0"
-            >
-              {isEditing ? <Save size={16} /> : <Edit size={16} />}
-            </Button>
           </div>
         </div>
       </div>
@@ -1863,16 +1809,14 @@ export function ProfileView({ userProfile, onUpdate }: ProfileViewProps) {
                         <p className="text-sm text-gray-600 italic mt-1">"{userProfile.oneSentenceIntro}"</p>
                       )}
                     </div>
-                    {isEditing && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => startEditing('basic-info')}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Edit size={14} />
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => startEditing('basic-info')}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Edit size={14} />
+                    </Button>
                   </div>
                   
                   {/* Demographics & Personal Details Tags */}
@@ -1938,7 +1882,7 @@ export function ProfileView({ userProfile, onUpdate }: ProfileViewProps) {
               <div className="flex items-center gap-2 mb-3">
                 <section.icon size={20} className="text-gray-600" />
                 <h3 className="font-medium">{section.title}</h3>
-                {isEditing && !editingSections.has(section.id) && (
+                {!editingSections.has(section.id) && (
                   <Button 
                     variant="ghost" 
                     size="sm" 

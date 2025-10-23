@@ -1,7 +1,6 @@
 import React from 'react';
 import { Home, User, Settings } from 'lucide-react';
 import type { Screen } from '../App';
-import { useLanguage } from '../contexts/LanguageContext';
 
 interface BottomNavigationProps {
   currentScreen: Screen;
@@ -9,12 +8,10 @@ interface BottomNavigationProps {
 }
 
 export function BottomNavigation({ currentScreen, onScreenChange }: BottomNavigationProps) {
-  const { t } = useLanguage();
-  
   const navItems = [
-    { id: 'home' as Screen, icon: Home, label: t('navigation.home') },
-    { id: 'profile' as Screen, icon: User, label: t('navigation.profile') },
-    { id: 'settings' as Screen, icon: Settings, label: t('navigation.settings') },
+    { id: 'home' as Screen, icon: Home },
+    { id: 'profile' as Screen, icon: User },
+    { id: 'settings' as Screen, icon: Settings },
   ];
 
   return (
@@ -28,19 +25,18 @@ export function BottomNavigation({ currentScreen, onScreenChange }: BottomNaviga
             <button
               key={item.id}
               onClick={() => onScreenChange(item.id)}
-              className={`flex flex-col items-center py-2 px-4 rounded-lg transition-all duration-200 ${
+              className={`flex items-center justify-center py-2 px-4 rounded-lg transition-all duration-200 ${
                 isActive 
                   ? 'text-blue-500' 
                   : 'text-gray-500 hover:text-gray-700'
               }`}
             >
               <Icon 
-                size={20} 
+                size={24} 
                 className={`transition-all duration-200 ${
                   isActive ? 'scale-110' : ''
                 }`}
               />
-              <span className="text-xs mt-1">{item.label}</span>
             </button>
           );
         })}

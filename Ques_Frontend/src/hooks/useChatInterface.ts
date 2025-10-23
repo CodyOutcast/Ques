@@ -46,7 +46,43 @@ interface ChatInterfaceState {
   sessionId: string | null;
   unreadNotifications: number;
   singleCardInChat: any;
+  currentSuggestions: string[];
 }
+
+// 提示词池 - 包含25个精心设计的提示词
+const SUGGESTION_POOL = [
+  "Find me a Python co-founder",
+  "Connect me with AI researchers",
+  "Looking for startup mentors",
+  "Need investors for tech startup",
+  "Find design collaborators",
+  "Connect with product managers",
+  "Search for blockchain developers",
+  "Find UX/UI designers",
+  "Looking for marketing experts",
+  "Connect with data scientists",
+  "Find mobile app developers",
+  "Search for business strategists",
+  "Looking for technical writers",
+  "Find DevOps engineers",
+  "Connect with sales professionals",
+  "Search for legal advisors",
+  "Find community managers",
+  "Looking for growth hackers",
+  "Connect with content creators",
+  "Find backend developers",
+  "Search for frontend specialists",
+  "Looking for machine learning engineers",
+  "Connect with startup founders",
+  "Find full-stack developers",
+  "Search for venture capitalists"
+];
+
+// 从提示词池中随机选择N个不重复的提示词
+const getRandomSuggestions = (count: number = 4): string[] => {
+  const shuffled = [...SUGGESTION_POOL].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+};
 
 export function useChatInterface(
   userProfile: UserProfile,
@@ -70,7 +106,8 @@ export function useChatInterface(
     quotedContacts: [],
     sessionId: null,
     unreadNotifications: 0,
-    singleCardInChat: null
+    singleCardInChat: null,
+    currentSuggestions: getRandomSuggestions(4)
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -244,6 +281,9 @@ export function useChatInterface(
           }, 1000);
         }
       }
+
+      // 刷新建议提示词（每次对话后）
+      updateState({ currentSuggestions: getRandomSuggestions(4) });
 
     } catch (error) {
       console.error('Failed to send message:', error);
@@ -529,17 +569,15 @@ export function useChatInterface(
     });
   }, []);
 
-  // 获取建议查询
+  // 刷新建议提示词
+  const refreshSuggestions = useCallback(() => {
+    updateState({ currentSuggestions: getRandomSuggestions(4) });
+  }, [updateState]);
+
+  // 获取当前建议查询
   const getSuggestedQueries = useCallback(() => {
-    return [
-      "Find me a Python co-founder",
-      "Connect me with AI researchers",
-      "Looking for startup mentors", 
-      "Need investors for tech startup",
-      "Find design collaborators",
-      "Connect with product managers"
-    ];
-  }, []);
+    return state.currentSuggestions;
+  }, [state.currentSuggestions]);
 
   // 初始化时获取未读通知
   useEffect(() => {
@@ -566,6 +604,7 @@ export function useChatInterface(
     sessionId: state.sessionId,
     unreadNotifications: state.unreadNotifications,
     singleCardInChat: state.singleCardInChat,
+    currentSuggestions: state.currentSuggestions,
 
     // 操作方法
     sendMessage,
@@ -579,6 +618,7 @@ export function useChatInterface(
     clearQuotedContacts,
     showSingleCard,
     updateUnreadNotifications,
+    refreshSuggestions,
 
     // 工具方法
     formatTime,

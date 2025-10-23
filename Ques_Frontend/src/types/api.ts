@@ -588,7 +588,7 @@ export interface PhotoUploadResponse extends FileUploadResponse {
 }
 
 // 卡片滑动相关类型
-export type SwipeAction = 'like' | 'ignore' | 'super_like';
+export type SwipeAction = 'like' | 'ignore';
 
 export interface SwipeRecord {
   id: string;
@@ -623,7 +623,6 @@ export interface SwipeStats {
   totalSwipes: number;
   likes: number;
   ignores: number;
-  superLikes: number;
   matchRate: number; // percentage of likes that resulted in matches
   mostSwipedSkills: string[];
   mostSwipedLocations: string[];
@@ -867,4 +866,28 @@ export interface GetLatestCardResponse {
   hasCard: boolean;
   card?: LatestCardInfo;
   updatedAt?: string;
+}
+
+// Stream相关类型
+export interface StreamChunk {
+  type: 'thinking' | 'result' | 'error' | 'done';
+  content?: string;
+  data?: any;
+}
+
+export interface ChatStreamResponse {
+  thinking?: string; // 累积的思考内容
+  result?: string; // 累积的结果内容
+  recommendations?: UserRecommendation[];
+  suggestedQueries?: string[];
+  sessionId?: string;
+  isDone?: boolean;
+}
+
+export interface StreamCallbacks {
+  onThinkingChunk?: (chunk: string, fullThinking: string) => void;
+  onResultChunk?: (chunk: string, fullResult: string) => void;
+  onRecommendations?: (recommendations: UserRecommendation[]) => void;
+  onComplete?: (response: ChatStreamResponse) => void;
+  onError?: (error: Error) => void;
 } 

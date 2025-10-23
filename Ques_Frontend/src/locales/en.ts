@@ -343,7 +343,6 @@ export const en = {
   swipe: {
     like: 'Like',
     pass: 'Pass',
-    superLike: 'Super Like',
     noMore: 'No more profiles'
   },
   chat: {

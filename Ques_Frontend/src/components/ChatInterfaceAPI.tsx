@@ -398,18 +398,20 @@ export function ChatInterfaceAPI({
         </div>
       )}
 
-      {/* 建议气泡 - 仅在初始状态显示 */}
-      {messages.length === 0 && (
-        <div className="px-4 pb-3">
+      {/* 建议气泡 - 每次对话后都显示 */}
+      <div className="px-4 pb-3 pt-6">
+        <AnimatePresence mode="wait">
           <motion.div
+            key={getSuggestedQueries().join(',')}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
             className="flex flex-wrap gap-2 justify-center"
           >
-            {getSuggestedQueries().slice(0, 4).map((query, index) => (
+            {getSuggestedQueries().map((query, index) => (
               <button
-                key={index}
+                key={`${query}-${index}`}
                 onClick={() => {
                   setInputValue(query);
                   setTimeout(() => handleSendMessage(), 100);
@@ -425,8 +427,8 @@ export function ChatInterfaceAPI({
               </button>
             ))}
           </motion.div>
-        </div>
-      )}
+        </AnimatePresence>
+      </div>
 
       {/* 输入区域 */}
       <div className="p-4 border-t border-gray-200 bg-white">

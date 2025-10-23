@@ -8,6 +8,7 @@ import logoIcon from '../assets/icon.jpg';
 import { useLanguage } from '../contexts/LanguageContext';
 import type { UserProfile } from '../App';
 import type { FriendRequest } from './NotificationPanel';
+import type { UserRecommendation as ApiUserRecommendation } from '../types/api';
 import ChatCards, { ChatCardsRef } from './ChatCards';
 
 interface Message {
@@ -15,7 +16,14 @@ interface Message {
   type: 'user' | 'ai';
   content: string;
   timestamp: Date;
+  thinking?: string; // 思考流内容
+  isStreaming?: boolean; // 是否正在流式输出
 }
+
+// 使用api.ts中的UserRecommendation类型，并添加age属性（向后兼容）
+type UserRecommendation = ApiUserRecommendation & {
+  age?: string; // 向后兼容，从birthday计算得出
+};
 
 interface ConversationState {
   lastQuery: string;
@@ -27,43 +35,6 @@ interface ConversationState {
 interface QuotedContact {
   id: string;
   name: string;
-}
-
-interface UserRecommendation {
-  id: string;
-  name: string;
-  age: string;
-  gender: string;
-  avatar: string;
-  location: string;
-  hobbies: string[];
-  languages: string[];
-  skills: string[];
-  resources: string[];
-  projects: { 
-    title: string; 
-    role: string; 
-    description: string; 
-    referenceLinks: string[] 
-  }[];
-  goals: string[];
-  demands: string[];
-  institutions: { 
-    name: string; 
-    role: string; 
-    description: string; 
-    verified: boolean;
-  }[];
-  university?: {
-    name: string;
-    verified: boolean;
-  };
-  matchScore: number;
-  bio: string;
-  oneSentenceIntro?: string;
-  whyMatch: string; // Why we match message shown to the user (receiver's perspective)
-  whisperDefaultMessage?: string; // AI-generated message from user's perspective for whisper
-  receivesLeft?: number;
 }
 
 interface ChatInterfaceProps {
@@ -87,10 +58,58 @@ export interface ChatInterfaceRef {
   resetLastSwipe: () => void;
 }
 
+// 提示词池 - 包含25个精心设计的提示词
+const SUGGESTION_POOL = [
+  "Find me a Python co-founder",
+  "Connect me with AI researchers",
+  "Looking for startup mentors",
+  "Need investors for tech startup",
+  "Find design collaborators",
+  "Connect with product managers",
+  "Search for blockchain developers",
+  "Find UX/UI designers",
+  "Looking for marketing experts",
+  "Connect with data scientists",
+  "Find mobile app developers",
+  "Search for business strategists",
+  "Looking for technical writers",
+  "Find DevOps engineers",
+  "Connect with sales professionals",
+  "Search for legal advisors",
+  "Find community managers",
+  "Looking for growth hackers",
+  "Connect with content creators",
+  "Find backend developers",
+  "Search for frontend specialists",
+  "Looking for machine learning engineers",
+  "Connect with startup founders",
+  "Find full-stack developers",
+  "Search for venture capitalists"
+];
+
+// 从提示词池中随机选择N个不重复的提示词
+const getRandomSuggestions = (count: number = 4): string[] => {
+  const shuffled = [...SUGGESTION_POOL].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+};
+
+// 辅助函数：从生日计算年龄
+const calculateAge = (birthday: string): string => {
+  const birthDate = new Date(birthday);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDiff = today.getMonth() - birthDate.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age.toString();
+};
+
 const MOCK_RECOMMENDATIONS: UserRecommendation[] = [
   {
     id: '1',
     name: 'Sarah Chen',
+    birthday: '1999-03-15',
     age: '24',
     gender: 'Female',
     avatar: '👩‍💻',
@@ -131,12 +150,12 @@ const MOCK_RECOMMENDATIONS: UserRecommendation[] = [
     bio: 'AI researcher passionate about ethical machine learning and startup innovation. PhD in Computer Science with 5 years of industry experience at Google AI.',
     oneSentenceIntro: 'I build AI systems that solve real-world problems while keeping humans at the center.',
     whyMatch: 'Perfect co-founder match! 🚀 You both have strong Python skills and share a passion for AI innovation. Sarah has the ML expertise to complement your technical background, and she\'s actively seeking a co-founder for her next venture.',
-    whisperDefaultMessage: 'Hi Sarah! I noticed we both share a passion for ethical AI and have strong Python skills. I\'m really impressed by your ML Ethics Framework project. I believe my technical background could complement your ML expertise perfectly, and I\'d love to explore potential collaboration opportunities!',
     receivesLeft: 5,
   },
   {
     id: '2',
     name: 'Alex Kumar',
+    birthday: '1994-07-22',
     age: '29',
     gender: 'Male',
     avatar: '👨‍💼',
@@ -177,12 +196,12 @@ const MOCK_RECOMMENDATIONS: UserRecommendation[] = [
     bio: 'Serial entrepreneur with 3 successful exits, now mentoring and building. Former Product Director at Alibaba, expert in scaling 0-to-1 products.',
     oneSentenceIntro: 'I turn technical innovations into market-winning products that users love.',
     whyMatch: 'Excellent bidirectional match! 🤝 He brings the product management and startup scaling experience you need, while you offer the technical Python skills he\'s seeking for his next venture. Both actively looking for co-founders in the China market.',
-    whisperDefaultMessage: 'Hi Alex! Your experience scaling EdTech to $10M ARR is incredibly inspiring. I have strong technical Python skills and I\'m looking for someone with your product and scaling expertise. I think we could build something amazing together in the China market!',
     receivesLeft: 3,
   },
   {
     id: '3',
     name: 'Maria Rodriguez',
+    birthday: '1997-11-08',
     age: '26',
     gender: 'Female',
     avatar: '👩‍🔬',
@@ -223,7 +242,6 @@ const MOCK_RECOMMENDATIONS: UserRecommendation[] = [
     bio: 'Data scientist passionate about AI ethics and open source contributions. Published researcher with 20+ papers in top-tier journals.',
     oneSentenceIntro: 'I use data science to solve real-world problems with ethical AI solutions.',
     whyMatch: 'Strong mutual interest! 🤝 Your AI ethics values align perfectly with her research focus, while your technical skills complement her data science background. She\'s looking for collaborators who share her values-driven approach to AI development.',
-    whisperDefaultMessage: 'Hi Maria! I\'m deeply interested in AI ethics and your Bias Detection Framework research caught my attention. I share your values-driven approach to AI development and would love to discuss how we might collaborate on ethical AI solutions, especially in healthcare applications.',
     receivesLeft: 8,
   }
 ];
@@ -255,6 +273,8 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [currentThinking, setCurrentThinking] = useState('');
   const [searchInside, setSearchInside] = useState(true);
   const chatCardsRef = useRef<ChatCardsRef>(null);
   const [showCardStack, setShowCardStack] = useState(false);
@@ -272,6 +292,7 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
     currentIndex: 0
   });
   const [quotedContacts, setQuotedContacts] = useState<QuotedContact[]>([]);
+  const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(() => getRandomSuggestions(4));
 
   // Add state to track if waiting for single card setup
   const [pendingSingleCard, setPendingSingleCard] = useState<any>(null);
@@ -399,107 +420,139 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
   };
 
   const simulateAIResponse = async (userMessage: string) => {
-    setIsTyping(true);
-    
-    // Simulate thinking time
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    let aiResponse = AI_RESPONSES[Math.floor(Math.random() * AI_RESPONSES.length)];
-    let recommendations: UserRecommendation[] = [];
-    let triggerIndex: number | null = null;
-
     const userMessageLower = userMessage.toLowerCase();
-
-    if (userMessageLower.includes('co-founder') || 
-        userMessageLower.includes('startup') ||
-        userMessageLower.includes('python') ||
-        userMessageLower.includes('ai')) {
-      recommendations = MOCK_RECOMMENDATIONS
-        .filter(rec => !addedContactIds.has(rec.id))
-        .map(rec => ({
-          ...rec,
-          whyMatch: generateMutualMatchExplanation(rec, userMessage)
-        }));
-      
-      if (recommendations.length > 0) {
-        aiResponse = "I found some excellent matches for you! Let me show them in an interactive format...";
-        triggerIndex = messages.length;
-      } else {
-        aiResponse = "I've already shown you all the best matches for this type of search. Would you like to try a different query?";
-      }
-    } else if (userMessageLower.includes('mentor')) {
-      recommendations = MOCK_RECOMMENDATIONS
-        .filter(r => !addedContactIds.has(r.id) && (r.name === 'Sarah Chen' || r.name === 'Alex Kumar'))
-        .map(rec => ({
-          ...rec,
-          whyMatch: generateMutualMatchExplanation(rec, userMessage)
-        }));
-      
-      if (recommendations.length > 0) {
-        aiResponse = "I found some experienced mentors who are also seeking mentees with your profile! Let me show them...";
-        triggerIndex = messages.length;
-      } else {
-        aiResponse = "I've already shown you all the available mentors. Would you like to try a different search?";
-      }
-    } else if (userMessageLower.includes('investor')) {
-      recommendations = MOCK_RECOMMENDATIONS
-        .filter(r => !addedContactIds.has(r.id) && r.name === 'Alex Kumar')
-        .map(rec => ({
-          ...rec,
-          whyMatch: generateMutualMatchExplanation(rec, userMessage)
-        }));
-      
-      if (recommendations.length > 0) {
-        aiResponse = "Here are some investors actively seeking founders with profiles like yours! Opening the stack...";
-        triggerIndex = messages.length;
-      } else {
-        aiResponse = "I've already shown you all the available investors. Would you like to try a different search?";
-      }
-    }
-
-    setIsTyping(false);
     
-    const newMessage: Message = {
-      id: Date.now().toString(),
+    // 判断是否需要复杂搜索（有思考流）
+    const needsComplexSearch = userMessageLower.includes('co-founder') || 
+                               userMessageLower.includes('startup') ||
+                               userMessageLower.includes('python') ||
+                               userMessageLower.includes('ai') ||
+                               userMessageLower.includes('mentor') ||
+                               userMessageLower.includes('investor');
+
+    // 创建AI消息占位符
+    const aiMessageId = Date.now().toString();
+    const aiMessage: Message = {
+      id: aiMessageId,
       type: 'ai',
-      content: aiResponse,
+      content: '',
+      thinking: '',
       timestamp: new Date(),
+      isStreaming: true
     };
 
-    setMessages(prev => [...prev, newMessage]);
+    // 获取当前消息索引（在添加AI消息之前）
+    let currentMessageIndex = 0;
+    
+    // 添加消息到列表，并获取正确的索引
+    setMessages(prev => {
+      currentMessageIndex = prev.length; // AI消息将被添加到这个位置
+      return [...prev, aiMessage];
+    });
 
-    if (triggerIndex !== null && recommendations.length > 0) {
-      setConversationState({
-        lastQuery: userMessage,
-        availableContacts: recommendations,
-        shownContacts: recommendations,
-        currentIndex: 0
-      });
+    // 使用chatService的模拟stream响应
+    const { chatService } = await import('../services/chatService');
+    
+    await chatService.simulateStreamResponse(
+      userMessage,
+      {
+        onThinkingChunk: (chunk, fullThinking) => {
+          setIsThinking(true);
+          setCurrentThinking(fullThinking);
+          setMessages(prev => prev.map(msg => 
+            msg.id === aiMessageId 
+              ? { ...msg, thinking: fullThinking }
+              : msg
+          ));
+        },
+        onResultChunk: (chunk, fullResult) => {
+          setIsThinking(false);
+          setIsTyping(true);
+          setMessages(prev => prev.map(msg => 
+            msg.id === aiMessageId 
+              ? { ...msg, content: fullResult }
+              : msg
+          ));
+        },
+        onRecommendations: (recommendations) => {
+          const filteredRecs = recommendations
+            .filter(rec => !addedContactIds.has(rec.id))
+            .map(rec => ({
+              ...rec,
+              whyMatch: generateMutualMatchExplanation(rec, userMessage)
+            }));
 
-      setTimeout(() => {
-        // Show cards directly below last message
-        setCurrentRecommendations(recommendations);
-        setShowCards(true);
-        setCardsTriggerIndex(triggerIndex);
-        
-        // Trigger scroll animation to center cards
-        setTimeout(() => {
-          setScrollToCards(true);
-        }, 100);
-      }, 1000);
-    }
+          if (filteredRecs.length > 0) {
+            setConversationState({
+              lastQuery: userMessage,
+              availableContacts: filteredRecs,
+              shownContacts: filteredRecs,
+              currentIndex: 0
+            });
+
+            setTimeout(() => {
+              setCurrentRecommendations(filteredRecs);
+              setShowCards(true);
+              setCardsTriggerIndex(currentMessageIndex);
+              
+              setTimeout(() => {
+                setScrollToCards(true);
+              }, 100);
+            }, 500);
+          }
+        },
+        onComplete: (response) => {
+          setIsTyping(false);
+          setIsThinking(false);
+          setCurrentThinking('');
+          setMessages(prev => prev.map(msg => 
+            msg.id === aiMessageId 
+              ? { ...msg, isStreaming: false }
+              : msg
+          ));
+          
+          // 刷新建议提示词
+          setCurrentSuggestions(getRandomSuggestions(4));
+        },
+        onError: (error) => {
+          console.error('Stream error:', error);
+          setIsTyping(false);
+          setIsThinking(false);
+          setCurrentThinking('');
+          setMessages(prev => prev.map(msg => 
+            msg.id === aiMessageId 
+              ? { 
+                  ...msg, 
+                  content: 'Sorry, something went wrong. Please try again.',
+                  isStreaming: false 
+                }
+              : msg
+          ));
+        }
+      },
+      searchInside ? 'inside' : 'global',
+      userProfile
+    );
   };
 
   const handleSendMessage = async () => {
-    if (!inputValue.trim() && quotedContacts.length === 0) return;
+    // 先保存当前输入值，避免状态更新导致的竞态条件
+    const currentInput = inputValue.trim();
+    const currentQuotedContacts = [...quotedContacts];
+    
+    if (!currentInput && currentQuotedContacts.length === 0) return;
+
+    // 立即清空输入框和引用联系人，避免重复发送
+    setInputValue('');
+    setQuotedContacts([]);
 
     // Build the message content with quoted contacts context
-    let messageContent = inputValue;
-    if (quotedContacts.length > 0) {
-      const quotedNames = quotedContacts.map(q => q.name).join(', ');
-      messageContent = quotedContacts.length === 1 
-        ? `About ${quotedNames}: ${inputValue}`
-        : `About ${quotedNames}: ${inputValue}`;
+    let messageContent = currentInput;
+    if (currentQuotedContacts.length > 0) {
+      const quotedNames = currentQuotedContacts.map(q => q.name).join(', ');
+      messageContent = currentQuotedContacts.length === 1 
+        ? `About ${quotedNames}: ${currentInput}`
+        : `About ${quotedNames}: ${currentInput}`;
     }
 
     const userMessage: Message = {
@@ -509,12 +562,14 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
       timestamp: new Date(),
     };
 
+    // 添加用户消息
     setMessages(prev => [...prev, userMessage]);
-    const messageToProcess = messageContent;
-    setInputValue('');
-    setQuotedContacts([]);
 
-    await simulateAIResponse(messageToProcess);
+    // 等待一小段时间确保状态更新完成
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    // 调用AI响应
+    await simulateAIResponse(messageContent);
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -690,7 +745,71 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
                     ) : (
                       <div className="flex justify-start mb-3">
                         <div className="bg-gray-100 rounded-2xl rounded-tl-md px-4 py-2 max-w-xs">
-                          <p className="text-gray-800">{message.content}</p>
+                          {/* 思考流显示 */}
+                          {message.thinking && (
+                            <div className="mb-2 pb-2 border-b border-gray-300">
+                              <div className="flex items-center gap-2 mb-1">
+                                {message.isStreaming && !message.content ? (
+                                  // 思考中 - 显示动画
+                                  <>
+                                    <div className="flex items-center space-x-1">
+                                      <motion.div
+                                        animate={{ scale: [1, 1.3, 1] }}
+                                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                                        className="w-2 h-2 bg-blue-500 rounded-full"
+                                      />
+                                      <motion.div
+                                        animate={{ scale: [1, 1.3, 1] }}
+                                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                                        className="w-2 h-2 bg-blue-500 rounded-full"
+                                      />
+                                      <motion.div
+                                        animate={{ scale: [1, 1.3, 1] }}
+                                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                                        className="w-2 h-2 bg-blue-500 rounded-full"
+                                      />
+                                    </div>
+                                    <span className="text-xs text-blue-600 font-medium">思考中</span>
+                                  </>
+                                ) : (
+                                  // 思考完成 - 显示勾选图标
+                                  <>
+                                    <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span className="text-xs text-green-600 font-medium">思考完成</span>
+                                  </>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-600 whitespace-pre-line">{message.thinking}</p>
+                            </div>
+                          )}
+                          
+                          {/* 结果内容 */}
+                          {message.content && (
+                            <p className="text-gray-800">{message.content}</p>
+                          )}
+                          
+                          {!message.content && !message.thinking && message.isStreaming && (
+                            <div className="flex space-x-1">
+                              <motion.div
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                                className="w-2 h-2 bg-gray-400 rounded-full"
+                              />
+                              <motion.div
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                                className="w-2 h-2 bg-gray-400 rounded-full"
+                              />
+                              <motion.div
+                                animate={{ scale: [1, 1.2, 1] }}
+                                transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                                className="w-2 h-2 bg-gray-400 rounded-full"
+                              />
+                            </div>
+                          )}
+                          
                           <p className="text-xs text-gray-500 mt-1">{formatTime(message.timestamp)}</p>
                         </div>
                       </div>
@@ -746,7 +865,71 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
                   ) : (
                       <div className="flex justify-start mb-3">
                       <div className="bg-gray-100 rounded-2xl rounded-tl-md px-4 py-2 max-w-xs">
-                        <p className="text-gray-800">{message.content}</p>
+                        {/* 思考流显示 */}
+                        {message.thinking && (
+                            <div className="mb-2 pb-2 border-b border-gray-300">
+                              <div className="flex items-center gap-2 mb-1">
+                                {message.isStreaming && !message.content ? (
+                                  // 思考中 - 显示动画
+                                  <>
+                                    <div className="flex items-center space-x-1">
+                                      <motion.div
+                                        animate={{ scale: [1, 1.3, 1] }}
+                                        transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                                        className="w-2 h-2 bg-blue-500 rounded-full"
+                                      />
+                                      <motion.div
+                                        animate={{ scale: [1, 1.3, 1] }}
+                                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                                        className="w-2 h-2 bg-blue-500 rounded-full"
+                                      />
+                                      <motion.div
+                                        animate={{ scale: [1, 1.3, 1] }}
+                                        transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                                        className="w-2 h-2 bg-blue-500 rounded-full"
+                                      />
+                                    </div>
+                                    <span className="text-xs text-blue-600 font-medium">思考中</span>
+                                  </>
+                                ) : (
+                                  // 思考完成 - 显示勾选图标
+                                  <>
+                                    <svg className="w-3 h-3 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                    <span className="text-xs text-green-600 font-medium">思考完成</span>
+                                  </>
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-600 whitespace-pre-line">{message.thinking}</p>
+                            </div>
+                        )}
+                        
+                        {/* 结果内容 */}
+                        {message.content && (
+                          <p className="text-gray-800">{message.content}</p>
+                        )}
+                        
+                        {!message.content && !message.thinking && message.isStreaming && (
+                          <div className="flex space-x-1">
+                            <motion.div
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0 }}
+                              className="w-2 h-2 bg-gray-400 rounded-full"
+                            />
+                            <motion.div
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.2 }}
+                              className="w-2 h-2 bg-gray-400 rounded-full"
+                            />
+                            <motion.div
+                              animate={{ scale: [1, 1.2, 1] }}
+                              transition={{ duration: 0.6, repeat: Infinity, delay: 0.4 }}
+                              className="w-2 h-2 bg-gray-400 rounded-full"
+                            />
+                          </div>
+                        )}
+                        
                         <p className="text-xs text-gray-500 mt-1">{formatTime(message.timestamp)}</p>
                       </div>
                     </div>
@@ -809,45 +992,39 @@ export const ChatInterface = forwardRef<ChatInterfaceRef, ChatInterfaceProps>(({
         </div>
       )}
 
-      {/* Suggestion Bubbles - only show in initial state */}
-      {messages.length === 0 && (
-        <div className="px-4 pb-3">
+      {/* Suggestion Bubbles - show after every conversation */}
+      <div className="px-4 pb-3 pt-6">
+        <AnimatePresence mode="wait">
           <motion.div
+            key={currentSuggestions.join(',')}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.3 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
             className="flex flex-wrap gap-2 justify-center"
           >
-            <button
-              onClick={() => {
-                setInputValue("Find me a Python co-founder");
-                handleSendMessage();
-              }}
-              className="bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-full text-sm transition-colors border border-blue-200"
-            >
-              Python co-founder
-            </button>
-            <button
-              onClick={() => setInputValue("Connect me with AI researchers")}
-              className="bg-green-50 hover:bg-green-100 text-green-700 px-3 py-2 rounded-full text-sm transition-colors border border-green-200"
-            >
-              AI researchers
-            </button>
-            <button
-              onClick={() => setInputValue("Find design mentors")}
-              className="bg-purple-50 hover:bg-purple-100 text-purple-700 px-3 py-2 rounded-full text-sm transition-colors border border-purple-200"
-            >
-              Design mentors
-            </button>
-            <button
-              onClick={() => setInputValue("Startup advisors needed")}
-              className="bg-orange-50 hover:bg-orange-100 text-orange-700 px-3 py-2 rounded-full text-sm transition-colors border border-orange-200"
-            >
-              Startup advisors
-            </button>
+            {currentSuggestions.map((suggestion, index) => (
+              <button
+                key={`${suggestion}-${index}`}
+                onClick={async () => {
+                  setInputValue(suggestion);
+                  // 使用setTimeout确保状态更新完成
+                  await new Promise(resolve => setTimeout(resolve, 50));
+                  await handleSendMessage();
+                }}
+                className={`px-3 py-2 rounded-full text-sm transition-colors border ${
+                  index % 4 === 0 ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200' :
+                  index % 4 === 1 ? 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200' :
+                  index % 4 === 2 ? 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200' :
+                  'bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200'
+                }`}
+              >
+                {suggestion}
+              </button>
+            ))}
           </motion.div>
-        </div>
-      )}
+        </AnimatePresence>
+      </div>
 
       {/* Input Area */}
       <div className="p-4 border-t border-gray-200 bg-white">

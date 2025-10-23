@@ -7,7 +7,10 @@ import type {
   ChatRequest,
   ChatResponse,
   UserRecommendation,
-  PaginatedResponse
+  PaginatedResponse,
+  StreamChunk,
+  ChatStreamResponse,
+  StreamCallbacks
 } from '../types/api';
 
 class ChatService {
@@ -377,6 +380,168 @@ class ChatService {
     }
     
     return new ApiError('Unknown error occurred');
+  }
+
+  /**
+   * 发送消息并获取流式响应（同时处理思考流和结果流）
+   */
+  async sendMessageStream(
+    request: ChatRequest,
+    callbacks: StreamCallbacks
+  ): Promise<void> {
+    try {
+      const streamResponse: ChatStreamResponse = {
+        thinking: '',
+        result: '',
+        recommendations: [],
+        suggestedQueries: [],
+        isDone: false
+      };
+
+      await httpClient.stream(
+        API_CONFIG.ENDPOINTS.CHAT.SEND_MESSAGE + '/stream',
+        request,
+        (chunk: StreamChunk) => {
+          try {
+            switch (chunk.type) {
+              case 'thinking':
+                if (chunk.content) {
+                  streamResponse.thinking += chunk.content;
+                  callbacks.onThinkingChunk?.(
+                    chunk.content,
+                    streamResponse.thinking
+                  );
+                }
+                break;
+
+              case 'result':
+                if (chunk.content) {
+                  streamResponse.result += chunk.content;
+                  callbacks.onResultChunk?.(
+                    chunk.content,
+                    streamResponse.result
+                  );
+                }
+                break;
+
+              case 'done':
+                streamResponse.isDone = true;
+                if (chunk.data) {
+                  if (chunk.data.recommendations) {
+                    streamResponse.recommendations = chunk.data.recommendations;
+                    callbacks.onRecommendations?.(chunk.data.recommendations);
+                  }
+                  if (chunk.data.suggestedQueries) {
+                    streamResponse.suggestedQueries = chunk.data.suggestedQueries;
+                  }
+                  if (chunk.data.sessionId) {
+                    streamResponse.sessionId = chunk.data.sessionId;
+                  }
+                }
+                callbacks.onComplete?.(streamResponse);
+                break;
+
+              case 'error':
+                throw new ApiError(chunk.content || 'Stream error');
+
+              default:
+                console.warn('Unknown chunk type:', chunk.type);
+            }
+          } catch (error) {
+            console.error('Error processing chunk:', error);
+            callbacks.onError?.(error as Error);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Failed to send message with stream:', error);
+      callbacks.onError?.(this.handleError(error));
+      throw this.handleError(error);
+    }
+  }
+
+  /**
+   * 模拟流式AI响应（开发阶段使用）
+   * 模拟思考流和结果流
+   */
+  async simulateStreamResponse(
+    message: string,
+    callbacks: StreamCallbacks,
+    searchMode: 'inside' | 'global' = 'inside',
+    userProfile?: any
+  ): Promise<void> {
+    const streamResponse: ChatStreamResponse = {
+      thinking: '',
+      result: '',
+      recommendations: [],
+      suggestedQueries: [],
+      isDone: false
+    };
+
+    try {
+      // 判断是否需要思考流
+      const needsThinking = message.toLowerCase().includes('co-founder') || 
+                          message.toLowerCase().includes('startup') ||
+                          message.toLowerCase().includes('python') ||
+                          message.toLowerCase().includes('ai');
+
+      // 第一阶段：思考流（如果需要）
+      if (needsThinking) {
+        const thinkingSteps = [
+          '正在分析你的查询...',
+          '检查用户资料匹配度...',
+          '筛选符合条件的候选人...',
+          '计算匹配分数...',
+          '生成个性化推荐理由...'
+        ];
+
+        for (let i = 0; i < thinkingSteps.length; i++) {
+          await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 200));
+          const thinkingChunk = thinkingSteps[i] + '\n';
+          streamResponse.thinking += thinkingChunk;
+          callbacks.onThinkingChunk?.(thinkingChunk, streamResponse.thinking);
+        }
+
+        // 思考完成后稍作停顿
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+
+      // 第二阶段：结果流
+      const resultText = needsThinking
+        ? '我找到了一些非常匹配的候选人！让我为你展示他们的资料...'
+        : '让我帮你搜索一下相关的人选...';
+
+      const words = resultText.split('');
+      for (const word of words) {
+        await new Promise(resolve => setTimeout(resolve, 30 + Math.random() * 20));
+        streamResponse.result += word;
+        callbacks.onResultChunk?.(word, streamResponse.result);
+      }
+
+      // 第三阶段：返回推荐结果（如果有）
+      if (needsThinking) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        const recommendations = this.getMockRecommendations().map(rec => ({
+          ...rec,
+          whyMatch: this.generateMatchExplanation(rec, message, userProfile)
+        }));
+
+        streamResponse.recommendations = recommendations;
+        streamResponse.suggestedQueries = this.getSuggestedQueries(message);
+        streamResponse.sessionId = `session_${Date.now()}`;
+
+        callbacks.onRecommendations?.(recommendations);
+      }
+
+      // 完成
+      streamResponse.isDone = true;
+      callbacks.onComplete?.(streamResponse);
+
+    } catch (error) {
+      console.error('Simulation error:', error);
+      callbacks.onError?.(error as Error);
+    }
   }
 }
 

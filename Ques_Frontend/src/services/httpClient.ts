@@ -250,6 +250,70 @@ class HttpClient {
       xhr.send(formData);
     });
   }
+
+  // Stream请求 - 支持Server-Sent Events (SSE)
+  public async stream(
+    endpoint: string,
+    data?: any,
+    onChunk?: (chunk: any) => void
+  ): Promise<void> {
+    const url = `${this.baseURL}${endpoint}`;
+    const headers = this.buildHeaders();
+
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: data ? JSON.stringify(data) : undefined,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new ApiError(
+          errorData.message || `HTTP ${response.status}: ${response.statusText}`,
+          response.status,
+          errorData.code,
+          errorData
+        );
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+
+      if (!reader) {
+        throw new ApiError('Stream not available');
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        
+        if (done) {
+          break;
+        }
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              if (onChunk) {
+                onChunk(data);
+              }
+            } catch (e) {
+              console.error('Failed to parse chunk:', e);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError('Stream error');
+    }
+  }
 }
 
 // 创建全局HTTP客户端实例

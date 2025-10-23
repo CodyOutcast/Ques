@@ -312,8 +312,8 @@ class SwipeService {
       errors.push('Target user ID is required');
     }
 
-    if (!request.action || !['like', 'ignore', 'super_like'].includes(request.action)) {
-      errors.push('Valid action is required (like, ignore, or super_like)');
+    if (!request.action || !['like', 'ignore'].includes(request.action)) {
+      errors.push('Valid action is required (like or ignore)');
     }
 
     if (request.matchScore && (request.matchScore < 0 || request.matchScore > 100)) {

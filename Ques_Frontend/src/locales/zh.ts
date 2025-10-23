@@ -343,7 +343,6 @@ export const zh = {
   swipe: {
     like: '喜欢',
     pass: '跳过',
-    superLike: '超级喜欢',
     noMore: '没有更多资料了'
   },
   chat: {
