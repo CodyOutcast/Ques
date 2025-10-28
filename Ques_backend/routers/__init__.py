@@ -20,7 +20,7 @@ from . import (
     payments,             # payment system with complete implementation
     # card_tracking,      # may import deleted models
     ai_services,
-    # casual_requests,    # imports deleted models.casual_requests
+    casual_requests,    # casual requests social activity system  
     # chat_agent,         # imports deleted models.casual_requests
     # projects,           # imports deleted models.projects
     # membership,         # imports deleted models.payments
@@ -46,7 +46,7 @@ __all__ = [
     "payments",               # Payment system - NEWLY ADDED
     # "card_tracking",       # Commented - imports deleted models
     "ai_services",
-    # "casual_requests",     # Commented - imports deleted models
+    "casual_requests",     # Casual requests system - NEWLY ENABLED
     # "chat_agent",          # Commented - imports deleted models
     # "projects",            # Commented - imports deleted models
     # "membership",          # Commented - imports deleted models

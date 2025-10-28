@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 
 from dependencies.db import get_db, engine
 from models.base import Base
-from routers import auth, users, user_reports, intelligent_agent, basic_operations, university_verification, notifications, contacts, whispers, payments, ai_services, tpns, project_management, sms_router, swipes, user_settings, chat
+from routers import auth, users, user_reports, intelligent_agent, basic_operations, university_verification, notifications, contacts, whispers, payments, ai_services, tpns, project_management, sms_router, swipes, user_settings, chat, casual_requests
 # university_verification - now uses existing UserProfile model
 # Commented out routers that import deleted models:
 # sms_router - phone verification service (field names fixed) 
@@ -203,8 +203,8 @@ logger.info("✅ Payment system router loaded")
 # logger.info("✅ Card tracking router loaded")
 app.include_router(ai_services.router, prefix="/api/v1/ai", tags=["AI Services"])
 logger.info("✅ AI services router loaded")
-# app.include_router(casual_requests.router, prefix="/api/v1/casual-requests", tags=["Casual Requests"])  # Commented - imports deleted models.casual_requests
-# logger.info("✅ Casual requests router loaded")
+app.include_router(casual_requests.router, prefix="/api/v1/casual-requests", tags=["Casual Requests"])  # NEWLY ENABLED - casual requests social activity system
+logger.info("✅ Casual requests router loaded")
 # app.include_router(chat_agent.router, prefix="/api/v1", tags=["Chat Agent"])  # Commented - imports deleted models.casual_requests
 # logger.info("✅ Chat agent router loaded")
 

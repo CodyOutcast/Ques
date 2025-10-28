@@ -21,6 +21,8 @@ class Province(Base):
     
     # Relationships
     cities = relationship("City", back_populates="province")
+    institutions = relationship("Institution", back_populates="province")
+    casual_requests = relationship("CasualRequest", back_populates="province")
     # Note: Users don't have direct province_id FK - location info is in user_profiles table
     user_profiles = relationship("UserProfile", foreign_keys="[UserProfile.province_id]", back_populates="province")
 
@@ -42,5 +44,7 @@ class City(Base):
     
     # Relationships
     province = relationship("Province", back_populates="cities")
+    institutions = relationship("Institution", back_populates="city")
+    casual_requests = relationship("CasualRequest", back_populates="city")
     # Note: Users don't have direct city_id FK - location info is in user_profiles table
     user_profiles = relationship("UserProfile", foreign_keys="[UserProfile.city_id]", back_populates="city")

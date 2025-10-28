@@ -10,7 +10,8 @@ from datetime import datetime
 class CasualRequestBase(BaseModel):
     """Base schema for casual requests"""
     query: str = Field(..., min_length=10, max_length=500, description="The original request text")
-    location: Optional[str] = Field(None, max_length=100, description="Optional location for the activity")
+    province_id: Optional[int] = Field(None, ge=1, description="Province ID for the activity location")
+    city_id: Optional[int] = Field(None, ge=1, description="City ID for the activity location")
     preferences: Optional[Dict[str, Any]] = Field(None, description="User preferences as JSON object")
 
     @validator('query')
@@ -19,10 +20,10 @@ class CasualRequestBase(BaseModel):
             raise ValueError('Query cannot be empty or just whitespace')
         return v.strip()
 
-    @validator('location')
-    def validate_location(cls, v):
-        if v is not None:
-            return v.strip() if v.strip() else None
+    @validator('city_id')
+    def validate_city_requires_province(cls, v, values):
+        if v is not None and 'province_id' in values and values['province_id'] is None:
+            raise ValueError('City ID requires province ID to be set')
         return v
 
 class CasualRequestCreate(CasualRequestBase):
@@ -32,7 +33,8 @@ class CasualRequestCreate(CasualRequestBase):
         schema_extra = {
             "example": {
                 "query": "Looking for someone to grab coffee and discuss startup ideas this weekend",
-                "location": "Shenzhen",
+                "province_id": 19,  # Guangdong Province
+                "city_id": 308,     # Shenzhen City  
                 "preferences": {
                     "activity_type": "social", 
                     "timing": "weekend", 
@@ -44,7 +46,8 @@ class CasualRequestCreate(CasualRequestBase):
 class CasualRequestUpdate(BaseModel):
     """Schema for updating a casual request"""
     query: Optional[str] = Field(None, min_length=10, max_length=500)
-    location: Optional[str] = Field(None, max_length=100)
+    province_id: Optional[int] = Field(None, ge=1)
+    city_id: Optional[int] = Field(None, ge=1) 
     preferences: Optional[Dict[str, Any]] = None
     is_active: Optional[bool] = None
 
@@ -53,6 +56,12 @@ class CasualRequestUpdate(BaseModel):
         if v is not None and not v.strip():
             raise ValueError('Query cannot be empty or just whitespace')
         return v.strip() if v else v
+        
+    @validator('city_id')
+    def validate_city_requires_province(cls, v, values):
+        if v is not None and 'province_id' in values and values['province_id'] is None:
+            raise ValueError('City ID requires province ID to be set')
+        return v
 
 class CasualRequestResponse(BaseModel):
     """Schema for casual request responses"""
@@ -61,7 +70,10 @@ class CasualRequestResponse(BaseModel):
     query: str
     optimized_query: str
     is_active: bool
-    location: Optional[str]
+    province_id: Optional[int]
+    city_id: Optional[int]
+    province_name: Optional[str] = Field(None, description="Province name (populated from relationships)")
+    city_name: Optional[str] = Field(None, description="City name (populated from relationships)")
     preferences: Optional[Dict[str, Any]]
     created_at: datetime
     updated_at: datetime
@@ -76,7 +88,10 @@ class CasualRequestResponse(BaseModel):
                 "query": "Looking for hiking partners this weekend",
                 "optimized_query": "Seeking outdoor enthusiasts for weekend hiking adventure in local trails",
                 "is_active": True,
-                "location": "Shenzhen",
+                "province_id": 19,
+                "city_id": 308,
+                "province_name": "Guangdong",
+                "city_name": "Shenzhen",
                 "preferences": {"activity_type": "outdoor", "timing": "weekend", "group_size": "2-5"},
                 "created_at": "2024-01-15T10:30:00Z",
                 "updated_at": "2024-01-15T10:30:00Z",
@@ -86,13 +101,15 @@ class CasualRequestResponse(BaseModel):
 
 class CasualRequestSearch(BaseModel):
     """Schema for searching casual requests"""
-    location: Optional[str] = Field(None, description="Filter by location")
+    province_id: Optional[int] = Field(None, ge=1, description="Filter by province ID")
+    city_id: Optional[int] = Field(None, ge=1, description="Filter by city ID")
     limit: Optional[int] = Field(20, ge=1, le=100, description="Number of results to return")
     
     class Config:
         schema_extra = {
             "example": {
-                "location": "Shenzhen",
+                "province_id": 19,  # Guangdong
+                "city_id": 308,     # Shenzhen
                 "limit": 10
             }
         }
@@ -112,14 +129,17 @@ class CasualRequestMatch(BaseModel):
                     "query": "Want to explore hiking trails around Shenzhen",
                     "optimized_query": "Seeking hiking companions for trail exploration in Shenzhen area",
                     "is_active": True,
-                    "location": "Shenzhen",
+                    "province_id": 19,
+                    "city_id": 308,
+                    "province_name": "Guangdong",
+                    "city_name": "Shenzhen",
                     "preferences": {"activity_type": "outdoor", "timing": "flexible"},
                     "created_at": "2024-01-15T12:00:00Z",
                     "updated_at": "2024-01-15T12:00:00Z", 
                     "last_activity_at": "2024-01-15T12:00:00Z"
                 },
                 "similarity_score": 0.85,
-                "match_reasons": ["Same location (Shenzhen)", "Similar outdoor activity interest", "Compatible timing"]
+                "match_reasons": ["Same province", "Same city", "Similar outdoor activity interest", "Compatible timing"]
             }
         }
 
@@ -134,7 +154,7 @@ class CasualRequestStats(BaseModel):
         schema_extra = {
             "example": {
                 "total_active_requests": 150,
-                "requests_by_location": {"Shenzhen": 45, "Beijing": 32, "Shanghai": 28, "Guangzhou": 20},
+                "requests_by_location": {"province_19": 45, "province_11": 32, "province_31": 28, "province_44": 20},
                 "recent_activity_count": 25,
                 "average_requests_per_day": 12.5
             }

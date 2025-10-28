@@ -14,6 +14,7 @@ from .user_quotas import UserQuota  # user_quotas table
 from .user_swipes import UserSwipe, SwipeDirection  # user_swipes table
 from .swipes import SwipeRecord, SwipeAction, SearchMode  # swipe_records table (new)
 from .user_settings import UserSettings  # user_settings table (new)
+from .casual_requests import CasualRequest  # casual_requests table (new)
 from .chat import ChatSession, ChatMessage, MessageRecommendation, SuggestedQuery  # chat system tables (new)
 from .payments import MembershipTransaction, PaymentRefund, PaymentMethod, PaymentSession, PaymentStatus, PaymentType, PaymentMethodType  # payment system tables
 
@@ -44,6 +45,7 @@ __all__ = [
     "SwipeAction",   # swipe action enum (new)
     "SearchMode",    # search mode enum (new)
     "UserSettings",  # user_settings table (new)
+    "CasualRequest", # casual_requests table (new)
     # Chat system models (new)
     "ChatSession",         # chat_sessions table
     "ChatMessage",         # chat_messages table

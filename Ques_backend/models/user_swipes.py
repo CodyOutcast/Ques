@@ -29,6 +29,6 @@ class UserSwipe(Base):
     triggered_whisper = Column(Boolean, nullable=False, default=False)
     created_at = Column(TIMESTAMP, nullable=False, default=datetime.utcnow)
 
-    # Relationships
-    swiper = relationship("User", foreign_keys=[swiper_id], back_populates="swipes_made")
-    swiped_user = relationship("User", foreign_keys=[swiped_user_id], back_populates="swipes_received")
+    # Relationships (removed back_populates since User model doesn't have these relationships)
+    swiper = relationship("User", foreign_keys=[swiper_id])
+    swiped_user = relationship("User", foreign_keys=[swiped_user_id])

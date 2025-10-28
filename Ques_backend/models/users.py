@@ -60,7 +60,7 @@ class User(Base):
     swipe_records = relationship("SwipeRecord", back_populates="user")  # New swipe system
     
     # Institution relationships  
-    institutions = relationship("UserInstitution", back_populates="user")
+    user_institutions = relationship("UserInstitution", back_populates="user")
     
     # Project relationships
     projects = relationship("UserProject", back_populates="user")
@@ -75,6 +75,9 @@ class User(Base):
     
     # Chat relationships
     chat_sessions = relationship("ChatSession", back_populates="user", cascade="all, delete-orphan")
+    
+    # Quota relationships
+    quotas = relationship("UserQuota", back_populates="user")
 
     
     # Compatibility properties - delegate to user_profiles table

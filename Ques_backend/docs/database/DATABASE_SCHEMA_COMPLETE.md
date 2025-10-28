@@ -6,8 +6,9 @@
 
 ## 📋 Tables Overview
 
-Total Tables: 14
+Total Tables: 15
 
+- `casual_requests` (NEW - Social activity requests)
 - `cities`
 - `institutions`
 - `memberships`

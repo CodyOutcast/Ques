@@ -40,7 +40,7 @@ class SearchAgent:
             api_base_url: Database API base URL
         """
         # Import GLM4Client from the correct location
-        from ..glm4_client import GLM4Client
+        from services.glm4_client import GLM4Client
         
         # Initialize GLM-4 client
         self.glm_client = GLM4Client(
@@ -66,8 +66,15 @@ class SearchAgent:
             "total_search_time": 0.0,
             "llm_calls": 0,
             "cache_hits": 0,
-            "vector_searches": 0
+            "vector_searches": 0,
+            "casual_count": 0
         }
+        
+        # Initialize casual request components (lazy loading for optional functionality)
+        self.casual_classifier = None
+        self.casual_optimizer = None
+        self.casual_search_engine = None
+        self.casual_collection_name = "casual_requests"
     
     def _initialize_embedding_models(self):
         """Initialize embedding models"""
@@ -77,18 +84,64 @@ class SearchAgent:
             print("  [info] Loading BGE-M3 dense vector model...")
             self._dense_model = SentenceTransformer('BAAI/bge-m3')
             
-            # Initialize sparse vector model (fallback TF-IDF implementation)
+            # Initialize SPLADE sparse vector model
+            from transformers import AutoModelForMaskedLM, AutoTokenizer
             import torch
-            print("  [info] Using TF-IDF fallback for sparse vectors...")
-            self._splade_tokenizer = None
-            self._splade_model = None
+            print("  [info] Loading SPLADE sparse vector model...")
             
-            # Set device for dense model only
-            self._device = 'mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu')
-            print(f"  [info] Using device: {self._device}")
+            try:
+                # Try publicly available SPLADE models first
+                splade_models = [
+                    "naver/splade_v2_max",           # SPLADE v2 Max (publicly accessible)
+                    "naver/splade_v2_distil",        # SPLADE v2 Distilled (publicly accessible)
+                    "naver/splade-cocondenser-ensembledistil",  # Another public SPLADE model
+                    "naver/splade-v3"                # Latest but gated (fallback if user has access)
+                ]
+                
+                model_loaded = False
+                for model_name in splade_models:
+                    try:
+                        print(f"  [info] Trying SPLADE model: {model_name}...")
+                        self._splade_tokenizer = AutoTokenizer.from_pretrained(model_name)
+                        self._splade_model = AutoModelForMaskedLM.from_pretrained(model_name)
+                        
+                        # Set device
+                        self._device = 'mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu')
+                        self._splade_model = self._splade_model.to(self._device)
+                        print(f"  [info] Using device: {self._device}")
+                        print(f"  [info] ✅ SPLADE model loaded successfully: {model_name}")
+                        model_loaded = True
+                        break
+                        
+                    except Exception as model_error:
+                        if "gated repo" in str(model_error).lower() or "restricted" in str(model_error).lower():
+                            print(f"  [warn] {model_name} is gated/restricted, trying next model...")
+                        else:
+                            print(f"  [warn] Failed to load {model_name}: {str(model_error)[:100]}...")
+                        continue
+                
+                if not model_loaded:
+                    raise Exception("All SPLADE models failed to load")
+                
+            except Exception as splade_error:
+                print(f"  [warn] SPLADE model loading failed: {splade_error}")
+                if "gated repo" in str(splade_error).lower() or "restricted" in str(splade_error).lower():
+                    print("  [info] SPLADE-v3 is a gated repository requiring authentication")
+                    print("  [info] To use SPLADE-v3:")
+                    print("    1. Create Hugging Face account: https://huggingface.co/join")
+                    print("    2. Request access to naver/splade-v3")
+                    print("    3. Login: huggingface-cli login")
+                print("  [warn] Falling back to TF-IDF for sparse vectors...")
+                self._splade_tokenizer = None
+                self._splade_model = None
+                
+                # Set device anyway for dense model
+                self._device = 'mps' if torch.backends.mps.is_available() else ('cuda' if torch.cuda.is_available() else 'cpu')
+                print(f"  [info] Using device: {self._device}")
             
         except Exception as e:
             print(f"[error] Embedding model loading failed: {e}")
+            print("  [warn] Falling back to TF-IDF for sparse vectors...")
             # Set to None, reload when needed
             self._dense_model = None
             self._splade_model = None
@@ -157,6 +210,10 @@ Intent Type Definitions:
    - Includes greetings, general consultation, feature understanding, etc.
    - Typical expressions: "Hello", "How to use this system?", "Any suggestions?"
 
+4. **Casual Request**: Social activity invitations, looking for activity partners, non-work related
+   - Key features: Focus on activities rather than skills, emphasis on social aspects and hobbies
+   - Typical expressions: "Anyone want to go hiking this weekend?", "Looking for someone to have coffee with", "Who wants to go to the movies together"
+
 Analysis Requirements:
 - Carefully analyze the semantics and context of user input
 - Consider whether there is referenced user information to assist judgment
@@ -165,7 +222,7 @@ Analysis Requirements:
 
 Return JSON format:
 {
-    "intent": "search|inquiry|chat",
+    "intent": "search|inquiry|chat|casual",
     "confidence": 0.0-1.0,
     "reasoning": "Detailed analysis reasoning process",
     "clarification_needed": boolean,
@@ -198,7 +255,7 @@ Please provide detailed intent analysis.
             
             # Validate and standardize result
             intent = result.get("intent", "chat").lower()
-            if intent not in ["search", "inquiry", "chat"]:
+            if intent not in ["search", "inquiry", "chat", "casual"]:
                 intent = "chat"
             
             confidence = float(result.get("confidence", 0.5))
@@ -446,6 +503,222 @@ Please provide detailed analysis and response.
                 "error": str(e)
             }
     
+    # ===== 3.3.1 Casual Request Processor =====
+    
+    async def process_casual_request(
+        self,
+        user_input: str,
+        current_user: Dict = None,
+        language_code: str = "zh"
+    ) -> Dict:
+        """Process casual request with full integration"""
+        
+        # Start timing and update stats
+        start_time = time.time()
+        self.stats["casual_count"] += 1
+        
+        # Get user ID
+        user_id = current_user.get('id', 'unknown') if current_user else 'unknown'
+        
+        # Initialize casual request components
+        await self._initialize_casual_components()
+        
+        # 1. Store user's casual request and find matches
+        storage_result = None
+        matches = []
+        
+        if user_id != 'unknown' and hasattr(self, 'casual_classifier'):
+            try:
+                # Import database dependencies
+                from dependencies.db import get_db
+                
+                # Get database session
+                db_session = next(get_db())
+                
+                try:
+                    # Process and store the casual request
+                    from services.casual_request_processor import process_and_store_casual_request
+                    
+                    storage_result = await process_and_store_casual_request(
+                        user_input=user_input,
+                        user_id=str(user_id),
+                        classifier=self.casual_classifier,
+                        optimizer=self.casual_optimizer,
+                        qdrant_client=getattr(self, 'qdrant_client', None),
+                        embedding_model=getattr(self, '_dense_model', None),
+                        collection_name="casual_requests",
+                        db_conn=db_session
+                    )
+                    
+                    print(f"[info] Casual request storage result: {storage_result}")
+                    
+                    # 2. Search for existing matching casual requests
+                    if (hasattr(self, 'casual_search_engine') and 
+                        self.casual_search_engine and 
+                        storage_result and 
+                        storage_result.get('success')):
+                        try:
+                            matches = await self.casual_search_engine.search_casual_requests(
+                                query=user_input,
+                                user_id=str(user_id),
+                                limit=5
+                            )
+                            print(f"[info] Found {len(matches)} potential matches")
+                        except Exception as e:
+                            print(f"[warn] Could not search for matches: {e}")
+                            
+                finally:
+                    db_session.close()
+                
+            except Exception as e:
+                print(f"[warn] Could not process casual request: {e}")
+        else:
+            # If no valid user ID or components not available, provide basic acknowledgment
+            print(f"[info] Processing casual request without storage (user_id: {user_id})")
+            if not hasattr(self, 'casual_classifier'):
+                print("[warn] Casual components not initialized")
+        
+        # 3. Build response based on results
+        response_content = await self._build_casual_response(
+            user_input=user_input,
+            language_code=language_code,
+            storage_result=storage_result,
+            matches=matches
+        )
+        
+        # End timing
+        elapsed_time = time.time() - start_time
+        
+        # Build return result
+        result = {
+            "type": "casual_request",
+            "intent": "casual",
+            "content": response_content,
+            "query": user_input,
+            "user_id": user_id,
+            "storage_result": storage_result,
+            "matches": matches,
+            "processing_time": elapsed_time,
+            "timestamp": datetime.now().isoformat(),
+            "status": "acknowledged"
+        }
+        
+        return result
+    
+    # ===== 3.3.1 Casual Request Helper Methods =====
+    
+    async def _initialize_casual_components(self):
+        """Initialize casual request components if not already done"""
+        try:
+            # Import casual request components
+            from services.casual_request_classifier import CasualRequestClassifier
+            from services.casual_request_optimizer import CasualRequestOptimizer
+            from services.casual_request_search_engine import CasualRequestSearchEngine
+            
+            # Initialize components if not already done
+            if not hasattr(self, 'casual_classifier') or self.casual_classifier is None:
+                print(f"[debug] Initializing CasualRequestClassifier with api_key={self.glm_client.api_key[:20] if self.glm_client.api_key else None}...")
+                self.casual_classifier = CasualRequestClassifier(
+                    glm_api_key=self.glm_client.api_key,
+                    glm_model=self.glm_client.default_model
+                )
+                print(f"[info] ✅ CasualRequestClassifier initialized: {type(self.casual_classifier)}")
+            
+            if not hasattr(self, 'casual_optimizer') or self.casual_optimizer is None:
+                print(f"[debug] Initializing CasualRequestOptimizer with api_key={self.glm_client.api_key[:20] if self.glm_client.api_key else None}...")
+                self.casual_optimizer = CasualRequestOptimizer(
+                    glm_api_key=self.glm_client.api_key,
+                    glm_model=self.glm_client.default_model
+                )
+                print(f"[info] ✅ CasualRequestOptimizer initialized: {type(self.casual_optimizer)}")
+            
+            if not hasattr(self, 'casual_search_engine') or self.casual_search_engine is None:
+                print(f"[debug] Initializing CasualRequestSearchEngine...")
+                self.casual_search_engine = CasualRequestSearchEngine(
+                    glm_api_key=self.glm_client.api_key,
+                    qdrant_client=getattr(self, 'qdrant_client', None),
+                    collection_name="casual_requests",
+                    glm_model=self.glm_client.default_model,
+                    api_base_url=getattr(self, 'api_base_url', None),
+                    embedding_model=getattr(self, '_dense_model', None)
+                )
+                print(f"[info] ✅ CasualRequestSearchEngine initialized: {type(self.casual_search_engine)}")
+                
+        except Exception as e:
+            print(f"[warn] Could not initialize casual components: {e}")
+            import traceback
+            traceback.print_exc()
+            # Set components to None to indicate failure
+            self.casual_classifier = None
+            self.casual_optimizer = None
+            self.casual_search_engine = None
+    
+    async def _build_casual_response(
+        self,
+        user_input: str,
+        language_code: str,
+        storage_result: dict = None,
+        matches: list = None
+    ) -> str:
+        """Build response content for casual requests"""
+        
+        if language_code == "zh":
+            if storage_result and storage_result.get('success'):
+                if matches and len(matches) > 0:
+                    # Found matches
+                    match_count = len(matches)
+                    response = f"我收到了您的社交活动请求：「{user_input}」\n\n"
+                    response += f"🎉 找到了 {match_count} 个可能感兴趣的活动伙伴！\n\n"
+                    
+                    for i, match in enumerate(matches[:3], 1):  # Show top 3 matches
+                        activity = match.get('activity_type', '未知活动')
+                        location = match.get('preferred_location', '未指定地点')
+                        time_pref = match.get('preferred_time', '时间待定')
+                        score = match.get('similarity_score', 0.0)
+                        
+                        response += f"{i}. {activity} | {location} | {time_pref} (匹配度: {score:.2f})\n"
+                    
+                    if match_count > 3:
+                        response += f"\n还有 {match_count - 3} 个其他匹配..."
+                        
+                else:
+                    # Stored but no matches yet
+                    response = f"我收到了您的社交活动请求：「{user_input}」\n\n"
+                    response += "✅ 已将您的请求记录下来，当有相似兴趣的用户时会为您匹配！"
+            else:
+                # Storage failed or incomplete
+                response = f"我收到了您的社交活动请求：「{user_input}」\n\n"
+                response += "📝 暂时记录了您的请求。完整的匹配功能需要配置数据库连接。"
+        else:
+            if storage_result and storage_result.get('success'):
+                if matches and len(matches) > 0:
+                    # Found matches
+                    match_count = len(matches)
+                    response = f"I've received your casual activity request: \"{user_input}\"\n\n"
+                    response += f"🎉 Found {match_count} potential activity partners!\n\n"
+                    
+                    for i, match in enumerate(matches[:3], 1):  # Show top 3 matches
+                        activity = match.get('activity_type', 'Unknown activity')
+                        location = match.get('preferred_location', 'Location TBD')
+                        time_pref = match.get('preferred_time', 'Time TBD')
+                        score = match.get('similarity_score', 0.0)
+                        
+                        response += f"{i}. {activity} | {location} | {time_pref} (Match: {score:.2f})\n"
+                    
+                    if match_count > 3:
+                        response += f"\n{match_count - 3} more matches available..."
+                        
+                else:
+                    # Stored but no matches yet
+                    response = f"I've received your casual activity request: \"{user_input}\"\n\n"
+                    response += "✅ Your request has been recorded! We'll match you with users who have similar interests."
+            else:
+                # Storage failed or incomplete
+                response = f"I've received your casual activity request: \"{user_input}\"\n\n"
+                response += "📝 Temporarily recorded your request. Full matching requires database configuration."
+        
+        return response
+    
     # ===== 3.4 Dense Vector Query Optimizer =====
     
     def optimize_query_for_dense_vector(
@@ -517,49 +790,89 @@ Please provide detailed analysis and response.
         search_strategy: str = "standard",
         limit: int = 10,
         viewed_user_ids: List[str] = None,
+        swiped_user_ids: List[str] = None,
         fetch_db_details: bool = True
     ) -> List[Dict]:
         """
-        Execute hybrid vector search and fetch database details
+        Execute hybrid vector search with proper fallback mechanism
         
         Args:
             dense_query: Dense vector query text
             sparse_query: Sparse vector query text
             search_strategy: Search strategy ("standard", "expanded", "custom")
-            limit: Number of results to return
-            viewed_user_ids: List of viewed user IDs
+            limit: Number of results to return (default 10)
+            viewed_user_ids: List of viewed user IDs (exclude from initial search)
+            swiped_user_ids: List of swiped user IDs (filter after getting 50 candidates)
             fetch_db_details: Whether to fetch detailed information from database
             
         Returns:
             Search result list (including database detailed information)
+            
+        Fallback Mechanism:
+            1. Get closest 50 candidates from vector search (exclude viewed users only)
+            2. Filter out users who have been swiped (left/right)  
+            3. Return top {limit} from remaining candidates
         """
         try:
-            # Build basic filter conditions (only for excluding viewed users)
+            # STEP 1: Get 50 candidates (exclude only viewed users, not swiped users)
+            fallback_limit = max(50, limit * 5)  # Get at least 50 or 5x the requested limit
+            
             filter_conditions = {}
             if viewed_user_ids:
                 filter_conditions["user_id"] = {"$nin": viewed_user_ids}
 
+            print(f"[info] Executing {search_strategy} search for {fallback_limit} candidates...")
+            
             # Execute vector search using the vectordb adapter
             if search_strategy == "standard":
-                vector_results = await self._standard_search(dense_query, sparse_query, filter_conditions, limit)
+                vector_results = await self._standard_search(dense_query, sparse_query, filter_conditions, fallback_limit)
             elif search_strategy == "expanded":
-                vector_results = await self._expanded_search(dense_query, sparse_query, filter_conditions, limit)
+                vector_results = await self._expanded_search(dense_query, sparse_query, filter_conditions, fallback_limit)
             elif search_strategy == "custom":
-                vector_results = await self._custom_search(dense_query, sparse_query, filter_conditions, limit)
+                vector_results = await self._custom_search(dense_query, sparse_query, filter_conditions, fallback_limit)
             else:
                 raise ValueError(f"Unsupported search strategy: {search_strategy}")
             
+            print(f"[info] Initial vector search found {len(vector_results)} candidates")
+            
+            # STEP 2: Filter out swiped users (post-search filtering)
+            if swiped_user_ids and vector_results:
+                swiped_set = set(str(uid) for uid in swiped_user_ids)
+                filtered_results = []
+                
+                for result in vector_results:
+                    user_id = str(result.get("user_id", ""))
+                    if user_id not in swiped_set:
+                        filtered_results.append(result)
+                
+                print(f"[info] After filtering swiped users: {len(filtered_results)} candidates remain")
+                vector_results = filtered_results
+            
+            # STEP 3: Return top {limit} candidates
+            final_results = vector_results[:limit]
+            print(f"[info] Returning top {len(final_results)} candidates")
+            
             # If no database details needed or no search results, return vector search results directly
-            if not fetch_db_details or not vector_results:
-                return vector_results
+            if not fetch_db_details or not final_results:
+                return final_results
             
             # Extract user ID list
-            user_ids = [str(result.get("user_id")) for result in vector_results if result.get("user_id")]
+            user_ids = [str(result.get("user_id")) for result in final_results if result.get("user_id")]
             
             if not user_ids:
-                return vector_results
+                return final_results
             
-            print(f"[info] Vector search found {len(vector_results)} candidates, fetching database details...")
+            print(f"[info] Fetching database details for {len(user_ids)} selected candidates...")
+            
+            # Fetch user detailed information from database
+            db_details = await self._fetch_user_details_from_db(user_ids)
+            
+            # Merge vector search results and database details
+            merged_results = self._merge_vector_and_db_results(final_results, db_details)
+            
+            print(f"[info] Successfully fetched database details for {len([r for r in db_details.values() if not r.get('error')])} users")
+            
+            return merged_results
             
             # Fetch user detailed information from database
             db_details = await self._fetch_user_details_from_db(user_ids)
@@ -727,7 +1040,56 @@ Please provide detailed analysis and response.
             return []
     
     def _build_splade_sparse_vector(self, text: str) -> Dict[str, float]:
-        """Generate sparse vector using TF-IDF fallback (since SPLADE is gated)"""
+        """Generate sparse vector using SPLADE-v3 model or TF-IDF fallback"""
+        try:
+            # Try SPLADE-v3 model first
+            if self._splade_model is not None and self._splade_tokenizer is not None:
+                import torch
+                
+                # Tokenize input
+                inputs = self._splade_tokenizer(text, return_tensors="pt", max_length=512, truncation=True)
+                inputs = {k: v.to(self._device) for k, v in inputs.items()}
+                
+                # Generate SPLADE embeddings
+                with torch.no_grad():
+                    outputs = self._splade_model(**inputs)
+                    logits = outputs.logits
+                    
+                    # Apply ReLU and log to get sparse representation
+                    sparse_embeddings = torch.relu(logits) * torch.log(1 + torch.relu(logits))
+                    sparse_embeddings = sparse_embeddings.squeeze(0)  # Remove batch dimension
+                    
+                    # Convert to dictionary format
+                    vocab = self._splade_tokenizer.get_vocab()
+                    id_to_token = {v: k for k, v in vocab.items()}
+                    
+                    sparse_dict = {}
+                    for token_id, score in enumerate(sparse_embeddings.max(dim=0)[0]):
+                        if score > 0.1:  # Only include tokens with meaningful scores
+                            token = id_to_token.get(token_id, f"[UNK_{token_id}]")
+                            # Skip special tokens
+                            if not token.startswith("[") and len(token) > 1:
+                                sparse_dict[token] = float(score.cpu())
+                    
+                    # Normalize scores
+                    if sparse_dict:
+                        max_score = max(sparse_dict.values())
+                        if max_score > 0:
+                            sparse_dict = {k: v / max_score for k, v in sparse_dict.items()}
+                    
+                    return sparse_dict
+            
+            # Fallback to TF-IDF if SPLADE is not available
+            print(f"  [warn] SPLADE model not available, using TF-IDF fallback")
+            return self._build_tfidf_sparse_vector(text)
+            
+        except Exception as e:
+            print(f"SPLADE sparse vector generation failed: {e}")
+            print(f"  [warn] Falling back to TF-IDF")
+            return self._build_tfidf_sparse_vector(text)
+    
+    def _build_tfidf_sparse_vector(self, text: str) -> Dict[str, float]:
+        """Generate sparse vector using TF-IDF fallback"""
         try:
             # TF-IDF-style sparse vector generation
             import re
@@ -763,15 +1125,17 @@ Please provide detailed analysis and response.
                 # TF-IDF score
                 score = tf * idf
                 
-                # Boost important mobile development keywords
-                mobile_keywords = {
+                # Boost important keywords
+                important_keywords = {
                     'mobile', 'app', 'android', 'ios', 'swift', 'kotlin', 'react', 'flutter',
                     'development', 'developer', 'programming', 'coding', 'student', 'university',
-                    'interested', 'passionate', 'experience', 'project', 'build', 'create'
+                    'interested', 'passionate', 'experience', 'project', 'build', 'create',
+                    'python', 'javascript', 'java', 'frontend', 'backend', 'machine', 'learning',
+                    'ai', 'data', 'science', 'algorithm', 'web', 'design', 'ui', 'ux'
                 }
                 
-                if word in mobile_keywords:
-                    score *= 2.0  # Boost mobile-related terms
+                if word in important_keywords:
+                    score *= 2.0  # Boost important terms
                 
                 if score > 0.001:  # Only include meaningful scores
                     sparse_dict[word] = float(score)
@@ -785,7 +1149,7 @@ Please provide detailed analysis and response.
             return sparse_dict
             
         except Exception as e:
-            print(f"Sparse vector generation failed: {e}")
+            print(f"TF-IDF sparse vector generation failed: {e}")
             return {}
     
     def _custom_dbsf_fusion(self, dense_results: List, sparse_results: List, alpha: float, limit: int) -> List[Dict]:
@@ -1349,7 +1713,8 @@ Please provide detailed analysis and response.
         user_query: str,
         current_user: dict = None,
         referenced_users: List[Dict] = None,
-        viewed_user_ids: List[str] = None
+        viewed_user_ids: List[str] = None,
+        swiped_user_ids: List[str] = None
     ) -> Dict:
         """
         Complete intelligent search method - includes language detection, search scheduling and result generation
@@ -1358,7 +1723,8 @@ Please provide detailed analysis and response.
             user_query: User query
             current_user: Current user's complete information (including demands and goals)
             referenced_users: Referenced user list
-            viewed_user_ids: Viewed user ID list
+            viewed_user_ids: Viewed user ID list (excluded from initial search)
+            swiped_user_ids: Swiped user ID list (filtered after getting 50 candidates)
             
         Returns:
             Complete formatted search results
@@ -1419,6 +1785,7 @@ Please provide detailed analysis and response.
                     search_strategy=strategy,
                     limit=10,
                     viewed_user_ids=viewed_user_ids or [],
+                    swiped_user_ids=swiped_user_ids or [],
                     fetch_db_details=False  # Use VectorDB data only (no PostgreSQL API call)
                 )
                 search_time = time.time() - search_start
@@ -1576,6 +1943,7 @@ Please provide detailed analysis and response.
         referenced_users: List[Dict] = None,
         current_user: Dict = None,
         viewed_user_ids: List[str] = None,
+        swiped_user_ids: List[str] = None,
         language_code: str = "zh"
     ) -> Dict:
         """
@@ -1587,6 +1955,7 @@ Please provide detailed analysis and response.
             referenced_users: Referenced user list
             current_user: Current user information
             viewed_user_ids: Viewed user ID list
+            swiped_user_ids: Swiped user ID list
             language_code: Language code for response ("zh" or "en")
             
         Returns:
@@ -1604,7 +1973,8 @@ Please provide detailed analysis and response.
                     user_query=user_input,
                     current_user=current_user,
                     referenced_users=referenced_users,
-                    viewed_user_ids=viewed_user_ids
+                    viewed_user_ids=viewed_user_ids,
+                    swiped_user_ids=swiped_user_ids
                 )
                 
             elif intent == "inquiry":
@@ -1639,6 +2009,14 @@ Please provide detailed analysis and response.
                     language_code=language_code
                 )
                 
+            elif intent == "casual":
+                # Casual request mode: Process social activity requests
+                return await self.process_casual_request(
+                    user_input=user_input,
+                    current_user=current_user,
+                    language_code=language_code
+                )
+                
             else:
                 # Unknown intent, default to chat mode
                 return self.process_chat(
@@ -1666,7 +2044,8 @@ Please provide detailed analysis and response.
         user_input: str,
         user_id: str = None,
         referenced_ids: List[str] = None,
-        viewed_user_ids: List[str] = None
+        viewed_user_ids: List[str] = None,
+        swiped_user_ids: List[str] = None
     ) -> Dict:
         """
         Intelligent interaction unified entry point (integrates intent recognition and multi-mode processing)
@@ -1676,6 +2055,7 @@ Please provide detailed analysis and response.
             user_id: User ID, used to get user's demands and goals information (optional)
             referenced_ids: Array of user IDs referenced by user, system will fetch complete user information from database (optional)
             viewed_user_ids: List of user IDs already viewed by user, used to exclude duplicate recommendations (optional)
+            swiped_user_ids: List of user IDs already swiped by user, used for post-search filtering (optional)
         
         Returns:
             Interaction result: Intent-based personalized response, including result type tags
@@ -1728,6 +2108,7 @@ Please provide detailed analysis and response.
                 referenced_users=referenced_users,
                 current_user=current_user,
                 viewed_user_ids=viewed_user_ids,
+                swiped_user_ids=swiped_user_ids,
                 language_code=language_code
             )
             

@@ -40,8 +40,9 @@ async def create_or_update_casual_request(
         
         # Simple AI optimization (in production, use proper AI service)
         optimized_query = f"Seeking: {request_data.query}"
-        if request_data.location:
-            optimized_query += f" in {request_data.location}"
+        if request_data.province_id and request_data.city_id:
+            # You might want to fetch province/city names for the optimized query
+            optimized_query += f" in province {request_data.province_id}, city {request_data.city_id}"
         if request_data.preferences:
             if "activity_type" in request_data.preferences:
                 optimized_query += f" - {request_data.preferences['activity_type']} activity"
@@ -51,7 +52,8 @@ async def create_or_update_casual_request(
             user_id=user_id,
             query=request_data.query,
             optimized_query=optimized_query,
-            location=request_data.location,
+            province_id=request_data.province_id,
+            city_id=request_data.city_id,
             preferences=request_data.preferences
         )
         
@@ -110,11 +112,14 @@ async def update_my_casual_request(
             request.query = updates.query
             # Re-optimize query
             request.optimized_query = f"Seeking: {updates.query}"
-            if request.location:
-                request.optimized_query += f" in {request.location}"
+            if request.province_id and request.city_id:
+                request.optimized_query += f" in province {request.province_id}, city {request.city_id}"
         
-        if updates.location is not None:
-            request.location = updates.location
+        if updates.province_id is not None:
+            request.province_id = updates.province_id
+            
+        if updates.city_id is not None:
+            request.city_id = updates.city_id
         
         if updates.preferences is not None:
             request.preferences = updates.preferences
@@ -170,7 +175,8 @@ async def delete_my_casual_request(
 
 @router.get("/search", response_model=List[CasualRequestResponse])
 async def search_casual_requests(
-    location: Optional[str] = Query(None, description="Filter by location"),
+    province_id: Optional[int] = Query(None, description="Filter by province ID"),
+    city_id: Optional[int] = Query(None, description="Filter by city ID"),
     limit: int = Query(20, ge=1, le=100, description="Number of results"),
     db: Session = Depends(get_db),
     current_user: Dict[str, Any] = Depends(get_current_user)
@@ -179,8 +185,8 @@ async def search_casual_requests(
     try:
         user_id = str(current_user["id"])
         
-        if location:
-            requests = CasualRequest.search_by_location(db, location, limit)
+        if province_id or city_id:
+            requests = CasualRequest.search_by_location(db, province_id, city_id, limit)
         else:
             requests = CasualRequest.get_active_requests(db, limit)
         
@@ -224,11 +230,15 @@ async def get_potential_matches(
             match_reasons = []
             
             # Location matching
-            if my_request.location and request.location:
-                if my_request.location.lower() in request.location.lower() or \
-                   request.location.lower() in my_request.location.lower():
+            if my_request.province_id and request.province_id:
+                if my_request.province_id == request.province_id:
                     similarity_score += 0.4
-                    match_reasons.append(f"Same location ({request.location})")
+                    match_reasons.append(f"Same province")
+                    
+                    # Additional score for same city
+                    if my_request.city_id and request.city_id and my_request.city_id == request.city_id:
+                        similarity_score += 0.2
+                        match_reasons.append(f"Same city")
             
             # Preferences matching
             if my_request.preferences and request.preferences:
@@ -275,16 +285,16 @@ async def get_casual_requests_stats(
         # Total active requests
         total_active = db.query(CasualRequest).filter(CasualRequest.is_active == True).count()
         
-        # Requests by location
+        # Requests by province
         location_stats = {}
-        location_data = db.query(CasualRequest.location, db.func.count(CasualRequest.id)).filter(
+        province_data = db.query(CasualRequest.province_id, db.func.count(CasualRequest.id)).filter(
             CasualRequest.is_active == True,
-            CasualRequest.location.isnot(None)
-        ).group_by(CasualRequest.location).all()
+            CasualRequest.province_id.isnot(None)
+        ).group_by(CasualRequest.province_id).all()
         
-        for location, count in location_data:
-            if location:
-                location_stats[location] = count
+        for province_id, count in province_data:
+            if province_id:
+                location_stats[f"province_{province_id}"] = count
         
         # Recent activity (last 24 hours)
         yesterday = datetime.utcnow() - timedelta(days=1)
