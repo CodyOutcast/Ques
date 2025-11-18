@@ -1,0 +1,77 @@
+{
+  "translation": {
+    "header": {
+      "about": "关于我们",
+      "products": "我们的产品",
+      "team": "我们的团队",
+      "contact": "联系我们",
+      "logo_text": "快索",
+      "language": "语言"
+    },
+    "contact_modal": {
+      "title": "联系我们",
+      "email": "电子邮箱",
+      "email_value": "quesappstore@gmail.com",
+      "social_media": "社交媒体",
+      "close": "关闭",
+      "wechat": "微信",
+      "message": "有问题或建议？请与我们联系！"
+    },
+    "about_section": {
+      "title": "关于我们",
+      "company_name": "深圳市快索科技有限公司",
+      "tagline": "构建AI基础设施的OSINT层",
+      "description": "我们正在开创AI时代的下一代开源情报（OSINT）工具。通过结合尖端的逆向工程技术、机器学习模型和开源数据分析，我们在情报收集和验证方面提供最先进的准确性。",
+      "mission_title": "我们的使命",
+      "mission_description": "为企业和个人提供专业级的OSINT能力。无论您是在构建需要验证信息的AI代理，还是寻求个人情报工具，我们都提供基础设施，使准确、可靠的开源情报触手可及。",
+      "vision_title": "我们的愿景",
+      "vision_description": "我们将自己定位为AI基础设施生态系统中领先的OSINT工具提供商。我们的技术弥合了原始开源数据和可操作情报之间的差距，实现更智能的AI系统和明智的决策。",
+      "address_title": "办公地址",
+      "address_value": "深圳市龙华区民治街道红山社区龙光玖钻北甲期A座807",
+      "contact_title": "联系电话",
+      "contact_value": "+86 13430942314"
+    },
+    "products_section": {
+      "title": "我们的产品",
+      "subtitle": "AI驱动的情报工具",
+      "intro": "我们构建最先进的OSINT工具，利用人工智能改变信息发现和验证的方式。",
+      "geoseer_title": "GeoSeer",
+      "geoseer_tagline": "AI驱动的图像地理定位",
+      "geoseer_description": "GeoSeer是一个精密的平台，使用尖端的AI技术从上传的图像中识别位置。结合地理估计模型、多代理分析和推理验证，它在基于图像的地理定位中提供前所未有的准确性。",
+      "geoseer_features_title": "核心功能",
+      "geoseer_feature_1": "精调的地理估计模型，实现精确的位置检测",
+      "geoseer_feature_2": "具有逆向工程能力的多代理AI架构",
+      "geoseer_feature_3": "推理验证，确保结果准确可靠",
+      "geoseer_feature_4": "实时处理，全球覆盖",
+      "geoseer_feature_5": "隐私优先 - 图像从不存储",
+      "geoseer_feature_6": "开发者API，无缝集成",
+      "visit_website": "访问网站",
+      "learn_more": "了解更多"
+    },
+    "team_section": {
+      "title": "我们的团队",
+      "tagline": "认识快索背后充满热情的团队",
+      "ceo_role": "CEO",
+      "ceo_bio": "喜风险怕无聊的工作狂。",
+      "cto_role": "CTO",
+      "cto_bio": "战略性拖延项目进度的专家。",
+      "coo_role": "COO",
+      "coo_bio": "不会说中文。",
+      "cmo_role": "CMO",
+      "cmo_bio": "我喜欢书呆子。"
+    },
+    "contact_section": {
+      "title": "联系我们",
+      "subtitle": "与我们的团队取得联系",
+      "email_label": "电子邮箱",
+      "wechat_label": "微信",
+      "wechat_id": "Kusnomo_William",
+      "description": "有问题或建议？我们很乐意听取您的意见！",
+      "social_media": "关注我们"
+    },
+    "footer": {
+      "company": "深圳市快索科技有限责任公司",
+      "icp": "粤ICP备2025472398号-1"
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "translation": {
+    "header": {
+      "about": "About Us",
+      "products": "Our Products",
+      "team": "Our Team",
+      "contact": "Contact Us",
+      "logo_text": "Ques",
+      "language": "Language"
+    },
+    "contact_modal": {
+      "title": "Contact Us",
+      "email": "Email",
+      "email_value": "quesappstore@gmail.com",
+      "social_media": "Social Media",
+      "close": "Close",
+      "wechat": "WeChat",
+      "message": "Have questions or suggestions? Get in touch with us!"
+    },
+    "about_section": {
+      "title": "About Us",
+      "company_name": "Shenzhen Ques Technology Co., Ltd.",
+      "tagline": "Building the OSINT Layer of AI Infrastructure",
+      "description": "We're pioneering the next generation of open-source intelligence (OSINT) tools for the AI era. By combining cutting-edge reverse engineering techniques, machine learning models, and open-source data analysis, we deliver state-of-the-art accuracy in intelligence gathering and verification.",
+      "mission_title": "Our Mission",
+      "mission_description": "To empower companies and individuals with professional-grade OSINT capabilities. Whether you're building AI agents that need verified information or seeking personal intelligence tools, we provide the infrastructure that makes accurate, reliable open-source intelligence accessible to all.",
+      "vision_title": "Our Vision",
+      "vision_description": "We position ourselves as the leading provider of OSINT tools in the AI infrastructure ecosystem. Our technology bridges the gap between raw open-source data and actionable intelligence, enabling smarter AI systems and informed decision-making.",
+      "address_title": "Office Address",
+      "address_value": "Room 807, Block A, North Phase of Longguang Jiuzuan, Hongshan Community, Minzhi Street, Longhua District, Shenzhen",
+      "contact_title": "Contact Phone",
+      "contact_value": "+86 13430942314"
+    },
+    "products_section": {
+      "title": "Our Products",
+      "subtitle": "AI-Powered Intelligence Tools",
+      "intro": "We build state-of-the-art OSINT tools that leverage artificial intelligence to transform how information is discovered and verified.",
+      "geoseer_title": "GeoSeer",
+      "geoseer_tagline": "AI-Powered Image Geolocation",
+      "geoseer_description": "GeoSeer is a sophisticated platform that uses cutting-edge AI to identify locations from uploaded images. Combining geoestimation models, multi-agent analysis, and reasoning verification, it provides unprecedented accuracy in image-based geolocation.",
+      "geoseer_features_title": "Key Features",
+      "geoseer_feature_1": "Fine-tuned geoestimation models for precise location detection",
+      "geoseer_feature_2": "Multi-agent AI architecture with reverse engineering capabilities",
+      "geoseer_feature_3": "Reasoning verification for validated, accurate results",
+      "geoseer_feature_4": "Real-time processing with global coverage",
+      "geoseer_feature_5": "Privacy-first approach - images never stored",
+      "geoseer_feature_6": "Developer API for seamless integration",
+      "visit_website": "Visit Website",
+      "learn_more": "Learn More"
+    },
+    "team_section": {
+      "title": "Our Team",
+      "tagline": "Meet the passionate people behind Ques",
+      "ceo_role": "CEO",
+      "ceo_bio": "Riskphilic, Boredomphobic, Workaholic.",
+      "cto_role": "CTO",
+      "cto_bio": "Specializes in Tactical Project Schedule Delays.",
+      "coo_role": "COO",
+      "coo_bio": "\"Boss doesn't pay me, haven't eaten in three days.\"",
+      "cmo_role": "CMO",
+      "cmo_bio": "I like nerds."
+    },
+    "contact_section": {
+      "title": "Contact Us",
+      "subtitle": "Get in touch with our team",
+      "email_label": "Email",
+      "wechat_label": "WeChat",
+      "wechat_id": "Kusnomo_William",
+      "description": "Have questions or suggestions? We'd love to hear from you!",
+      "social_media": "Follow Us"
+    },
+    "footer": {
+      "company": "Shenzhen Ques Technology Co., Ltd.",
+      "icp": "粤ICP备2025472398号-1"
+    }
+  }
+}

@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+/* 基础页面样式 */
+html, body, #root {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: fixed;
+  touch-action: none;
+}
+
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: gradient(to bottom, #37c1f8, #afafaf);
+  color: white;
+}
+
+/* 性能优化 CSS */
+.gpu-accelerate {
+  will-change: transform, opacity;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* 优化动画的容器 */
+.animation-container {
+  isolation: isolate;
+  contain: content;
+}
+
+/* 用于移动设备的低性能模式 */
+@media (max-width: 768px) {
+  .motion-reduce {
+    transition-duration: 0.2s !important;
+    animation-duration: 0.2s !important;
+  }
+}
