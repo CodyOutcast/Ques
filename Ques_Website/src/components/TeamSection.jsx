@@ -67,10 +67,10 @@ const TeamSection = ({ isVisible }) => {
         }}
         transition={{ duration: 0.6, delay: 0.2 }}
       >
-        <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3 md:mb-5">
+        <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-5 font-tech tracking-wide">
           {t("team_section.title")}
         </h2>
-        <p className="text-lg md:text-xl text-gray-100 max-w-2xl mx-auto mb-6 md:mb-10">
+        <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-6 md:mb-10">
           {t("team_section.tagline")}
         </p>
         
@@ -89,13 +89,13 @@ const TeamSection = ({ isVisible }) => {
                 ...optimizeAnimation.optimizedSpring
               }}
               style={optimizeAnimation.gpuAcceleration}
-              className="bg-white/10 backdrop-blur-lg rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col items-center"
+              className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col items-center border border-slate-700/50 shadow-xl hover-glow"
             >
               <a 
                 href={member.xLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-full overflow-hidden mb-2 md:mb-4 border-2 border-blue-400 transition-transform hover:scale-110 cursor-pointer"
+                className="w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-full overflow-hidden mb-2 md:mb-4 border-2 border-cyan-500 transition-transform hover:scale-110 cursor-pointer shadow-lg shadow-cyan-500/20"
               >
                 <img 
                   src={member.image} 
@@ -107,12 +107,12 @@ const TeamSection = ({ isVisible }) => {
                 href={member.xLink}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="hover:text-blue-300 transition-colors cursor-pointer"
+                className="hover:text-cyan-300 transition-colors cursor-pointer"
               >
-                <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2">{member.name}</h3>
+                <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2 font-mono-accent">{member.name}</h3>
               </a>
-              <p className="text-blue-300 mb-1 md:mb-3 text-xs sm:text-sm md:text-base">{member.title}</p>
-              <p className="text-gray-200 text-xs leading-tight sm:leading-normal md:leading-relaxed text-center line-clamp-3 sm:line-clamp-none md:text-sm lg:text-base">{member.bio}</p>
+              <p className="text-cyan-400 mb-1 md:mb-3 text-xs sm:text-sm md:text-base font-medium">{member.title}</p>
+              <p className="text-slate-300 text-xs leading-tight sm:leading-normal md:leading-relaxed text-center line-clamp-3 sm:line-clamp-none md:text-sm lg:text-base">{member.bio}</p>
             </motion.div>
           ))}
         </div>

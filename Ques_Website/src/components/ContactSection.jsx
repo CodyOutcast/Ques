@@ -91,7 +91,7 @@ const ContactSection = ({ isVisible }) => {
       >
         {/* Title */}
         <motion.h2
-          className="text-3xl md:text-4xl font-bold mb-3"
+          className="text-4xl md:text-5xl font-bold mb-3 font-tech tracking-wide"
           initial={{ opacity: 0, y: 20 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -104,7 +104,7 @@ const ContactSection = ({ isVisible }) => {
 
         {/* Subtitle */}
         <motion.p
-          className="text-base md:text-lg text-gray-100 mb-6"
+          className="text-base md:text-lg text-slate-300 mb-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -125,19 +125,19 @@ const ContactSection = ({ isVisible }) => {
           }}
           transition={{ duration: 0.6, delay: 0.5 }}
         >
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-6 max-w-md mx-auto">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-6 max-w-md mx-auto border border-slate-700/50 shadow-xl hover-glow">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Email */}
-              <div className="text-center md:border-r md:border-white/20 md:pr-4">
+              <div className="text-center md:border-r md:border-slate-700/50 md:pr-4">
                 <div className="flex items-center justify-center mb-2">
-                  <FiMail className="text-blue-300 w-6 h-6" />
+                  <FiMail className="text-cyan-400 w-6 h-6" />
                 </div>
-                <h3 className="text-sm font-semibold mb-2 text-blue-200">
+                <h3 className="text-sm font-semibold mb-2 text-cyan-400 font-mono-accent">
                   {t("contact_section.email_label")}
                 </h3>
                 <a
                   href="mailto:cody@quesx.com"
-                  className="text-blue-300 hover:text-blue-200 transition-colors text-sm"
+                  className="text-slate-300 hover:text-cyan-300 transition-colors text-sm"
                 >
                   cody@quesx.com
                 </a>
@@ -146,16 +146,16 @@ const ContactSection = ({ isVisible }) => {
               {/* Phone */}
               <div className="text-center md:pl-4">
                 <div className="flex items-center justify-center mb-2">
-                  <svg className="w-6 h-6 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                 </div>
-                <h3 className="text-sm font-semibold mb-2 text-blue-200">
+                <h3 className="text-sm font-semibold mb-2 text-cyan-400 font-mono-accent">
                   {t("about_section.contact_title")}
                 </h3>
                 <a
                   href={`tel:${t('about_section.contact_value')}`}
-                  className="text-blue-300 hover:text-blue-200 transition-colors text-sm"
+                  className="text-slate-300 hover:text-cyan-300 transition-colors text-sm"
                 >
                   {t('about_section.contact_value')}
                 </a>
@@ -174,11 +174,11 @@ const ContactSection = ({ isVisible }) => {
           }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-5 max-w-md mx-auto">
-            <h3 className="text-sm font-semibold mb-2 text-blue-200">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-5 max-w-md mx-auto border border-slate-700/50 shadow-xl hover-glow">
+            <h3 className="text-sm font-semibold mb-2 text-cyan-400 font-mono-accent">
               {t("about_section.address_title")}
             </h3>
-            <p className="text-gray-200 text-xs">
+            <p className="text-slate-300 text-xs">
               {t('about_section.address_value')}
             </p>
           </div>
@@ -186,7 +186,7 @@ const ContactSection = ({ isVisible }) => {
 
         {/* Social Media */}
         <motion.div
-          className="bg-white/10 backdrop-blur-lg rounded-xl p-5 max-w-md mx-auto"
+          className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-5 max-w-md mx-auto border border-slate-700/50 shadow-xl hover-glow"
           initial={{ opacity: 0, y: 30 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -194,13 +194,13 @@ const ContactSection = ({ isVisible }) => {
           }}
           transition={{ duration: 0.6, delay: 0.7 }}
         >
-          <h3 className="text-sm font-semibold mb-3">
+          <h3 className="text-sm font-semibold mb-3 text-cyan-400 font-mono-accent">
             {t("contact_section.social_media")}
           </h3>
           <div className="flex justify-center items-center gap-5">
             <a
               href="https://x.com/GeoSeeer"
-              className="text-gray-200 hover:text-blue-300 transition-colors transform hover:scale-110"
+              className="text-slate-400 hover:text-cyan-400 transition-colors transform hover:scale-110"
               aria-label="X"
               target="_blank"
               rel="noopener noreferrer"
@@ -209,7 +209,7 @@ const ContactSection = ({ isVisible }) => {
             </a>
             <a
               href="https://www.instagram.com/geoseeer/"
-              className="text-gray-200 hover:text-blue-300 transition-colors transform hover:scale-110"
+              className="text-slate-400 hover:text-cyan-400 transition-colors transform hover:scale-110"
               aria-label="Instagram"
               target="_blank"
               rel="noopener noreferrer"
@@ -218,7 +218,7 @@ const ContactSection = ({ isVisible }) => {
             </a>
             <a
               href="https://www.tiktok.com/@geoseeer"
-              className="text-gray-200 hover:text-blue-300 transition-colors transform hover:scale-110"
+              className="text-slate-400 hover:text-cyan-400 transition-colors transform hover:scale-110"
               aria-label="TikTok"
               target="_blank"
               rel="noopener noreferrer"
@@ -227,7 +227,7 @@ const ContactSection = ({ isVisible }) => {
             </a>
             <a
               href="https://www.facebook.com/profile.php?id=61583773556872"
-              className="text-gray-200 hover:text-blue-300 transition-colors transform hover:scale-110"
+              className="text-slate-400 hover:text-cyan-400 transition-colors transform hover:scale-110"
               aria-label="Facebook"
               target="_blank"
               rel="noopener noreferrer"
@@ -236,7 +236,7 @@ const ContactSection = ({ isVisible }) => {
             </a>
             <a
               href="https://www.youtube.com/@geoseeer"
-              className="text-gray-200 hover:text-blue-300 transition-colors transform hover:scale-110"
+              className="text-slate-400 hover:text-cyan-400 transition-colors transform hover:scale-110"
               aria-label="YouTube"
               target="_blank"
               rel="noopener noreferrer"
@@ -245,7 +245,7 @@ const ContactSection = ({ isVisible }) => {
             </a>
             <a
               href="https://www.linkedin.com/company/geoseer"
-              className="text-gray-200 hover:text-blue-300 transition-colors transform hover:scale-110"
+              className="text-slate-400 hover:text-cyan-400 transition-colors transform hover:scale-110"
               aria-label="LinkedIn"
               target="_blank"
               rel="noopener noreferrer"

@@ -44,7 +44,7 @@ const ProductsSection = ({ isVisible }) => {
         {/* Header */}
         <div className="text-center mb-6">
           <motion.h2
-            className="text-3xl md:text-4xl font-bold mb-2"
+            className="text-4xl md:text-5xl font-bold mb-2 font-tech tracking-wide"
             initial={{ opacity: 0, y: 20 }}
             animate={{ 
               opacity: isVisible ? 1 : 0,
@@ -56,7 +56,7 @@ const ProductsSection = ({ isVisible }) => {
           </motion.h2>
 
           <motion.h3
-            className="text-lg md:text-xl font-semibold mb-2 text-blue-200"
+            className="text-lg md:text-xl font-semibold mb-2 text-cyan-400 font-mono-accent tracking-tight"
             initial={{ opacity: 0, y: 20 }}
             animate={{ 
               opacity: isVisible ? 1 : 0,
@@ -68,7 +68,7 @@ const ProductsSection = ({ isVisible }) => {
           </motion.h3>
 
           <motion.p
-            className="text-sm md:text-base text-gray-100 leading-relaxed max-w-3xl mx-auto"
+            className="text-sm md:text-base text-slate-300 leading-relaxed max-w-3xl mx-auto"
             initial={{ opacity: 0, y: 20 }}
             animate={{ 
               opacity: isVisible ? 1 : 0,
@@ -82,7 +82,7 @@ const ProductsSection = ({ isVisible }) => {
 
         {/* GeoSeer Product Card */}
         <motion.div
-          className="bg-white/10 backdrop-blur-lg rounded-2xl p-5 md:p-6 border border-white/20"
+          className="bg-slate-900/60 backdrop-blur-xl rounded-2xl p-5 md:p-6 border border-slate-700/50 shadow-2xl hover-glow"
           initial={{ opacity: 0, y: 30 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -98,7 +98,7 @@ const ProductsSection = ({ isVisible }) => {
               rel="noopener noreferrer"
               className="flex-shrink-0 transition-transform hover:scale-110 cursor-pointer"
             >
-              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-blue-500 to-green-400 p-2 flex items-center justify-center overflow-hidden">
+              <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-gradient-to-br from-cyan-600 to-blue-600 p-2 flex items-center justify-center overflow-hidden shadow-lg shadow-cyan-500/20">
                 <img 
                   src="/geoseer-logo.png" 
                   alt="GeoSeer Logo" 
@@ -111,26 +111,26 @@ const ProductsSection = ({ isVisible }) => {
                 href="https://geoseeer.com" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="hover:text-blue-300 transition-colors cursor-pointer"
+                className="hover:text-cyan-300 transition-colors cursor-pointer"
               >
                 <h3 className="text-xl md:text-2xl font-bold mb-0.5">
                   {t("products_section.geoseer_title")}
                 </h3>
               </a>
-              <p className="text-sm md:text-base text-green-300">
+              <p className="text-sm md:text-base text-emerald-400 font-mono-accent">
                 {t("products_section.geoseer_tagline")}
               </p>
             </div>
           </div>
 
           {/* Description */}
-          <p className="text-xs md:text-sm text-gray-100 leading-relaxed mb-4">
+          <p className="text-xs md:text-sm text-slate-300 leading-relaxed mb-4">
             {t("products_section.geoseer_description")}
           </p>
 
           {/* Features Grid */}
           <div className="mb-4">
-            <h4 className="text-base md:text-lg font-bold mb-2 text-blue-200">
+            <h4 className="text-base md:text-lg font-bold mb-2 text-cyan-400 font-mono-accent">
               {t("products_section.geoseer_features_title")}
             </h4>
             <div className="grid md:grid-cols-2 gap-2">
@@ -143,10 +143,10 @@ const ProductsSection = ({ isVisible }) => {
                     x: isVisible ? 0 : -20 
                   }}
                   transition={{ duration: 0.4, delay: 0.7 + (index * 0.1) }}
-                  className="flex items-start gap-2 bg-white/5 rounded-lg p-2.5"
+                  className="flex items-start gap-2 bg-slate-800/50 border border-slate-700/30 rounded-lg p-2.5"
                 >
-                  <div className="w-1 h-1 bg-blue-400 rounded-full mt-1.5 flex-shrink-0" />
-                  <p className="text-gray-200 text-xs leading-relaxed">
+                  <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1.5 flex-shrink-0" />
+                  <p className="text-slate-300 text-xs leading-relaxed">
                     {feature}
                   </p>
                 </motion.div>
@@ -160,7 +160,7 @@ const ProductsSection = ({ isVisible }) => {
               href="https://geoseeer.com"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white font-semibold px-5 py-2.5 text-sm rounded-full transition-all duration-300 transform hover:scale-105"
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold px-5 py-2.5 text-sm rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-cyan-500/20"
             >
               {t("products_section.visit_website")}
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

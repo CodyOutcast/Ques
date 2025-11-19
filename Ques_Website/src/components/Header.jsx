@@ -40,8 +40,8 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
               z-index: 20;
               background: linear-gradient(
                 to bottom,
-                rgba(29, 78, 216, 1.0) 0%,
-                rgba(29, 78, 216, 0.9) calc(30px + env(safe-area-inset-top, 0px)),
+                rgba(2, 6, 23, 1.0) 0%,
+                rgba(2, 6, 23, 0.9) calc(30px + env(safe-area-inset-top, 0px)),
                 transparent calc(80px + env(safe-area-inset-top, 0px))
               );
             }
@@ -65,14 +65,14 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
                 style={optimizeAnimation.gpuAcceleration}
                 className="flex items-center"
               >
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-blue-500 to-green-400 flex items-center justify-center mr-3">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 flex items-center justify-center mr-3 shadow-lg shadow-cyan-500/20">
                   <img 
                     src={logo} 
                     alt="Logo" 
                     className="h-full w-full object-contain"
                   />
                 </div>
-                <span className="text-xl font-bold bg-gradient-to-r from-blue-200 to-green-300 bg-clip-text text-transparent">
+                <span className="text-2xl font-bold font-tech bg-gradient-to-r from-cyan-400 to-emerald-400 bg-clip-text text-transparent tracking-widest uppercase">
                   {t("header.logo_text")}
                 </span>
               </motion.div>
@@ -92,10 +92,10 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
                     >
                       <button
                         onClick={() => handleNavClick(item.id)}
-                        className={`relative text-gray-200 
+                        className={`relative font-medium transition-colors duration-300
                           ${activeSection === item.id 
-                            ? 'text-blue-400' 
-                            : 'hover:text-blue-400'}
+                            ? 'text-cyan-400' 
+                            : 'text-slate-400 hover:text-cyan-300'}
                           bg-transparent
                           h-8 flex items-center
                           font-medium text-lg rounded-md

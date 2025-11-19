@@ -34,7 +34,8 @@ const AboutSection = ({ isVisible }) => {
       >
         {/* Title */}
         <motion.h2
-          className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 text-center"
+          className="text-5xl md:text-6xl lg:text-7xl font-bold mb-4 text-center font-tech text-glitch"
+          data-text={t("about_section.title")}
           initial={{ opacity: 0, y: 20 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -47,7 +48,7 @@ const AboutSection = ({ isVisible }) => {
 
         {/* Company Name */}
         <motion.h3
-          className="text-2xl md:text-3xl font-semibold mb-3 text-blue-200 text-center"
+          className="text-2xl md:text-3xl font-semibold mb-3 text-cyan-400 font-mono-accent text-center tracking-tight"
           initial={{ opacity: 0, y: 20 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -60,7 +61,7 @@ const AboutSection = ({ isVisible }) => {
 
         {/* Tagline */}
         <motion.p
-          className="text-xl md:text-2xl font-medium text-green-300 mb-8 text-center"
+          className="text-xl md:text-2xl font-medium text-emerald-400 font-mono-accent mb-8 text-center"
           initial={{ opacity: 0, y: 20 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -73,7 +74,7 @@ const AboutSection = ({ isVisible }) => {
 
         {/* Description */}
         <motion.p
-          className="text-base md:text-lg text-gray-100 leading-relaxed mb-8 text-center max-w-4xl mx-auto"
+          className="text-base md:text-lg text-slate-300 leading-relaxed mb-8 text-center max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -95,21 +96,21 @@ const AboutSection = ({ isVisible }) => {
           transition={{ duration: 0.6, delay: 0.6 }}
         >
           {/* Mission */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8">
-            <h4 className="text-2xl md:text-3xl font-bold mb-4 text-blue-300">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-8 border border-slate-700/50 shadow-xl hover-glow">
+            <h4 className="text-2xl md:text-3xl font-bold mb-4 text-cyan-400 font-mono-accent">
               {t("about_section.mission_title")}
             </h4>
-            <p className="text-base md:text-lg text-gray-200 leading-relaxed">
+            <p className="text-base md:text-lg text-slate-300 leading-relaxed">
               {t("about_section.mission_description")}
             </p>
           </div>
 
           {/* Vision */}
-          <div className="bg-white/10 backdrop-blur-lg rounded-xl p-8">
-            <h4 className="text-2xl md:text-3xl font-bold mb-4 text-green-300">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-8 border border-slate-700/50 shadow-xl hover-glow">
+            <h4 className="text-2xl md:text-3xl font-bold mb-4 text-emerald-400 font-mono-accent">
               {t("about_section.vision_title")}
             </h4>
-            <p className="text-base md:text-lg text-gray-200 leading-relaxed">
+            <p className="text-base md:text-lg text-slate-300 leading-relaxed">
               {t("about_section.vision_description")}
             </p>
           </div>

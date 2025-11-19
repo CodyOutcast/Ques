@@ -6,7 +6,7 @@ const Footer = () => {
   
   return (
     <footer 
-      className="absolute bottom-0 w-full py-2 text-center text-white text-xs flex flex-col items-center"
+      className="absolute bottom-0 w-full py-2 text-center text-slate-400 text-xs flex flex-col items-center"
       style={{
         paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
         marginBottom: 'env(safe-area-inset-bottom, 20px)'
@@ -19,7 +19,7 @@ const Footer = () => {
           href="https://beian.miit.gov.cn/" 
           target="_blank" 
           rel="noopener noreferrer" 
-          className="hover:text-blue-300 transition-colors"
+          className="hover:text-cyan-400 transition-colors"
         >
           {t('footer.icp')}
         </a>
@@ -28,7 +28,7 @@ const Footer = () => {
           href=" " 
           rel="noreferrer" 
           target="_blank"
-          className="inline-flex items-center hover:text-blue-300 transition-colors"
+          className="inline-flex items-center hover:text-cyan-400 transition-colors"
         >
           <img 
             src="/police_logo.jpg" 

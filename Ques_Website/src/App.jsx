@@ -36,11 +36,11 @@ import i18n from 'i18next';
         height: 100vh !important;
         height: 100dvh !important;
         overflow: hidden !important;
-        background-color: #1d4ed8 !important;
+        background-color: #020617 !important;
     `;
     
     // Set CSS variables to match top gradient color
-    document.documentElement.style.setProperty('--top-background-color', '#1d4ed8');
+    document.documentElement.style.setProperty('--top-background-color', '#020617');
     document.documentElement.style.setProperty('--safe-area-inset-top', 'env(safe-area-inset-top)');
 })();
 
@@ -179,7 +179,7 @@ export default function App() {
 
     return (
         <div
-            className="dynamic-height w-full overflow-hidden fixed bg-gradient-to-b from-blue-700 to-gray-400"
+            className="dynamic-height w-full overflow-hidden fixed bg-grid-pattern"
             style={{
                 top: 0,
                 left: 0,
@@ -195,6 +195,13 @@ export default function App() {
             onTouchEnd={handleTouchEnd}
             onWheel={handleWheel}
         >
+            {/* Ambient Background Effects */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-purple-500/30 rounded-full mix-blend-screen filter blur-[80px] animate-blob"></div>
+                <div className="absolute top-[20%] right-[-10%] w-[35rem] h-[35rem] bg-cyan-500/30 rounded-full mix-blend-screen filter blur-[80px] animate-blob animation-delay-2000"></div>
+                <div className="absolute bottom-[-10%] left-[20%] w-[45rem] h-[45rem] bg-blue-600/30 rounded-full mix-blend-screen filter blur-[80px] animate-blob animation-delay-4000"></div>
+            </div>
+
             <Header 
                 isChinese={isChinese}
                 toggleLanguage={toggleLanguage}
