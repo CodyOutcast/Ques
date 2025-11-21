@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import HomeSection from './components/HomeSection';
 import AboutSection from './components/AboutSection';
 import ProductsSection from './components/ProductsSection';
 import TeamSection from './components/TeamSection';
@@ -48,11 +49,11 @@ export default function App() {
     // Language state
     const [isChinese, setIsChinese] = useState(i18n.language === 'cn');
     
-    // Active section state (0: About, 1: Products, 2: Team, 3: Contact)
+    // Active section state (0: Home, 1: About, 2: Products, 3: Team, 4: Contact)
     const [activeSection, setActiveSection] = useState(0);
     
     // Section names for tracking
-    const sections = ['about', 'products', 'team', 'contact'];
+    const sections = ['home', 'about', 'products', 'team', 'contact'];
 
     // Wheel scroll management
     const wheelDeltaRef = useRef(0);
@@ -197,9 +198,8 @@ export default function App() {
         >
             {/* Ambient Background Effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-purple-500/30 rounded-full mix-blend-screen filter blur-[80px] animate-blob"></div>
-                <div className="absolute top-[20%] right-[-10%] w-[35rem] h-[35rem] bg-cyan-500/30 rounded-full mix-blend-screen filter blur-[80px] animate-blob animation-delay-2000"></div>
-                <div className="absolute bottom-[-10%] left-[20%] w-[45rem] h-[45rem] bg-blue-600/30 rounded-full mix-blend-screen filter blur-[80px] animate-blob animation-delay-4000"></div>
+                <div className="absolute top-[-10%] left-[-10%] w-[40rem] h-[40rem] bg-blue-900/20 rounded-full mix-blend-screen filter blur-[80px] animate-blob"></div>
+                <div className="absolute bottom-[-10%] right-[-10%] w-[45rem] h-[45rem] bg-blue-800/15 rounded-full mix-blend-screen filter blur-[80px] animate-blob animation-delay-4000"></div>
             </div>
 
             <Header 
@@ -209,17 +209,20 @@ export default function App() {
                 activeSection={sections[activeSection]}
             />
             
+            {/* Home Section */}
+            <HomeSection isVisible={activeSection === 0} />
+            
             {/* About Section */}
-            <AboutSection isVisible={activeSection === 0} />
+            <AboutSection isVisible={activeSection === 1} />
             
             {/* Products Section */}
-            <ProductsSection isVisible={activeSection === 1} />
+            <ProductsSection isVisible={activeSection === 2} />
             
             {/* Team Section */}
-            <TeamSection isVisible={activeSection === 2} />
+            <TeamSection isVisible={activeSection === 3} />
             
             {/* Contact Section */}
-            <ContactSection isVisible={activeSection === 3} />
+            <ContactSection isVisible={activeSection === 4} />
             
             {/* Footer */}
             <Footer />

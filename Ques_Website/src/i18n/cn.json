@@ -1,6 +1,7 @@
 {
   "translation": {
     "header": {
+      "home": "主页",
       "about": "关于我们",
       "products": "我们的产品",
       "team": "我们的团队",
@@ -16,6 +17,10 @@
       "close": "关闭",
       "wechat": "微信",
       "message": "有问题或建议？请与我们联系！"
+    },
+    "home_section": {
+      "company_name": "深圳市快索科技有限公司",
+      "tagline": "构建AI基础设施的OSINT层"
     },
     "about_section": {
       "title": "关于我们",

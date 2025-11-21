@@ -1,6 +1,7 @@
 {
   "translation": {
     "header": {
+      "home": "Home",
       "about": "About Us",
       "products": "Our Products",
       "team": "Our Team",
@@ -16,6 +17,10 @@
       "close": "Close",
       "wechat": "WeChat",
       "message": "Have questions or suggestions? Get in touch with us!"
+    },
+    "home_section": {
+      "company_name": "Shenzhen Ques Technology Co., Ltd.",
+      "tagline": "Building the OSINT Layer of AI Infrastructure"
     },
     "about_section": {
       "title": "About Us",

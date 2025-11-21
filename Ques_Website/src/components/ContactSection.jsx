@@ -125,19 +125,19 @@ const ContactSection = ({ isVisible }) => {
           }}
           transition={{ duration: 0.6, delay: 0.5 }}
         >
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-6 max-w-md mx-auto border border-slate-700/50 shadow-xl hover-glow">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-6 max-w-md mx-auto border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Email */}
               <div className="text-center md:border-r md:border-slate-700/50 md:pr-4">
                 <div className="flex items-center justify-center mb-2">
                   <FiMail className="text-cyan-400 w-6 h-6" />
                 </div>
-                <h3 className="text-sm font-semibold mb-2 text-cyan-400 font-mono-accent">
+                <h3 className="text-sm font-semibold mb-2 text-gray-300 font-mono-accent">
                   {t("contact_section.email_label")}
                 </h3>
                 <a
                   href="mailto:cody@quesx.com"
-                  className="text-slate-300 hover:text-cyan-300 transition-colors text-sm"
+                  className="text-slate-300 hover:text-gray-300 transition-colors text-sm"
                 >
                   cody@quesx.com
                 </a>
@@ -150,12 +150,12 @@ const ContactSection = ({ isVisible }) => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                   </svg>
                 </div>
-                <h3 className="text-sm font-semibold mb-2 text-cyan-400 font-mono-accent">
+                <h3 className="text-sm font-semibold mb-2 text-gray-300 font-mono-accent">
                   {t("about_section.contact_title")}
                 </h3>
                 <a
                   href={`tel:${t('about_section.contact_value')}`}
-                  className="text-slate-300 hover:text-cyan-300 transition-colors text-sm"
+                  className="text-slate-300 hover:text-gray-300 transition-colors text-sm"
                 >
                   {t('about_section.contact_value')}
                 </a>
@@ -174,8 +174,8 @@ const ContactSection = ({ isVisible }) => {
           }}
           transition={{ duration: 0.6, delay: 0.6 }}
         >
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-5 max-w-md mx-auto border border-slate-700/50 shadow-xl hover-glow">
-            <h3 className="text-sm font-semibold mb-2 text-cyan-400 font-mono-accent">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-5 max-w-md mx-auto border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow">
+            <h3 className="text-sm font-semibold mb-2 text-gray-300 font-mono-accent">
               {t("about_section.address_title")}
             </h3>
             <p className="text-slate-300 text-xs">
@@ -186,7 +186,7 @@ const ContactSection = ({ isVisible }) => {
 
         {/* Social Media */}
         <motion.div
-          className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-5 max-w-md mx-auto border border-slate-700/50 shadow-xl hover-glow"
+          className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-5 max-w-md mx-auto border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow"
           initial={{ opacity: 0, y: 30 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -194,7 +194,7 @@ const ContactSection = ({ isVisible }) => {
           }}
           transition={{ duration: 0.6, delay: 0.7 }}
         >
-          <h3 className="text-sm font-semibold mb-3 text-cyan-400 font-mono-accent">
+          <h3 className="text-sm font-semibold mb-3 text-gray-300 font-mono-accent">
             {t("contact_section.social_media")}
           </h3>
           <div className="flex justify-center items-center gap-5">

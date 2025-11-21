@@ -89,7 +89,7 @@ const TeamSection = ({ isVisible }) => {
                 ...optimizeAnimation.optimizedSpring
               }}
               style={optimizeAnimation.gpuAcceleration}
-              className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col items-center border border-slate-700/50 shadow-xl hover-glow"
+              className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col items-center border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow"
             >
               <a 
                 href={member.xLink}
@@ -111,7 +111,7 @@ const TeamSection = ({ isVisible }) => {
               >
                 <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2 font-mono-accent">{member.name}</h3>
               </a>
-              <p className="text-cyan-400 mb-1 md:mb-3 text-xs sm:text-sm md:text-base font-medium">{member.title}</p>
+              <p className="text-gray-300 mb-1 md:mb-3 text-xs sm:text-sm md:text-base font-medium">{member.title}</p>
               <p className="text-slate-300 text-xs leading-tight sm:leading-normal md:leading-relaxed text-center line-clamp-3 sm:line-clamp-none md:text-sm lg:text-base">{member.bio}</p>
             </motion.div>
           ))}

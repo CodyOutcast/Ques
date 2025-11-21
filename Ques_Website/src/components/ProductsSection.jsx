@@ -44,7 +44,7 @@ const ProductsSection = ({ isVisible }) => {
         {/* Header */}
         <div className="text-center mb-6">
           <motion.h2
-            className="text-4xl md:text-5xl font-bold mb-2 font-tech tracking-wide"
+            className="text-4xl md:text-5xl font-bold mb-6 font-tech tracking-wide"
             initial={{ opacity: 0, y: 20 }}
             animate={{ 
               opacity: isVisible ? 1 : 0,
@@ -54,35 +54,11 @@ const ProductsSection = ({ isVisible }) => {
           >
             {t("products_section.title")}
           </motion.h2>
-
-          <motion.h3
-            className="text-lg md:text-xl font-semibold mb-2 text-cyan-400 font-mono-accent tracking-tight"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ 
-              opacity: isVisible ? 1 : 0,
-              y: isVisible ? 0 : 20 
-            }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-          >
-            {t("products_section.subtitle")}
-          </motion.h3>
-
-          <motion.p
-            className="text-sm md:text-base text-slate-300 leading-relaxed max-w-3xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ 
-              opacity: isVisible ? 1 : 0,
-              y: isVisible ? 0 : 20 
-            }}
-            transition={{ duration: 0.5, delay: 0.5 }}
-          >
-            {t("products_section.intro")}
-          </motion.p>
         </div>
 
         {/* GeoSeer Product Card */}
         <motion.div
-          className="bg-slate-900/60 backdrop-blur-xl rounded-2xl p-5 md:p-6 border border-slate-700/50 shadow-2xl hover-glow"
+          className="bg-slate-900/60 backdrop-blur-xl rounded-2xl p-5 md:p-6 border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow"
           initial={{ opacity: 0, y: 30 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -117,7 +93,7 @@ const ProductsSection = ({ isVisible }) => {
                   {t("products_section.geoseer_title")}
                 </h3>
               </a>
-              <p className="text-sm md:text-base text-emerald-400 font-mono-accent">
+              <p className="text-sm md:text-base bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent font-mono-accent">
                 {t("products_section.geoseer_tagline")}
               </p>
             </div>
@@ -130,7 +106,7 @@ const ProductsSection = ({ isVisible }) => {
 
           {/* Features Grid */}
           <div className="mb-4">
-            <h4 className="text-base md:text-lg font-bold mb-2 text-cyan-400 font-mono-accent">
+            <h4 className="text-base md:text-lg font-bold mb-2 bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent font-mono-accent">
               {t("products_section.geoseer_features_title")}
             </h4>
             <div className="grid md:grid-cols-2 gap-2">

@@ -13,7 +13,7 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
         setIsOpen(!isOpen);
     };
 
-    // Navigation items for the new 4-section design
+    // Navigation items
     const NAVIGATION_ITEMS = [
       { name: t("header.about"), id: "about" },
       { name: t("header.products"), id: "products" },
@@ -94,8 +94,8 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
                         onClick={() => handleNavClick(item.id)}
                         className={`relative font-medium transition-colors duration-300
                           ${activeSection === item.id 
-                            ? 'text-cyan-400' 
-                            : 'text-slate-400 hover:text-cyan-300'}
+                            ? 'bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent' 
+                            : 'text-slate-400 hover:bg-gradient-to-r hover:from-white hover:via-gray-400 hover:to-white hover:bg-clip-text hover:text-transparent'}
                           bg-transparent
                           h-8 flex items-center
                           font-medium text-lg rounded-md
@@ -137,7 +137,7 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
                 <motion.button 
                   whileTap={{ scale: 0.9 }}
                   onClick={toggleMenu} 
-                  className="text-gray-200 hover:text-blue-500 transition-colors duration-300 p-2 rounded-md">
+                  className="text-gray-200 hover:bg-gradient-to-r hover:from-white hover:via-gray-400 hover:to-white hover:bg-clip-text hover:text-transparent transition-colors duration-300 p-2 rounded-md">
                   {isOpen ? <FiX className="h-8 w-8" /> : <FiMenu className="h-8 w-8" />}
                 </motion.button>
               </div>
@@ -165,7 +165,7 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
                     key={index}
                     onClick={() => handleNavClick(item.id)}
                     className={`text-gray-300 font-medium py-2 text-left
-                      ${activeSection === item.id ? 'text-blue-400' : ''}`}
+                      ${activeSection === item.id ? 'bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent' : ''}`}
                   >
                     {item.name}
                   </button>
