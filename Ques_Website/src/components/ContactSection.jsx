@@ -136,10 +136,10 @@ const ContactSection = ({ isVisible }) => {
                   {t("contact_section.email_label")}
                 </h3>
                 <a
-                  href="mailto:cody@quesx.com"
+                  href="mailto:support@quesx.com"
                   className="text-slate-300 hover:text-gray-300 transition-colors text-sm"
                 >
-                  cody@quesx.com
+                  support@quesx.com
                 </a>
               </div>
 

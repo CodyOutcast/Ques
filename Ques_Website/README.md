@@ -228,7 +228,7 @@ new/
 
 ## Contact
 
-**Email**: cody@quesx.com  
+**Email**: support@quesx.com  
 **Phone**: +86 (755) 26400640  
 **Address**: Floor 20, Tower A, Phoenix City, Guangming District, Shenzhen, Guangdong Province
 
