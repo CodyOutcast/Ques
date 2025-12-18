@@ -250,16 +250,18 @@ remove_conflicting_configs() {
 create_nginx_config() {
     print_info "Creating Nginx configuration..."
     
-    cat > "$NGINX_CONFIG" << 'EOF'
-# Redirect www to non-www (enforce canonical domain)
+    # Check if SSL certificates exist
+    if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
+        print_info "SSL certificates found - creating HTTPS configuration"
+        
+        cat > "$NGINX_CONFIG" << 'EOF'
+# Redirect www to non-www (HTTP)
 server {
     listen 80;
     listen [::]:80;
     server_name www.your-domain.com;
     
-    # Add X-Robots-Tag to tell search engines not to index redirect pages
     add_header X-Robots-Tag "noindex, nofollow" always;
-    
     return 301 https://your-domain.com$request_uri;
 }
 
@@ -269,9 +271,7 @@ server {
     listen [::]:80;
     server_name your-domain.com;
     
-    # Add X-Robots-Tag to tell search engines not to index redirect pages
     add_header X-Robots-Tag "noindex, nofollow" always;
-    
     return 301 https://your-domain.com$request_uri;
 }
 
@@ -285,8 +285,11 @@ server {
     root /var/www/ques;
     index index.html index.htm;
     
-    # SSL configuration (will be managed by certbot)
-    # ssl_certificate and ssl_certificate_key will be added by certbot
+    # SSL configuration
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
     
     # Logging
     access_log /var/log/nginx/ques-access.log;
@@ -304,11 +307,10 @@ server {
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     
-    # Add canonical Link header for all HTML responses to prevent duplicate content
+    # Add canonical Link header
     add_header Link '<https://your-domain.com/>; rel="canonical"' always;
     
-    # Redirect specific problematic paths to root with 301 (permanent redirect)
-    # This tells search engines these are not separate pages
+    # Redirect specific problematic paths
     location = /security-tips {
         return 301 https://your-domain.com/;
     }
@@ -323,7 +325,7 @@ server {
         add_header Cache-Control "public, immutable";
     }
     
-    # Main location - SPA fallback for any other paths
+    # Main location - SPA fallback
     location / {
         try_files $uri $uri/ /index.html;
     }
@@ -334,20 +336,82 @@ server {
     }
 }
 
-# Redirect www to non-www for HTTPS (if someone accesses www over HTTPS)
+# Redirect www to non-www for HTTPS
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
     server_name www.your-domain.com;
     
-    # SSL configuration (will be managed by certbot)
+    # SSL configuration
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
     
-    # Add X-Robots-Tag to tell search engines not to index redirect pages
     add_header X-Robots-Tag "noindex, nofollow" always;
-    
     return 301 https://your-domain.com$request_uri;
 }
 EOF
+    else
+        print_info "No SSL certificates found - creating HTTP-only configuration"
+        print_info "SSL will be added by certbot in the next step"
+        
+        cat > "$NGINX_CONFIG" << 'EOF'
+# HTTP server - will be modified by certbot to add HTTPS
+server {
+    listen 80;
+    listen [::]:80;
+    
+    server_name your-domain.com www.your-domain.com;
+    
+    root /var/www/ques;
+    index index.html index.htm;
+    
+    # Logging
+    access_log /var/log/nginx/ques-access.log;
+    error_log /var/log/nginx/ques-error.log warn;
+    
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json image/svg+xml;
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    
+    # Add canonical Link header
+    add_header Link '<https://your-domain.com/>; rel="canonical"' always;
+    
+    # Redirect specific problematic paths
+    location = /security-tips {
+        return 301 https://your-domain.com/;
+    }
+    
+    location ^~ /weixin/openWx/event/authorize {
+        return 301 https://your-domain.com/;
+    }
+    
+    # Cache static assets
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Main location - SPA fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+    }
+}
+EOF
+    fi
 
     # Replace domain placeholder with actual domain
     sed -i "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
@@ -454,9 +518,22 @@ install_ssl() {
     # Get SSL certificate
     print_info "Obtaining SSL certificate from Let's Encrypt..."
     
-    # Run certbot in non-interactive mode
+    # Run certbot - it will modify the Nginx config automatically
     if certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --non-interactive --agree-tos --redirect --email "admin@$DOMAIN"; then
         print_success "SSL certificate installed successfully"
+        
+        # Now recreate our custom configuration with proper redirects and headers
+        print_info "Updating Nginx configuration with SEO optimizations..."
+        create_nginx_config_with_ssl
+        
+        # Test the new configuration
+        if nginx -t; then
+            systemctl reload nginx
+            print_success "Nginx configuration updated with SEO optimizations"
+        else
+            print_warning "Custom configuration failed, keeping certbot defaults"
+        fi
+        
         print_success "HTTPS is now enabled with automatic HTTP to HTTPS redirect"
         return 0
     else
@@ -465,6 +542,111 @@ install_ssl() {
         print_warning "  sudo certbot --nginx -d $DOMAIN -d www.$DOMAIN"
         return 1
     fi
+}
+
+# Function to create SEO-optimized Nginx configuration after SSL is installed
+create_nginx_config_with_ssl() {
+    cat > "$NGINX_CONFIG" << 'EOF'
+# Redirect www to non-www (HTTP)
+server {
+    listen 80;
+    listen [::]:80;
+    server_name www.your-domain.com;
+    
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    return 301 https://your-domain.com$request_uri;
+}
+
+# Redirect HTTP to HTTPS for non-www
+server {
+    listen 80;
+    listen [::]:80;
+    server_name your-domain.com;
+    
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    return 301 https://your-domain.com$request_uri;
+}
+
+# Main HTTPS server block
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    
+    server_name your-domain.com;
+    
+    root /var/www/ques;
+    index index.html index.htm;
+    
+    # SSL configuration
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    
+    # Logging
+    access_log /var/log/nginx/ques-access.log;
+    error_log /var/log/nginx/ques-error.log warn;
+    
+    # Gzip compression
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/xml+rss application/json image/svg+xml;
+    
+    # Security headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    
+    # Add canonical Link header
+    add_header Link '<https://your-domain.com/>; rel="canonical"' always;
+    
+    # Redirect specific problematic paths
+    location = /security-tips {
+        return 301 https://your-domain.com/;
+    }
+    
+    location ^~ /weixin/openWx/event/authorize {
+        return 301 https://your-domain.com/;
+    }
+    
+    # Cache static assets
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+    
+    # Main location - SPA fallback
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+    
+    # Deny access to hidden files
+    location ~ /\. {
+        deny all;
+    }
+}
+
+# Redirect www to non-www for HTTPS
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.your-domain.com;
+    
+    # SSL configuration
+    ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    return 301 https://your-domain.com$request_uri;
+}
+EOF
+
+    # Replace domain placeholder with actual domain
+    sed -i "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
 }
 
 # Function to display final instructions
