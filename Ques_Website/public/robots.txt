@@ -1,0 +1,14 @@
+# robots.txt for quesx.com
+# Allow all search engines to crawl the site
+User-agent: *
+Allow: /
+
+# Disallow crawling of these specific paths that should redirect
+Disallow: /security-tips
+Disallow: /weixin/
+
+# Note: The canonical URL is https://quesx.com/ (non-www, HTTPS)
+# http:// and http://www. versions redirect and should not be indexed
+
+# Sitemap location
+Sitemap: https://quesx.com/sitemap.xml

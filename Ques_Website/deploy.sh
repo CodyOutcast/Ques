@@ -251,14 +251,42 @@ create_nginx_config() {
     print_info "Creating Nginx configuration..."
     
     cat > "$NGINX_CONFIG" << 'EOF'
+# Redirect www to non-www (enforce canonical domain)
 server {
     listen 80;
     listen [::]:80;
+    server_name www.your-domain.com;
     
-    server_name your-domain.com www.your-domain.com;
+    # Add X-Robots-Tag to tell search engines not to index redirect pages
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    
+    return 301 https://your-domain.com$request_uri;
+}
+
+# Redirect HTTP to HTTPS for non-www
+server {
+    listen 80;
+    listen [::]:80;
+    server_name your-domain.com;
+    
+    # Add X-Robots-Tag to tell search engines not to index redirect pages
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    
+    return 301 https://your-domain.com$request_uri;
+}
+
+# Main HTTPS server block
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    
+    server_name your-domain.com;
     
     root /var/www/ques;
     index index.html index.htm;
+    
+    # SSL configuration (will be managed by certbot)
+    # ssl_certificate and ssl_certificate_key will be added by certbot
     
     # Logging
     access_log /var/log/nginx/ques-access.log;
@@ -274,6 +302,20 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    
+    # Add canonical Link header for all HTML responses to prevent duplicate content
+    add_header Link '<https://your-domain.com/>; rel="canonical"' always;
+    
+    # Redirect specific problematic paths to root with 301 (permanent redirect)
+    # This tells search engines these are not separate pages
+    location = /security-tips {
+        return 301 https://your-domain.com/;
+    }
+    
+    location ^~ /weixin/openWx/event/authorize {
+        return 301 https://your-domain.com/;
+    }
     
     # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
@@ -281,7 +323,7 @@ server {
         add_header Cache-Control "public, immutable";
     }
     
-    # Main location
+    # Main location - SPA fallback for any other paths
     location / {
         try_files $uri $uri/ /index.html;
     }
@@ -290,6 +332,20 @@ server {
     location ~ /\. {
         deny all;
     }
+}
+
+# Redirect www to non-www for HTTPS (if someone accesses www over HTTPS)
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.your-domain.com;
+    
+    # SSL configuration (will be managed by certbot)
+    
+    # Add X-Robots-Tag to tell search engines not to index redirect pages
+    add_header X-Robots-Tag "noindex, nofollow" always;
+    
+    return 301 https://your-domain.com$request_uri;
 }
 EOF
 
