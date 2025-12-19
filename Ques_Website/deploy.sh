@@ -261,7 +261,6 @@ server {
     listen [::]:80;
     server_name www.your-domain.com;
     
-    add_header X-Robots-Tag "noindex, nofollow" always;
     return 301 https://your-domain.com$request_uri;
 }
 
@@ -271,7 +270,6 @@ server {
     listen [::]:80;
     server_name your-domain.com;
     
-    add_header X-Robots-Tag "noindex, nofollow" always;
     return 301 https://your-domain.com$request_uri;
 }
 
@@ -348,7 +346,6 @@ server {
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
     
-    add_header X-Robots-Tag "noindex, nofollow" always;
     return 301 https://your-domain.com$request_uri;
 }
 EOF
@@ -553,7 +550,6 @@ server {
     listen [::]:80;
     server_name www.your-domain.com;
     
-    add_header X-Robots-Tag "noindex, nofollow" always;
     return 301 https://your-domain.com$request_uri;
 }
 
@@ -563,7 +559,6 @@ server {
     listen [::]:80;
     server_name your-domain.com;
     
-    add_header X-Robots-Tag "noindex, nofollow" always;
     return 301 https://your-domain.com$request_uri;
 }
 
@@ -640,7 +635,6 @@ server {
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
     
-    add_header X-Robots-Tag "noindex, nofollow" always;
     return 301 https://your-domain.com$request_uri;
 }
 EOF
