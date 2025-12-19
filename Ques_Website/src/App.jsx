@@ -3,6 +3,7 @@ import Header from './components/Header';
 import Footer from './components/Footer';
 import HomeSection from './components/HomeSection';
 import AboutSection from './components/AboutSection';
+import ProductsDemoSection from './components/ProductsDemoSection';
 import ProductsSection from './components/ProductsSection';
 import TeamSection from './components/TeamSection';
 import ContactSection from './components/ContactSection';
@@ -49,11 +50,11 @@ export default function App() {
     // Language state
     const [isChinese, setIsChinese] = useState(i18n.language === 'cn');
     
-    // Active section state (0: Home, 1: About, 2: Products, 3: Team, 4: Contact)
+    // Active section state (0: Home, 1: About, 2: Products Demo, 3: Products Details, 4: Team, 5: Contact)
     const [activeSection, setActiveSection] = useState(0);
     
     // Section names for tracking
-    const sections = ['home', 'about', 'products', 'team', 'contact'];
+    const sections = ['home', 'about', 'products', 'products-detail', 'team', 'contact'];
 
     // Wheel scroll management
     const wheelDeltaRef = useRef(0);
@@ -215,14 +216,17 @@ export default function App() {
             {/* About Section */}
             <AboutSection isVisible={activeSection === 1} />
             
-            {/* Products Section */}
-            <ProductsSection isVisible={activeSection === 2} />
+            {/* Products Section - Demo Video */}
+            <ProductsDemoSection isVisible={activeSection === 2} />
+            
+            {/* Products Section - Details */}
+            <ProductsSection isVisible={activeSection === 3} />
             
             {/* Team Section */}
-            <TeamSection isVisible={activeSection === 3} />
+            <TeamSection isVisible={activeSection === 4} />
             
             {/* Contact Section */}
-            <ContactSection isVisible={activeSection === 4} />
+            <ContactSection isVisible={activeSection === 5} />
             
             {/* Footer */}
             <Footer />

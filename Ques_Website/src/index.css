@@ -131,6 +131,25 @@ body {
   animation: shimmer 3s linear infinite;
 }
 
+/* Skeleton Shimmer for Loading */
+@keyframes skeleton-shimmer {
+  0% { background-position: -1000px 0; }
+  100% { background-position: 1000px 0; }
+}
+
+.skeleton-shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.08) 50%,
+    transparent 100%
+  );
+  background-size: 1000px 100%;
+  animation: skeleton-shimmer 2s linear infinite;
+}
+
 /* Card Glow Hover Effect */
 .hover-glow {
   transition: all 0.3s ease;
