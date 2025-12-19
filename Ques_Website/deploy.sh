@@ -172,6 +172,17 @@ copy_build_files() {
         exit 1
     fi
     
+    # Verify critical SEO files
+    print_info "Verifying critical SEO files..."
+    critical_files=("logo.png" "site.webmanifest" "robots.txt" "sitemap.xml")
+    for file in "${critical_files[@]}"; do
+        if [ ! -f "$NGINX_ROOT/$file" ]; then
+            print_warning "Critical SEO file missing: $file"
+        else
+            print_success "Found: $file"
+        fi
+    done
+    
     # Set correct permissions
     chown -R www-data:www-data "$NGINX_ROOT"
     chmod -R 755 "$NGINX_ROOT"
@@ -391,6 +402,22 @@ server {
         return 301 https://your-domain.com/;
     }
     
+    # Serve robots.txt and sitemap.xml with correct MIME types
+    location = /robots.txt {
+        add_header Content-Type text/plain;
+        try_files $uri =404;
+    }
+    
+    location = /sitemap.xml {
+        add_header Content-Type application/xml;
+        try_files $uri =404;
+    }
+    
+    location = /site.webmanifest {
+        add_header Content-Type application/manifest+json;
+        try_files $uri =404;
+    }
+    
     # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
         expires 1y;
@@ -604,6 +631,22 @@ server {
     
     location ^~ /weixin/openWx/event/authorize {
         return 301 https://your-domain.com/;
+    }
+    
+    # Serve robots.txt and sitemap.xml with correct MIME types
+    location = /robots.txt {
+        add_header Content-Type text/plain;
+        try_files $uri =404;
+    }
+    
+    location = /sitemap.xml {
+        add_header Content-Type application/xml;
+        try_files $uri =404;
+    }
+    
+    location = /site.webmanifest {
+        add_header Content-Type application/manifest+json;
+        try_files $uri =404;
     }
     
     # Cache static assets
