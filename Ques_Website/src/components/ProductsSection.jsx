@@ -104,8 +104,8 @@ const ProductsSection = ({ isVisible }) => {
             {t("products_section.geoseer_description")}
           </p>
 
-          {/* Features Grid */}
-          <div className="mb-4">
+          {/* Features Grid - Hidden on mobile */}
+          <div className="mb-4 hidden sm:block">
             <h4 className="text-base md:text-lg font-bold mb-2 bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent font-mono-accent">
               {t("products_section.geoseer_features_title")}
             </h4>
