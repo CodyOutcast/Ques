@@ -18,7 +18,7 @@ const ProductsSection = ({ isVisible }) => {
   return (
     <motion.div 
       className='absolute w-full h-full flex flex-col 
-        items-center justify-center text-white lg:px-20 px-6'
+        items-center justify-start md:justify-center text-white lg:px-20 md:px-10 px-4 py-16 md:py-0 overflow-y-auto'
       initial={{ opacity: 0, y: 50 }}
       animate={{
         opacity: isVisible ? 1 : 0,
@@ -42,9 +42,9 @@ const ProductsSection = ({ isVisible }) => {
         transition={{ duration: 0.6, delay: 0.2 }}
       >
         {/* Header */}
-        <div className="text-center mb-6">
+        <div className="text-center mb-4 md:mb-6">
           <motion.h2
-            className="text-4xl md:text-5xl font-bold mb-6 font-tech tracking-wide"
+            className="text-2xl sm:text-3xl md:text-5xl font-bold mb-4 md:mb-6 font-tech tracking-wide"
             initial={{ opacity: 0, y: 20 }}
             animate={{ 
               opacity: isVisible ? 1 : 0,
@@ -109,7 +109,7 @@ const ProductsSection = ({ isVisible }) => {
             <h4 className="text-base md:text-lg font-bold mb-2 bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent font-mono-accent">
               {t("products_section.geoseer_features_title")}
             </h4>
-            <div className="grid md:grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 sm:gap-2">
               {features.map((feature, index) => (
                 <motion.div
                   key={index}
@@ -119,7 +119,7 @@ const ProductsSection = ({ isVisible }) => {
                     x: isVisible ? 0 : -20 
                   }}
                   transition={{ duration: 0.4, delay: 0.7 + (index * 0.1) }}
-                  className="flex items-start gap-2 bg-slate-800/50 border border-slate-700/30 rounded-lg p-2.5"
+                  className="flex items-start gap-1.5 sm:gap-2 bg-slate-800/50 border border-slate-700/30 rounded-lg p-2 sm:p-2.5"
                 >
                   <div className="w-1 h-1 bg-cyan-400 rounded-full mt-1.5 flex-shrink-0" />
                   <p className="text-slate-300 text-xs leading-relaxed">

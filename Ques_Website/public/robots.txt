@@ -1,14 +1,16 @@
 # robots.txt for quesx.com
-# Allow all search engines to crawl the site
+# Canonical URL: https://quesx.com/ (non-www, HTTPS)
+# All other variants (http://, www.) redirect here via 301
+
 User-agent: *
 Allow: /
 
-# Disallow crawling of these specific paths that should redirect
+# Disallow paths that redirect to homepage
 Disallow: /security-tips
 Disallow: /weixin/
 
-# Note: The canonical URL is https://quesx.com/ (non-www, HTTPS)
-# http:// and http://www. versions redirect and should not be indexed
+# Host directive (helps some crawlers understand canonical domain)
+Host: https://quesx.com
 
-# Sitemap location
+# Sitemap location (always use canonical HTTPS URL)
 Sitemap: https://quesx.com/sitemap.xml

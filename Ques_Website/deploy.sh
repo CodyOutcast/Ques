@@ -266,21 +266,13 @@ create_nginx_config() {
         print_info "SSL certificates found - creating HTTPS configuration"
         
         cat > "$NGINX_CONFIG" << 'EOF'
-# Redirect www to non-www (HTTP)
+# Redirect ALL HTTP traffic to canonical HTTPS URL (handles both www and non-www)
 server {
     listen 80;
     listen [::]:80;
-    server_name www.your-domain.com;
+    server_name your-domain.com www.your-domain.com;
     
-    return 301 https://your-domain.com$request_uri;
-}
-
-# Redirect HTTP to HTTPS for non-www
-server {
-    listen 80;
-    listen [::]:80;
-    server_name your-domain.com;
-    
+    # 301 permanent redirect to canonical HTTPS URL
     return 301 https://your-domain.com$request_uri;
 }
 
@@ -345,18 +337,20 @@ server {
     }
 }
 
-# Redirect www to non-www for HTTPS
+# Redirect www HTTPS to non-www HTTPS (canonical URL)
+# Uses the same certificate since Let's Encrypt issues one cert for both domains
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
     server_name www.your-domain.com;
     
-    # SSL configuration
+    # SSL configuration - uses same cert as primary domain
     ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
     
+    # 301 permanent redirect to canonical URL
     return 301 https://your-domain.com$request_uri;
 }
 EOF
@@ -438,7 +432,12 @@ EOF
     fi
 
     # Replace domain placeholder with actual domain
-    sed -i "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+    # Use -i '' for macOS compatibility, -i for Linux
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+    else
+        sed -i "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+    fi
     
     print_success "Nginx configuration created"
 }
@@ -571,21 +570,13 @@ install_ssl() {
 # Function to create SEO-optimized Nginx configuration after SSL is installed
 create_nginx_config_with_ssl() {
     cat > "$NGINX_CONFIG" << 'EOF'
-# Redirect www to non-www (HTTP)
+# Redirect ALL HTTP traffic to canonical HTTPS URL (handles both www and non-www)
 server {
     listen 80;
     listen [::]:80;
-    server_name www.your-domain.com;
+    server_name your-domain.com www.your-domain.com;
     
-    return 301 https://your-domain.com$request_uri;
-}
-
-# Redirect HTTP to HTTPS for non-www
-server {
-    listen 80;
-    listen [::]:80;
-    server_name your-domain.com;
-    
+    # 301 permanent redirect to canonical HTTPS URL
     return 301 https://your-domain.com$request_uri;
 }
 
@@ -666,24 +657,31 @@ server {
     }
 }
 
-# Redirect www to non-www for HTTPS
+# Redirect www HTTPS to non-www HTTPS (canonical URL)
+# Uses the same certificate since Let's Encrypt issues one cert for both domains
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
     server_name www.your-domain.com;
     
-    # SSL configuration
+    # SSL configuration - uses same cert as primary domain
     ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/your-domain.com/privkey.pem;
     include /etc/letsencrypt/options-ssl-nginx.conf;
     ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
     
+    # 301 permanent redirect to canonical URL
     return 301 https://your-domain.com$request_uri;
 }
 EOF
 
     # Replace domain placeholder with actual domain
-    sed -i "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+    # Use -i '' for macOS compatibility, -i for Linux
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        sed -i '' "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+    else
+        sed -i "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+    fi
 }
 
 # Function to display final instructions

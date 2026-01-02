@@ -9,7 +9,7 @@ const AboutSection = ({ isVisible }) => {
   return (
     <motion.div 
       className='absolute w-full h-full flex flex-col 
-        items-center justify-center text-white lg:px-20 px-10'
+        items-center justify-start md:justify-center text-white lg:px-20 md:px-10 px-4 py-16 md:py-0 overflow-y-auto'
       initial={{ opacity: 0, y: 50 }}
       animate={{
         opacity: isVisible ? 1 : 0,
@@ -34,7 +34,7 @@ const AboutSection = ({ isVisible }) => {
       >
         {/* Title */}
         <motion.h2
-          className="text-5xl md:text-6xl lg:text-7xl font-bold mb-8 text-center font-tech text-glitch"
+          className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold mb-4 md:mb-8 text-center font-tech text-glitch"
           data-text={t("about_section.title")}
           initial={{ opacity: 0, y: 20 }}
           animate={{ 
@@ -48,7 +48,7 @@ const AboutSection = ({ isVisible }) => {
 
         {/* Description */}
         <motion.p
-          className="text-base md:text-lg text-slate-300 leading-relaxed mb-8 text-center max-w-4xl mx-auto"
+          className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed mb-4 md:mb-8 text-center max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -61,7 +61,7 @@ const AboutSection = ({ isVisible }) => {
 
         {/* Mission and Vision Cards */}
         <motion.div
-          className="grid md:grid-cols-2 gap-6"
+          className="grid md:grid-cols-2 gap-3 md:gap-6"
           initial={{ opacity: 0, y: 30 }}
           animate={{ 
             opacity: isVisible ? 1 : 0,
@@ -70,21 +70,21 @@ const AboutSection = ({ isVisible }) => {
           transition={{ duration: 0.6, delay: 0.5 }}
         >
           {/* Mission */}
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-8 border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow">
-            <h4 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent font-mono-accent">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-4 sm:p-6 md:p-8 border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow">
+            <h4 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 md:mb-4 bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent font-mono-accent">
               {t("about_section.mission_title")}
             </h4>
-            <p className="text-base md:text-lg text-slate-300 leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed">
               {t("about_section.mission_description")}
             </p>
           </div>
 
           {/* Vision */}
-          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-8 border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow">
-            <h4 className="text-2xl md:text-3xl font-bold mb-4 bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent font-mono-accent">
+          <div className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-4 sm:p-6 md:p-8 border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow">
+            <h4 className="text-xl sm:text-2xl md:text-3xl font-bold mb-2 md:mb-4 bg-gradient-to-r from-white via-gray-400 to-white bg-clip-text text-transparent font-mono-accent">
               {t("about_section.vision_title")}
             </h4>
-            <p className="text-base md:text-lg text-slate-300 leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-slate-300 leading-relaxed">
               {t("about_section.vision_description")}
             </p>
           </div>
