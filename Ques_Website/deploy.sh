@@ -311,13 +311,20 @@ server {
     # Add canonical Link header
     add_header Link '<https://your-domain.com/>; rel="canonical"' always;
     
-    # Redirect specific problematic paths
-    location = /security-tips {
-        return 301 https://your-domain.com/;
+    # Serve robots.txt and sitemap.xml with correct MIME types
+    location = /robots.txt {
+        add_header Content-Type text/plain;
+        try_files \$uri =404;
     }
     
-    location ^~ /weixin/openWx/event/authorize {
-        return 301 https://your-domain.com/;
+    location = /sitemap.xml {
+        add_header Content-Type application/xml;
+        try_files \$uri =404;
+    }
+    
+    location = /site.webmanifest {
+        add_header Content-Type application/manifest+json;
+        try_files \$uri =404;
     }
     
     # Cache static assets
@@ -386,15 +393,6 @@ server {
     
     # Add canonical Link header
     add_header Link '<https://your-domain.com/>; rel="canonical"' always;
-    
-    # Redirect specific problematic paths
-    location = /security-tips {
-        return 301 https://your-domain.com/;
-    }
-    
-    location ^~ /weixin/openWx/event/authorize {
-        return 301 https://your-domain.com/;
-    }
     
     # Serve robots.txt and sitemap.xml with correct MIME types
     location = /robots.txt {
@@ -614,15 +612,6 @@ server {
     
     # Add canonical Link header
     add_header Link '<https://your-domain.com/>; rel="canonical"' always;
-    
-    # Redirect specific problematic paths
-    location = /security-tips {
-        return 301 https://your-domain.com/;
-    }
-    
-    location ^~ /weixin/openWx/event/authorize {
-        return 301 https://your-domain.com/;
-    }
     
     # Serve robots.txt and sitemap.xml with correct MIME types
     location = /robots.txt {

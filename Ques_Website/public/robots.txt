@@ -5,10 +5,6 @@
 User-agent: *
 Allow: /
 
-# Disallow paths that redirect to homepage
-Disallow: /security-tips
-Disallow: /weixin/
-
 # Host directive (helps some crawlers understand canonical domain)
 Host: https://quesx.com
 
