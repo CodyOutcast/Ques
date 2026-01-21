@@ -22,6 +22,11 @@ NGINX_CONFIG="/etc/nginx/sites-available/ques"
 NGINX_ENABLED="/etc/nginx/sites-enabled/ques"
 DOMAIN="quesx.com"  # Change this to your domain
 
+# Redirect domains (these will 301 redirect to the main domain)
+REDIRECT_DOMAINS=("ques.site" "ques.chat")
+REDIRECT_CONFIG="/etc/nginx/sites-available/ques-redirects"
+REDIRECT_ENABLED="/etc/nginx/sites-enabled/ques-redirects"
+
 # Function to print colored messages
 print_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -102,6 +107,16 @@ check_nginx() {
         print_success "Nginx installed successfully"
     else
         print_success "Nginx $(nginx -v 2>&1 | cut -d'/' -f2) detected"
+    fi
+}
+
+# Function to check if host command is available (for DNS lookups)
+check_host_command() {
+    if ! command -v host &> /dev/null; then
+        print_info "Installing dnsutils for DNS lookups..."
+        apt-get update
+        apt-get install -y dnsutils
+        print_success "dnsutils installed"
     fi
 }
 
@@ -565,6 +580,144 @@ install_ssl() {
     fi
 }
 
+# Function to setup redirect domains (ques.site, ques.chat -> quesx.com)
+setup_redirect_domains() {
+    if [ ${#REDIRECT_DOMAINS[@]} -eq 0 ]; then
+        print_info "No redirect domains configured, skipping..."
+        return 0
+    fi
+
+    print_info "Setting up redirect domains: ${REDIRECT_DOMAINS[*]}"
+    
+    # Build the list of domains for SSL certificate
+    local ssl_domains=""
+    local all_domains_ready=true
+    
+    for domain in "${REDIRECT_DOMAINS[@]}"; do
+        print_info "Checking DNS for $domain..."
+        if host "$domain" &> /dev/null; then
+            print_success "DNS is configured for $domain"
+            ssl_domains="$ssl_domains -d $domain -d www.$domain"
+        else
+            print_warning "DNS not configured for $domain - skipping this domain"
+            all_domains_ready=false
+        fi
+    done
+    
+    if [ -z "$ssl_domains" ]; then
+        print_warning "No redirect domains have DNS configured yet."
+        print_warning "After DNS propagates, run this script again or manually run:"
+        for domain in "${REDIRECT_DOMAINS[@]}"; do
+            print_warning "  sudo certbot certonly --nginx -d $domain -d www.$domain"
+        done
+        return 1
+    fi
+    
+    # Install SSL certificates for redirect domains
+    print_info "Obtaining SSL certificates for redirect domains..."
+    for domain in "${REDIRECT_DOMAINS[@]}"; do
+        if host "$domain" &> /dev/null; then
+            if [ ! -f "/etc/letsencrypt/live/$domain/fullchain.pem" ]; then
+                print_info "Getting SSL certificate for $domain..."
+                if certbot certonly --nginx -d "$domain" -d "www.$domain" --non-interactive --agree-tos --email "admin@$DOMAIN"; then
+                    print_success "SSL certificate obtained for $domain"
+                else
+                    print_warning "Failed to get SSL for $domain - will use HTTP redirect only"
+                fi
+            else
+                print_success "SSL certificate already exists for $domain"
+            fi
+        fi
+    done
+    
+    # Create the redirect Nginx configuration
+    create_redirect_nginx_config
+    
+    # Enable the redirect configuration
+    enable_redirect_site
+    
+    print_success "Redirect domains setup completed"
+}
+
+# Function to create Nginx configuration for redirect domains
+create_redirect_nginx_config() {
+    print_info "Creating Nginx redirect configuration..."
+    
+    # Start the config file
+    cat > "$REDIRECT_CONFIG" << 'EOF'
+# ============================================================================
+# Redirect Configuration: ques.site and ques.chat -> quesx.com
+# All traffic from these domains will be 301 redirected to the main domain
+# ============================================================================
+
+EOF
+
+    # Add HTTP redirect block for all redirect domains
+    local http_server_names=""
+    for domain in "${REDIRECT_DOMAINS[@]}"; do
+        if host "$domain" &> /dev/null; then
+            http_server_names="$http_server_names $domain www.$domain"
+        fi
+    done
+    
+    if [ -n "$http_server_names" ]; then
+        cat >> "$REDIRECT_CONFIG" << EOF
+# HTTP redirect for all redirect domains
+server {
+    listen 80;
+    listen [::]:80;
+    server_name$http_server_names;
+    
+    # 301 permanent redirect to main domain
+    return 301 https://$DOMAIN\$request_uri;
+}
+EOF
+    fi
+    
+    # Add HTTPS redirect blocks for each domain with SSL
+    for domain in "${REDIRECT_DOMAINS[@]}"; do
+        if [ -f "/etc/letsencrypt/live/$domain/fullchain.pem" ]; then
+            cat >> "$REDIRECT_CONFIG" << EOF
+
+# HTTPS redirect for $domain
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name $domain www.$domain;
+    
+    ssl_certificate /etc/letsencrypt/live/$domain/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/$domain/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+    
+    # 301 permanent redirect to main domain
+    return 301 https://$DOMAIN\$request_uri;
+}
+EOF
+            print_success "Added HTTPS redirect for $domain"
+        else
+            print_warning "No SSL cert for $domain - HTTP redirect only"
+        fi
+    done
+    
+    print_success "Redirect Nginx configuration created at $REDIRECT_CONFIG"
+}
+
+# Function to enable redirect site
+enable_redirect_site() {
+    print_info "Enabling redirect site..."
+    
+    # Remove old symlink if exists
+    if [ -L "$REDIRECT_ENABLED" ]; then
+        rm "$REDIRECT_ENABLED"
+    fi
+    
+    # Create new symlink
+    ln -s "$REDIRECT_CONFIG" "$REDIRECT_ENABLED"
+    
+    print_success "Redirect site enabled"
+}
+
 # Function to create SEO-optimized Nginx configuration after SSL is installed
 create_nginx_config_with_ssl() {
     cat > "$NGINX_CONFIG" << 'EOF'
@@ -713,6 +866,20 @@ display_final_instructions() {
         echo "  - Check SSL certificate: sudo certbot certificates"
     fi
     echo ""
+    # Show redirect domains status
+    if [ ${#REDIRECT_DOMAINS[@]} -gt 0 ]; then
+        echo -e "${BLUE}Redirect Domains:${NC}"
+        for domain in "${REDIRECT_DOMAINS[@]}"; do
+            if [ -f "/etc/letsencrypt/live/$domain/fullchain.pem" ]; then
+                echo -e "  ${GREEN}✓${NC} $domain -> https://$DOMAIN (HTTPS enabled)"
+            elif host "$domain" &> /dev/null; then
+                echo -e "  ${YELLOW}○${NC} $domain -> https://$DOMAIN (HTTP only - SSL pending)"
+            else
+                echo -e "  ${RED}✗${NC} $domain (DNS not configured)"
+            fi
+        done
+        echo ""
+    fi
     echo -e "${YELLOW}Troubleshooting:${NC}"
     echo "  If you see 500 error:"
     echo "    1. Check error log: sudo tail -50 /var/log/nginx/ques-error.log"
@@ -741,6 +908,7 @@ main() {
     check_node
     check_npm
     check_nginx
+    check_host_command
     
     echo ""
     print_info "Building application..."
@@ -778,6 +946,15 @@ USERSCRIPT
     elif check_dns; then
         ssl_status="failed"
     fi
+    
+    # Setup redirect domains (ques.site, ques.chat -> quesx.com)
+    echo ""
+    print_info "Setting up redirect domains..."
+    setup_redirect_domains
+    
+    # Test and reload Nginx with all configurations
+    test_nginx_config
+    restart_nginx
     
     # Display final instructions
     display_final_instructions "$ssl_status"
