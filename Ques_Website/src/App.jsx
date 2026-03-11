@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomeSection from './components/HomeSection';
@@ -12,19 +12,15 @@ import './viewportFix.css';
 import setAppHeight from './utils/viewportHeight';
 import i18n from 'i18next';
 
-// Immediately executing function to set Meta tags for iOS notch screens
-(function() {
-    // Remove existing viewport meta tags
+function applyViewportChrome() {
     const existingViewports = document.querySelectorAll('meta[name="viewport"]');
-    existingViewports.forEach(meta => meta.remove());
-    
-    // Add new viewport meta tag
+    existingViewports.forEach((meta) => meta.remove());
+
     const meta = document.createElement('meta');
     meta.name = 'viewport';
     meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover';
     document.head.appendChild(meta);
-    
-    // Force set body styles to eliminate potential white space
+
     document.documentElement.style.cssText = `
         margin: 0 !important;
         padding: 0 !important;
@@ -40,11 +36,10 @@ import i18n from 'i18next';
         overflow: hidden !important;
         background-color: #020617 !important;
     `;
-    
-    // Set CSS variables to match top gradient color
+
     document.documentElement.style.setProperty('--top-background-color', '#020617');
     document.documentElement.style.setProperty('--safe-area-inset-top', 'env(safe-area-inset-top)');
-})();
+}
 
 export default function App() {
     // Language state
@@ -65,6 +60,10 @@ export default function App() {
     const throttleDuration = 900;
 
     const [isThrottled, setIsThrottled] = useState(false);
+
+    useEffect(() => {
+        applyViewportChrome();
+    }, []);
     
     // Set viewport height on component mount
     useEffect(() => {

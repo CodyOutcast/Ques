@@ -1,6 +1,6 @@
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { FiMenu, FiX } from 'react-icons/fi';
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { optimizeAnimation } from '../utils/optimizeAnimation';
 import logo from '../assets/logo.ico';

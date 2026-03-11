@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Page Not Found | Ques</title>
+    <meta name="robots" content="noindex, follow" />
+    <link rel="icon" type="image/x-icon" href="/logo.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #020617;
+        --panel: rgba(15, 23, 42, 0.72);
+        --border: rgba(148, 163, 184, 0.2);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --accent-a: #22d3ee;
+        --accent-b: #10b981;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        min-height: 100%;
+        margin: 0;
+      }
+
+      body {
+        font-family: 'Inter', system-ui, sans-serif;
+        color: var(--text);
+        background-color: var(--bg);
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+        background-size: 50px 50px;
+        overflow: hidden;
+      }
+
+      .ambient {
+        position: fixed;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+      }
+
+      .blob {
+        position: absolute;
+        border-radius: 9999px;
+        filter: blur(80px);
+        opacity: 0.75;
+        animation: blob 9s infinite ease-in-out;
+      }
+
+      .blob.one {
+        top: -10%;
+        left: -10%;
+        width: 36rem;
+        height: 36rem;
+        background: rgba(30, 64, 175, 0.22);
+      }
+
+      .blob.two {
+        right: -12%;
+        bottom: -12%;
+        width: 40rem;
+        height: 40rem;
+        background: rgba(30, 41, 59, 0.42);
+        animation-delay: -3s;
+      }
+
+      .shell {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 2rem;
+      }
+
+      .card {
+        width: min(100%, 52rem);
+        padding: 2rem;
+        border: 1px solid var(--border);
+        border-radius: 1.5rem;
+        background: var(--panel);
+        backdrop-filter: blur(20px);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45);
+        text-align: center;
+      }
+
+      .brand {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.9rem;
+        margin-bottom: 1.5rem;
+      }
+
+      .brand img {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: 1rem;
+      }
+
+      .brand span {
+        font-family: 'Rajdhani', sans-serif;
+        font-size: clamp(1.75rem, 3vw, 2.4rem);
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        background: linear-gradient(90deg, #22d3ee, #10b981);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      .code {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.9rem;
+        color: var(--accent-a);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      h1 {
+        margin: 0.65rem 0 1rem;
+        font-family: 'Rajdhani', sans-serif;
+        font-size: clamp(2.5rem, 7vw, 5rem);
+        line-height: 0.95;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .headline {
+        background: linear-gradient(90deg, #ffffff, #94a3b8, #ffffff);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+
+      p {
+        margin: 0 auto;
+        max-width: 36rem;
+        color: var(--muted);
+        font-size: clamp(1rem, 2vw, 1.125rem);
+        line-height: 1.7;
+      }
+
+      .actions {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: center;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 12rem;
+        padding: 0.9rem 1.35rem;
+        border-radius: 9999px;
+        border: 1px solid rgba(34, 211, 238, 0.35);
+        background: linear-gradient(90deg, rgba(34, 211, 238, 0.16), rgba(16, 185, 129, 0.16));
+        color: #f8fafc;
+        text-decoration: none;
+        font-weight: 600;
+        transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+      }
+
+      .button:hover {
+        transform: translateY(-1px);
+        border-color: rgba(34, 211, 238, 0.6);
+        background: linear-gradient(90deg, rgba(34, 211, 238, 0.24), rgba(16, 185, 129, 0.24));
+      }
+
+      @keyframes blob {
+        0% { transform: translate(0, 0) scale(1); }
+        33% { transform: translate(30px, -50px) scale(1.08); }
+        66% { transform: translate(-20px, 20px) scale(0.92); }
+        100% { transform: translate(0, 0) scale(1); }
+      }
+
+      @media (max-width: 640px) {
+        .card {
+          padding: 1.5rem;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="ambient" aria-hidden="true">
+      <div class="blob one"></div>
+      <div class="blob two"></div>
+    </div>
+    <main class="shell">
+      <section class="card">
+        <div class="brand">
+          <img src="/logo.ico" alt="Ques logo" />
+          <span>Ques</span>
+        </div>
+        <div class="code">404 error</div>
+        <h1><span class="headline">Page Doesn't Exist</span></h1>
+        <p>The page you requested could not be found. The URL may be incorrect, outdated, or no longer available.</p>
+        <div class="actions">
+          <a class="button" href="/">Back to Homepage</a>
+        </div>
+      </section>
+    </main>
+  </body>
+</html>

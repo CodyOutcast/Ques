@@ -48,6 +48,8 @@ npm run build
 
 Output directory: `dist/`
 
+The production build prerenders the homepage into `dist/index.html` and hydrates it on the client.
+
 ### Preview Production Build
 
 ```bash
@@ -75,12 +77,15 @@ Access at: `http://localhost:4173`
 
 The script will:
 - Check Node.js and npm installation
+- Upgrade npm to the target release used by the deployment script
 - Install/verify Nginx
 - Install dependencies and build the project
 - Deploy to `/var/www/ques`
 - Configure Nginx with optimized settings
-- Enable the site and restart Nginx
+- Enable the site and reload Nginx
 - Configure firewall rules
+
+The deployment script manages only the main `quesx.com` site and no longer provisions auxiliary redirect domains.
 
 **Before running**: Edit `deploy.sh` and change `DOMAIN="your-domain.com"` to your actual domain.
 
@@ -110,8 +115,14 @@ server {
     root /path/to/dist;
     index index.html;
     
+    error_page 404 /404.html;
+
+    location = / {
+        try_files /index.html =404;
+    }
+
     location / {
-        try_files $uri $uri/ /index.html;
+        try_files $uri $uri/ $uri.html =404;
     }
     
     # Gzip compression
@@ -169,9 +180,12 @@ sudo ufw allow 4173/tcp
 ```
 new/
 ├── public/
+│   ├── 404.html              # Branded static 404 page
 │   ├── geoseer-logo.png       # GeoSeer product logo
 │   ├── police_logo.jpg        # Police registration logo
 │   └── logo.ico               # Company favicon
+├── scripts/
+│   └── build-prerender.mjs    # Production build + homepage prerender
 ├── src/
 │   ├── assets/
 │   │   ├── logo.ico           # Header logo
@@ -190,6 +204,7 @@ new/
 │   │   ├── optimizeAnimation.js  # Animation optimization
 │   │   └── viewportHeight.js     # Viewport height fix for mobile
 │   ├── App.jsx                # Main app component
+│   ├── entry-server.jsx       # SSR entry for homepage prerender
 │   ├── main.jsx               # Entry point
 │   ├── i18n.js                # i18n configuration
 │   ├── index.css              # Global styles

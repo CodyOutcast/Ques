@@ -5,7 +5,9 @@
 # Deploys the website to Nginx on a CVM server
 ##############################################################################
 
-set -e  # Exit on any error
+set -Ee -o pipefail
+
+trap 'echo "[ERROR] Deployment failed at line ${LINENO}: ${BASH_COMMAND}" >&2' ERR
 
 # Color codes for output
 RED='\033[0;31m'
@@ -18,14 +20,48 @@ NC='\033[0m' # No Color
 PROJECT_NAME="ques_website"
 BUILD_DIR="dist"
 NGINX_ROOT="/var/www/ques"
+STAGING_NGINX_ROOT="${NGINX_ROOT}.staging"
+BACKUP_NGINX_ROOT="${NGINX_ROOT}.backup"
 NGINX_CONFIG="/etc/nginx/sites-available/ques"
 NGINX_ENABLED="/etc/nginx/sites-enabled/ques"
 DOMAIN="quesx.com"  # Change this to your domain
+TARGET_NPM_VERSION="11.11.0"
 
-# Redirect domains (these will 301 redirect to the main domain)
-REDIRECT_DOMAINS=("ques.site" "ques.chat")
-REDIRECT_CONFIG="/etc/nginx/sites-available/ques-redirects"
-REDIRECT_ENABLED="/etc/nginx/sites-enabled/ques-redirects"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SUDO_KEEPALIVE_PID=""
+SUDO_CMD=()
+
+if [ "$EUID" -ne 0 ]; then
+    if ! command -v sudo &> /dev/null; then
+        echo "[ERROR] sudo is required for privileged deployment steps" >&2
+        exit 1
+    fi
+
+    echo "[INFO] Verifying sudo access..."
+    if ! sudo -n true 2>/dev/null; then
+        echo "[INFO] Sudo password required. Please authenticate once to continue."
+        sudo -v
+    fi
+
+    (
+        while true; do
+            sudo -n true >/dev/null 2>&1 || exit
+            sleep 50
+        done
+    ) &
+    SUDO_KEEPALIVE_PID=$!
+    SUDO_CMD=(sudo)
+fi
+
+cleanup() {
+    if [ -n "${SUDO_KEEPALIVE_PID:-}" ]; then
+        kill "$SUDO_KEEPALIVE_PID" >/dev/null 2>&1 || true
+    fi
+}
+
+trap cleanup EXIT
+
+cd "$PROJECT_DIR"
 
 # Function to print colored messages
 print_info() {
@@ -44,12 +80,23 @@ print_error() {
     echo -e "${RED}[ERROR]${NC} $1"
 }
 
-# Function to check if running as root
-check_root() {
-    if [ "$EUID" -ne 0 ]; then
-        print_error "This script must be run as root (use sudo)"
-        exit 1
+run_project_command() {
+    if [ "$EUID" -eq 0 ] && [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != "root" ]; then
+        local owner_home
+        if command -v getent &> /dev/null; then
+            owner_home="$(getent passwd "$SUDO_USER" 2>/dev/null | cut -d: -f6)"
+        fi
+        if [ -z "$owner_home" ]; then
+            owner_home="$(eval echo "~$SUDO_USER")"
+        fi
+        sudo -u "$SUDO_USER" env "PATH=$PATH" "HOME=$owner_home" "$@"
+    else
+        "$@"
     fi
+}
+
+version_lt() {
+    [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ]
 }
 
 # Function to install Node.js
@@ -58,15 +105,15 @@ install_node() {
     
     # Install curl if not present
     if ! command -v curl &> /dev/null; then
-        apt-get update
-        apt-get install -y curl
+        "${SUDO_CMD[@]}" apt-get update
+        "${SUDO_CMD[@]}" apt-get install -y curl
     fi
     
     # Add NodeSource repository
-    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+    curl -fsSL https://deb.nodesource.com/setup_20.x | "${SUDO_CMD[@]}" bash -
     
     # Install Node.js
-    apt-get install -y nodejs
+    "${SUDO_CMD[@]}" apt-get install -y nodejs
     
     print_success "Node.js $(node --version) installed successfully"
 }
@@ -92,18 +139,26 @@ check_node() {
 check_npm() {
     if ! command -v npm &> /dev/null; then
         print_warning "npm is not installed. Installing npm..."
-        apt-get install -y npm
+        "${SUDO_CMD[@]}" apt-get install -y npm
     fi
-    print_success "npm $(npm --version) detected"
+
+    CURRENT_NPM_VERSION=$(npm --version)
+    if version_lt "$CURRENT_NPM_VERSION" "$TARGET_NPM_VERSION"; then
+        print_info "Upgrading npm from $CURRENT_NPM_VERSION to $TARGET_NPM_VERSION..."
+        "${SUDO_CMD[@]}" npm install -g "npm@$TARGET_NPM_VERSION"
+        CURRENT_NPM_VERSION=$(npm --version)
+    fi
+
+    print_success "npm $CURRENT_NPM_VERSION detected"
 }
 
 # Function to check if Nginx is installed
 check_nginx() {
     if ! command -v nginx &> /dev/null; then
         print_warning "Nginx is not installed. Installing Nginx..."
-        apt-get update
-        apt-get install -y nginx
-        systemctl enable nginx
+        "${SUDO_CMD[@]}" apt-get update
+        "${SUDO_CMD[@]}" apt-get install -y nginx
+        "${SUDO_CMD[@]}" systemctl enable nginx
         print_success "Nginx installed successfully"
     else
         print_success "Nginx $(nginx -v 2>&1 | cut -d'/' -f2) detected"
@@ -114,8 +169,8 @@ check_nginx() {
 check_host_command() {
     if ! command -v host &> /dev/null; then
         print_info "Installing dnsutils for DNS lookups..."
-        apt-get update
-        apt-get install -y dnsutils
+        "${SUDO_CMD[@]}" apt-get update
+        "${SUDO_CMD[@]}" apt-get install -y dnsutils
         print_success "dnsutils installed"
     fi
 }
@@ -123,67 +178,69 @@ check_host_command() {
 # Function to install dependencies
 install_dependencies() {
     print_info "Installing npm dependencies..."
-    npm install
+    run_project_command npm install
     print_success "Dependencies installed"
 }
 
 # Function to build the project
 build_project() {
     print_info "Building the project..."
-    
-    # Clean old build
-    if [ -d "$BUILD_DIR" ]; then
-        print_info "Cleaning old build directory..."
-        rm -rf "$BUILD_DIR"
-    fi
-    
-    # Build the project
-    npm run build
-    
-    # Verify build directory exists
-    if [ ! -d "$BUILD_DIR" ]; then
-        print_error "Build failed. $BUILD_DIR directory not found."
+    local live_build_dir="$BUILD_DIR"
+    local staging_build_dir="${BUILD_DIR}.staging"
+    local backup_build_dir="${BUILD_DIR}.old"
+
+    rm -rf "$staging_build_dir" "$backup_build_dir"
+
+    run_project_command env BUILD_DIR_OVERRIDE="$staging_build_dir" npm run build
+
+    if [ ! -d "$staging_build_dir" ]; then
+        print_error "Build failed. $staging_build_dir directory not found."
         exit 1
     fi
-    
-    # Verify index.html exists
-    if [ ! -f "$BUILD_DIR/index.html" ]; then
-        print_error "Build failed. index.html not found in $BUILD_DIR."
+
+    if [ ! -f "$staging_build_dir/index.html" ]; then
+        print_error "Build failed. index.html not found in $staging_build_dir."
         print_error "Build directory contents:"
-        ls -la "$BUILD_DIR"
+        ls -la "$staging_build_dir"
         exit 1
     fi
-    
-    # Show build contents
+
+    if grep -Eq '<div id="root">[[:space:]]*</div>' "$staging_build_dir/index.html"; then
+        print_error "Prerender failed. index.html still contains an empty root container."
+        exit 1
+    fi
+
+    if [ -d "$live_build_dir" ]; then
+        mv "$live_build_dir" "$backup_build_dir"
+    fi
+    mv "$staging_build_dir" "$live_build_dir"
+    rm -rf "$backup_build_dir"
+
     print_info "Build completed. Contents:"
-    ls -lh "$BUILD_DIR" | head -10
-    
-    print_success "Project built successfully"
+    ls -lh "$live_build_dir" | head -10
+
+    print_success "Project built and prerendered successfully"
 }
 
 # Function to create Nginx directory
 create_nginx_directory() {
-    print_info "Creating Nginx web directory..."
-    
-    if [ -d "$NGINX_ROOT" ]; then
-        print_warning "Directory $NGINX_ROOT already exists. Creating backup..."
-        mv "$NGINX_ROOT" "${NGINX_ROOT}.backup.$(date +%Y%m%d%H%M%S)"
-    fi
-    
-    mkdir -p "$NGINX_ROOT"
-    print_success "Nginx directory created"
+    print_info "Preparing staged Nginx web directory..."
+
+    "${SUDO_CMD[@]}" rm -rf "$STAGING_NGINX_ROOT"
+    "${SUDO_CMD[@]}" mkdir -p "$STAGING_NGINX_ROOT"
+    print_success "Staging directory created"
 }
 
 # Function to copy build files
 copy_build_files() {
-    print_info "Copying build files to Nginx directory..."
-    
-    # Copy files
-    cp -r "$BUILD_DIR"/* "$NGINX_ROOT/"
-    
+    print_info "Copying build files to staged Nginx directory..."
+
+    # Copy files, including dotfiles if present
+    "${SUDO_CMD[@]}" cp -a "$BUILD_DIR"/. "$STAGING_NGINX_ROOT/"
+
     # Verify index.html was copied
-    if [ ! -f "$NGINX_ROOT/index.html" ]; then
-        print_error "Failed to copy index.html to $NGINX_ROOT"
+    if [ ! -f "$STAGING_NGINX_ROOT/index.html" ]; then
+        print_error "Failed to copy index.html to $STAGING_NGINX_ROOT"
         exit 1
     fi
     
@@ -191,7 +248,7 @@ copy_build_files() {
     print_info "Verifying critical SEO files..."
     critical_files=("logo.png" "site.webmanifest" "robots.txt" "sitemap.xml")
     for file in "${critical_files[@]}"; do
-        if [ ! -f "$NGINX_ROOT/$file" ]; then
+        if [ ! -f "$STAGING_NGINX_ROOT/$file" ]; then
             print_warning "Critical SEO file missing: $file"
         else
             print_success "Found: $file"
@@ -199,14 +256,26 @@ copy_build_files() {
     done
     
     # Set correct permissions
-    chown -R www-data:www-data "$NGINX_ROOT"
-    chmod -R 755 "$NGINX_ROOT"
+    "${SUDO_CMD[@]}" chown -R www-data:www-data "$STAGING_NGINX_ROOT"
+    "${SUDO_CMD[@]}" chmod -R 755 "$STAGING_NGINX_ROOT"
     
     # Verify permissions
-    print_info "Files in $NGINX_ROOT:"
-    ls -lh "$NGINX_ROOT" | head -10
+    print_info "Files in $STAGING_NGINX_ROOT:"
+    "${SUDO_CMD[@]}" ls -lh "$STAGING_NGINX_ROOT" | head -10
     
     print_success "Build files copied with correct permissions"
+}
+
+activate_nginx_directory() {
+    print_info "Activating staged Nginx web directory..."
+
+    "${SUDO_CMD[@]}" rm -rf "$BACKUP_NGINX_ROOT"
+    if [ -d "$NGINX_ROOT" ]; then
+        "${SUDO_CMD[@]}" mv "$NGINX_ROOT" "$BACKUP_NGINX_ROOT"
+    fi
+
+    "${SUDO_CMD[@]}" mv "$STAGING_NGINX_ROOT" "$NGINX_ROOT"
+    print_success "Staged web directory is now live"
 }
 
 # Function to remove conflicting configurations
@@ -227,14 +296,14 @@ remove_conflicting_configs() {
             # Check if this site uses our domain
             if [ -f "$enabled_site" ] && grep -q "server_name.*$DOMAIN" "$enabled_site" 2>/dev/null; then
                 print_warning "Found conflicting enabled site: $site_name"
-                rm "$enabled_site"
+                "${SUDO_CMD[@]}" rm "$enabled_site"
                 print_success "Removed: $site_name from sites-enabled"
             elif [ -L "$enabled_site" ]; then
                 # It's a symlink, check the target
                 target=$(readlink "$enabled_site")
                 if [ -f "$target" ] && grep -q "server_name.*$DOMAIN" "$target" 2>/dev/null; then
                     print_warning "Found conflicting enabled site: $site_name (symlink)"
-                    rm "$enabled_site"
+                    "${SUDO_CMD[@]}" rm "$enabled_site"
                     print_success "Removed symlink: $site_name from sites-enabled"
                 fi
             fi
@@ -256,7 +325,7 @@ remove_conflicting_configs() {
                 # Check if uses our domain
                 if grep -q "server_name.*$DOMAIN" "$config" 2>/dev/null; then
                     print_warning "Found conflicting config in sites-available: $config_name"
-                    mv "$config" "${config}.backup.$(date +%Y%m%d%H%M%S)"
+                    "${SUDO_CMD[@]}" mv "$config" "${config}.backup.$(date +%Y%m%d%H%M%S)"
                     print_success "Backed up and removed: $config_name"
                 fi
             fi
@@ -266,21 +335,38 @@ remove_conflicting_configs() {
     # Remove default site if it exists and is enabled
     if [ -L "/etc/nginx/sites-enabled/default" ]; then
         print_info "Disabling default Nginx site..."
-        rm "/etc/nginx/sites-enabled/default"
+        "${SUDO_CMD[@]}" rm "/etc/nginx/sites-enabled/default"
     fi
     
     print_success "Conflict check completed"
 }
 
+remove_legacy_redirect_config() {
+    local legacy_available="/etc/nginx/sites-available/ques-redirects"
+    local legacy_enabled="/etc/nginx/sites-enabled/ques-redirects"
+
+    if [ -L "$legacy_enabled" ] || [ -f "$legacy_enabled" ]; then
+        print_info "Removing legacy redirect-domain site from sites-enabled..."
+        "${SUDO_CMD[@]}" rm -f "$legacy_enabled"
+    fi
+
+    if [ -f "$legacy_available" ]; then
+        print_info "Removing legacy redirect-domain site from sites-available..."
+        "${SUDO_CMD[@]}" rm -f "$legacy_available"
+    fi
+}
+
 # Function to create Nginx configuration
 create_nginx_config() {
     print_info "Creating Nginx configuration..."
+    local temp_config
+    temp_config="$(mktemp)"
     
     # Check if SSL certificates exist
     if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
         print_info "SSL certificates found - creating HTTPS configuration"
         
-        cat > "$NGINX_CONFIG" << 'EOF'
+        cat > "$temp_config" << 'EOF'
 # Redirect ALL HTTP traffic to canonical HTTPS URL (handles both www and non-www)
 server {
     listen 80;
@@ -329,18 +415,20 @@ server {
     # Serve robots.txt and sitemap.xml with correct MIME types
     location = /robots.txt {
         add_header Content-Type text/plain;
-        try_files \$uri =404;
+        try_files $uri =404;
     }
     
     location = /sitemap.xml {
         add_header Content-Type application/xml;
-        try_files \$uri =404;
+        try_files $uri =404;
     }
     
     location = /site.webmanifest {
         add_header Content-Type application/manifest+json;
-        try_files \$uri =404;
+        try_files $uri =404;
     }
+
+    error_page 404 /404.html;
     
     # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
@@ -348,9 +436,33 @@ server {
         add_header Cache-Control "public, immutable";
     }
     
-    # Main location - SPA fallback
+    location = / {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+
+        try_files /index.html =404;
+    }
+
+    # Everything else should resolve to a real file or return 404.
     location / {
-        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+
+        try_files $uri $uri/ $uri.html =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+
+    location = /404.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
     }
     
     # Deny access to hidden files
@@ -380,7 +492,7 @@ EOF
         print_info "No SSL certificates found - creating HTTP-only configuration"
         print_info "SSL will be added by certbot in the next step"
         
-        cat > "$NGINX_CONFIG" << 'EOF'
+    cat > "$temp_config" << 'EOF'
 # HTTP server - will be modified by certbot to add HTTPS
 server {
     listen 80;
@@ -424,6 +536,8 @@ server {
         add_header Content-Type application/manifest+json;
         try_files $uri =404;
     }
+
+    error_page 404 /404.html;
     
     # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
@@ -431,9 +545,33 @@ server {
         add_header Cache-Control "public, immutable";
     }
     
-    # Main location - SPA fallback
+    location = / {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+
+        try_files /index.html =404;
+    }
+
+    # Everything else should resolve to a real file or return 404.
     location / {
-        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+
+        try_files $uri $uri/ $uri.html =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+
+    location = /404.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
     }
     
     # Deny access to hidden files
@@ -447,10 +585,13 @@ EOF
     # Replace domain placeholder with actual domain
     # Use -i '' for macOS compatibility, -i for Linux
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+        sed -i '' "s/your-domain.com/$DOMAIN/g" "$temp_config"
     else
-        sed -i "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+        sed -i "s/your-domain.com/$DOMAIN/g" "$temp_config"
     fi
+
+    "${SUDO_CMD[@]}" cp "$temp_config" "$NGINX_CONFIG"
+    rm -f "$temp_config"
     
     print_success "Nginx configuration created"
 }
@@ -461,11 +602,11 @@ enable_nginx_site() {
     
     # Remove old symlink if exists
     if [ -L "$NGINX_ENABLED" ]; then
-        rm "$NGINX_ENABLED"
+        "${SUDO_CMD[@]}" rm "$NGINX_ENABLED"
     fi
     
     # Create new symlink
-    ln -s "$NGINX_CONFIG" "$NGINX_ENABLED"
+    "${SUDO_CMD[@]}" ln -sfn "$NGINX_CONFIG" "$NGINX_ENABLED"
     
     print_success "Nginx site enabled"
 }
@@ -474,7 +615,7 @@ enable_nginx_site() {
 test_nginx_config() {
     print_info "Testing Nginx configuration..."
     
-    if nginx -t; then
+    if "${SUDO_CMD[@]}" nginx -t; then
         print_success "Nginx configuration is valid"
     else
         print_error "Nginx configuration test failed"
@@ -484,25 +625,30 @@ test_nginx_config() {
 
 # Function to restart Nginx
 restart_nginx() {
-    print_info "Restarting Nginx..."
-    systemctl restart nginx
-    
-    # Wait a moment for Nginx to start
+    if "${SUDO_CMD[@]}" systemctl is-active --quiet nginx; then
+        print_info "Reloading Nginx..."
+        "${SUDO_CMD[@]}" systemctl reload nginx
+    else
+        print_info "Starting Nginx..."
+        "${SUDO_CMD[@]}" systemctl start nginx
+    fi
+
+    # Wait a moment for Nginx to settle
     sleep 2
-    
+
     # Verify Nginx is running
-    if systemctl is-active --quiet nginx; then
-        print_success "Nginx restarted and is running"
+    if "${SUDO_CMD[@]}" systemctl is-active --quiet nginx; then
+        print_success "Nginx is running"
     else
         print_error "Nginx failed to start properly"
         print_error "Checking Nginx error log:"
-        tail -20 /var/log/nginx/error.log
+        "${SUDO_CMD[@]}" tail -20 /var/log/nginx/error.log
         exit 1
     fi
     
     # Show recent error log entries
     print_info "Recent Nginx error log entries:"
-    tail -5 /var/log/nginx/ques-error.log 2>/dev/null || echo "No errors logged yet"
+    "${SUDO_CMD[@]}" tail -5 /var/log/nginx/ques-error.log 2>/dev/null || echo "No errors logged yet"
 }
 
 # Function to configure firewall
@@ -510,7 +656,7 @@ configure_firewall() {
     print_info "Configuring firewall..."
     
     if command -v ufw &> /dev/null; then
-        ufw allow 'Nginx Full'
+        "${SUDO_CMD[@]}" ufw allow 'Nginx Full'
         print_success "Firewall configured for Nginx"
     else
         print_warning "ufw not found. Please configure firewall manually:"
@@ -532,6 +678,31 @@ check_dns() {
     fi
 }
 
+wait_for_certbot() {
+    local certbot_lock="/var/lib/letsencrypt/.certbot.lock"
+    local certbot_wait_timeout_sec="${CERTBOT_WAIT_TIMEOUT_SEC:-300}"
+    local wait_start
+
+    if [ -f "$certbot_lock" ]; then
+        if pgrep -x certbot > /dev/null; then
+            print_info "Another certbot process is running. Waiting for it to complete..."
+            wait_start=$(date +%s)
+            while pgrep -x certbot > /dev/null; do
+                if [ $(( $(date +%s) - wait_start )) -ge "$certbot_wait_timeout_sec" ]; then
+                    print_error "Timed out waiting for certbot after ${certbot_wait_timeout_sec}s"
+                    return 1
+                fi
+                sleep 2
+            done
+            print_success "Previous certbot process completed"
+        else
+            print_info "Removing stale certbot lock file..."
+            "${SUDO_CMD[@]}" rm -f "$certbot_lock"
+            print_success "Stale certbot lock file removed"
+        fi
+    fi
+}
+
 # Function to install SSL certificate
 install_ssl() {
     print_info "Installing SSL certificate..."
@@ -546,16 +717,20 @@ install_ssl() {
     # Install certbot if not present
     if ! command -v certbot &> /dev/null; then
         print_info "Installing certbot..."
-        apt-get update
-        apt-get install -y certbot python3-certbot-nginx
+        "${SUDO_CMD[@]}" apt-get update
+        "${SUDO_CMD[@]}" apt-get install -y certbot python3-certbot-nginx
         print_success "Certbot installed"
+    fi
+
+    if ! wait_for_certbot; then
+        return 1
     fi
     
     # Get SSL certificate
     print_info "Obtaining SSL certificate from Let's Encrypt..."
     
     # Run certbot - it will modify the Nginx config automatically
-    if certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --non-interactive --agree-tos --redirect --email "admin@$DOMAIN"; then
+    if "${SUDO_CMD[@]}" certbot --nginx -d "$DOMAIN" -d "www.$DOMAIN" --non-interactive --agree-tos --redirect --email "admin@$DOMAIN"; then
         print_success "SSL certificate installed successfully"
         
         # Now recreate our custom configuration with proper redirects and headers
@@ -563,8 +738,8 @@ install_ssl() {
         create_nginx_config_with_ssl
         
         # Test the new configuration
-        if nginx -t; then
-            systemctl reload nginx
+        if "${SUDO_CMD[@]}" nginx -t; then
+            "${SUDO_CMD[@]}" systemctl reload nginx
             print_success "Nginx configuration updated with SEO optimizations"
         else
             print_warning "Custom configuration failed, keeping certbot defaults"
@@ -580,147 +755,12 @@ install_ssl() {
     fi
 }
 
-# Function to setup redirect domains (ques.site, ques.chat -> quesx.com)
-setup_redirect_domains() {
-    if [ ${#REDIRECT_DOMAINS[@]} -eq 0 ]; then
-        print_info "No redirect domains configured, skipping..."
-        return 0
-    fi
-
-    print_info "Setting up redirect domains: ${REDIRECT_DOMAINS[*]}"
-    
-    # Build the list of domains for SSL certificate
-    local ssl_domains=""
-    local all_domains_ready=true
-    
-    for domain in "${REDIRECT_DOMAINS[@]}"; do
-        print_info "Checking DNS for $domain..."
-        if host "$domain" &> /dev/null; then
-            print_success "DNS is configured for $domain"
-            ssl_domains="$ssl_domains -d $domain -d www.$domain"
-        else
-            print_warning "DNS not configured for $domain - skipping this domain"
-            all_domains_ready=false
-        fi
-    done
-    
-    if [ -z "$ssl_domains" ]; then
-        print_warning "No redirect domains have DNS configured yet."
-        print_warning "After DNS propagates, run this script again or manually run:"
-        for domain in "${REDIRECT_DOMAINS[@]}"; do
-            print_warning "  sudo certbot certonly --nginx -d $domain -d www.$domain"
-        done
-        return 1
-    fi
-    
-    # Install SSL certificates for redirect domains
-    print_info "Obtaining SSL certificates for redirect domains..."
-    for domain in "${REDIRECT_DOMAINS[@]}"; do
-        if host "$domain" &> /dev/null; then
-            if [ ! -f "/etc/letsencrypt/live/$domain/fullchain.pem" ]; then
-                print_info "Getting SSL certificate for $domain..."
-                if certbot certonly --nginx -d "$domain" -d "www.$domain" --non-interactive --agree-tos --email "admin@$DOMAIN"; then
-                    print_success "SSL certificate obtained for $domain"
-                else
-                    print_warning "Failed to get SSL for $domain - will use HTTP redirect only"
-                fi
-            else
-                print_success "SSL certificate already exists for $domain"
-            fi
-        fi
-    done
-    
-    # Create the redirect Nginx configuration
-    create_redirect_nginx_config
-    
-    # Enable the redirect configuration
-    enable_redirect_site
-    
-    print_success "Redirect domains setup completed"
-}
-
-# Function to create Nginx configuration for redirect domains
-create_redirect_nginx_config() {
-    print_info "Creating Nginx redirect configuration..."
-    
-    # Start the config file
-    cat > "$REDIRECT_CONFIG" << 'EOF'
-# ============================================================================
-# Redirect Configuration: ques.site and ques.chat -> quesx.com
-# All traffic from these domains will be 301 redirected to the main domain
-# ============================================================================
-
-EOF
-
-    # Add HTTP redirect block for all redirect domains
-    local http_server_names=""
-    for domain in "${REDIRECT_DOMAINS[@]}"; do
-        if host "$domain" &> /dev/null; then
-            http_server_names="$http_server_names $domain www.$domain"
-        fi
-    done
-    
-    if [ -n "$http_server_names" ]; then
-        cat >> "$REDIRECT_CONFIG" << EOF
-# HTTP redirect for all redirect domains
-server {
-    listen 80;
-    listen [::]:80;
-    server_name$http_server_names;
-    
-    # 301 permanent redirect to main domain
-    return 301 https://$DOMAIN\$request_uri;
-}
-EOF
-    fi
-    
-    # Add HTTPS redirect blocks for each domain with SSL
-    for domain in "${REDIRECT_DOMAINS[@]}"; do
-        if [ -f "/etc/letsencrypt/live/$domain/fullchain.pem" ]; then
-            cat >> "$REDIRECT_CONFIG" << EOF
-
-# HTTPS redirect for $domain
-server {
-    listen 443 ssl http2;
-    listen [::]:443 ssl http2;
-    server_name $domain www.$domain;
-    
-    ssl_certificate /etc/letsencrypt/live/$domain/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$domain/privkey.pem;
-    include /etc/letsencrypt/options-ssl-nginx.conf;
-    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
-    
-    # 301 permanent redirect to main domain
-    return 301 https://$DOMAIN\$request_uri;
-}
-EOF
-            print_success "Added HTTPS redirect for $domain"
-        else
-            print_warning "No SSL cert for $domain - HTTP redirect only"
-        fi
-    done
-    
-    print_success "Redirect Nginx configuration created at $REDIRECT_CONFIG"
-}
-
-# Function to enable redirect site
-enable_redirect_site() {
-    print_info "Enabling redirect site..."
-    
-    # Remove old symlink if exists
-    if [ -L "$REDIRECT_ENABLED" ]; then
-        rm "$REDIRECT_ENABLED"
-    fi
-    
-    # Create new symlink
-    ln -s "$REDIRECT_CONFIG" "$REDIRECT_ENABLED"
-    
-    print_success "Redirect site enabled"
-}
-
 # Function to create SEO-optimized Nginx configuration after SSL is installed
 create_nginx_config_with_ssl() {
-    cat > "$NGINX_CONFIG" << 'EOF'
+    local temp_config
+    temp_config="$(mktemp)"
+
+    cat > "$temp_config" << 'EOF'
 # Redirect ALL HTTP traffic to canonical HTTPS URL (handles both www and non-www)
 server {
     listen 80;
@@ -781,6 +821,8 @@ server {
         add_header Content-Type application/manifest+json;
         try_files $uri =404;
     }
+
+    error_page 404 /404.html;
     
     # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
@@ -788,9 +830,33 @@ server {
         add_header Cache-Control "public, immutable";
     }
     
-    # Main location - SPA fallback
+    location = / {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+
+        try_files /index.html =404;
+    }
+
+    # Everything else should resolve to a real file or return 404.
     location / {
-        try_files $uri $uri/ /index.html;
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+
+        try_files $uri $uri/ $uri.html =404;
+    }
+
+    location = /index.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
+    }
+
+    location = /404.html {
+        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Pragma "no-cache" always;
+        add_header Expires "0" always;
     }
     
     # Deny access to hidden files
@@ -820,10 +886,13 @@ EOF
     # Replace domain placeholder with actual domain
     # Use -i '' for macOS compatibility, -i for Linux
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+        sed -i '' "s/your-domain.com/$DOMAIN/g" "$temp_config"
     else
-        sed -i "s/your-domain.com/$DOMAIN/g" "$NGINX_CONFIG"
+        sed -i "s/your-domain.com/$DOMAIN/g" "$temp_config"
     fi
+
+    "${SUDO_CMD[@]}" cp "$temp_config" "$NGINX_CONFIG"
+    rm -f "$temp_config"
 }
 
 # Function to display final instructions
@@ -858,7 +927,7 @@ display_final_instructions() {
     echo "  - Check Nginx status: sudo systemctl status nginx"
     echo "  - View error logs: sudo tail -f /var/log/nginx/ques-error.log"
     echo "  - View access logs: sudo tail -f /var/log/nginx/ques-access.log"
-    echo "  - Restart Nginx: sudo systemctl restart nginx"
+    echo "  - Reload Nginx: sudo systemctl reload nginx"
     echo "  - Test Nginx config: sudo nginx -t"
     echo "  - List web files: ls -la /var/www/ques/"
     if [ "$ssl_status" = "installed" ]; then
@@ -866,20 +935,6 @@ display_final_instructions() {
         echo "  - Check SSL certificate: sudo certbot certificates"
     fi
     echo ""
-    # Show redirect domains status
-    if [ ${#REDIRECT_DOMAINS[@]} -gt 0 ]; then
-        echo -e "${BLUE}Redirect Domains:${NC}"
-        for domain in "${REDIRECT_DOMAINS[@]}"; do
-            if [ -f "/etc/letsencrypt/live/$domain/fullchain.pem" ]; then
-                echo -e "  ${GREEN}✓${NC} $domain -> https://$DOMAIN (HTTPS enabled)"
-            elif host "$domain" &> /dev/null; then
-                echo -e "  ${YELLOW}○${NC} $domain -> https://$DOMAIN (HTTP only - SSL pending)"
-            else
-                echo -e "  ${RED}✗${NC} $domain (DNS not configured)"
-            fi
-        done
-        echo ""
-    fi
     echo -e "${YELLOW}Troubleshooting:${NC}"
     echo "  If you see 500 error:"
     echo "    1. Check error log: sudo tail -50 /var/log/nginx/ques-error.log"
@@ -900,9 +955,8 @@ main() {
     
     print_info "Starting deployment process..."
     echo ""
-    
-    # Check if running as root
-    check_root
+
+    print_info "Working directory: $PROJECT_DIR"
     
     # Check prerequisites
     check_node
@@ -912,17 +966,9 @@ main() {
     
     echo ""
     print_info "Building application..."
-    
-    # Build the project (run as the user who owns the files, not root)
-    if [ -n "$SUDO_USER" ]; then
-        sudo -u "$SUDO_USER" bash << 'USERSCRIPT'
-            npm install
-            npm run build
-USERSCRIPT
-    else
-        install_dependencies
-        build_project
-    fi
+
+    install_dependencies
+    build_project
     
     echo ""
     print_info "Deploying to Nginx..."
@@ -931,9 +977,11 @@ USERSCRIPT
     create_nginx_directory
     copy_build_files
     remove_conflicting_configs
+    remove_legacy_redirect_config
     create_nginx_config
     enable_nginx_site
     test_nginx_config
+    activate_nginx_directory
     restart_nginx
     configure_firewall
     
@@ -946,11 +994,6 @@ USERSCRIPT
     elif check_dns; then
         ssl_status="failed"
     fi
-    
-    # Setup redirect domains (ques.site, ques.chat -> quesx.com)
-    echo ""
-    print_info "Setting up redirect domains..."
-    setup_redirect_domains
     
     # Test and reload Nginx with all configurations
     test_nginx_config
