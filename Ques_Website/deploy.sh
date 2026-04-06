@@ -447,7 +447,7 @@ server {
 
     # Prevent third-party hotlinking of the large demo video.
     location = /demo.mp4 {
-        valid_referers none blocked server_names *.your-domain.com your-domain.com;
+        valid_referers none blocked server_names;
         if ($invalid_referer) {
             return 403;
         }
@@ -568,7 +568,7 @@ server {
 
     # Prevent third-party hotlinking of the large demo video.
     location = /demo.mp4 {
-        valid_referers none blocked server_names *.your-domain.com your-domain.com;
+        valid_referers none blocked server_names;
         if ($invalid_referer) {
             return 403;
         }
@@ -865,7 +865,7 @@ server {
 
     # Prevent third-party hotlinking of the large demo video.
     location = /demo.mp4 {
-        valid_referers none blocked server_names *.your-domain.com your-domain.com;
+        valid_referers none blocked server_names;
         if ($invalid_referer) {
             return 403;
         }
