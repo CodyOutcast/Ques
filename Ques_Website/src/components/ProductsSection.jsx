@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { optimizeAnimation } from '../utils/optimizeAnimation';
 
 const ProductsSection = ({ isVisible }) => {
   const { t } = useTranslation();
@@ -77,6 +76,9 @@ const ProductsSection = ({ isVisible }) => {
                 <img 
                   src="/geoseer-logo.png" 
                   alt="GeoSeer Logo" 
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
                   className="w-full h-full object-cover rounded-full"
                 />
               </div>

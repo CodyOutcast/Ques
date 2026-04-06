@@ -4,7 +4,7 @@ import { optimizeAnimation } from '../utils/optimizeAnimation';
 import CodyPic from '../assets/profile_pic/Cody_Chen.jpg';
 import WilliamPic from '../assets/profile_pic/William_Kusnomo.jpg';
 import IrenePic from '../assets/profile_pic/irene_chen.png';
-import JimmyPic from '../assets/profile_pic/Jimmy_Chen.png';
+import JimmyPic from '../assets/profile_pic/Jimmy_Chen.jpg';
 
 const TeamSection = ({ isVisible }) => {
   const { t } = useTranslation();
@@ -99,6 +99,9 @@ const TeamSection = ({ isVisible }) => {
                 <img 
                   src={member.image} 
                   alt={member.name} 
+                  loading="lazy"
+                  decoding="async"
+                  fetchPriority="low"
                   className="w-full h-full object-cover"
                 />
               </a>

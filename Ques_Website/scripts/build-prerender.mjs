@@ -17,14 +17,33 @@ function run(command, args) {
 }
 
 function findServerEntry(outDir) {
-  const files = readdirSync(outDir);
-  const entryFile = files.find((file) => /^entry-server\.(m?js|cjs)$/.test(file));
+  const candidates = [outDir];
 
-  if (!entryFile) {
-    throw new Error(`Could not find SSR entry output in ${outDir}`);
+  while (candidates.length > 0) {
+    const dir = candidates.pop();
+    const entries = readdirSync(dir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const fullPath = resolve(dir, entry.name);
+
+      if (entry.isDirectory()) {
+        candidates.push(fullPath);
+        continue;
+      }
+
+      if (/^entry-server\.(m?js|cjs)$/.test(entry.name)) {
+        return fullPath;
+      }
+    }
   }
 
-  return resolve(outDir, entryFile);
+  if (!existsSync(outDir)) {
+    throw new Error(`SSR output directory not found: ${outDir}`);
+  }
+
+  {
+    throw new Error(`Could not find SSR entry output in ${outDir}`);
+  }
 }
 
 async function prerenderHomePage() {

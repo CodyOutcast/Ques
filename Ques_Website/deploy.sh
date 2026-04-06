@@ -178,7 +178,13 @@ check_host_command() {
 # Function to install dependencies
 install_dependencies() {
     print_info "Installing npm dependencies..."
-    run_project_command npm install
+
+    if [ -f "package-lock.json" ]; then
+        run_project_command npm ci
+    else
+        run_project_command npm install
+    fi
+
     print_success "Dependencies installed"
 }
 
@@ -301,6 +307,9 @@ remove_conflicting_configs() {
             elif [ -L "$enabled_site" ]; then
                 # It's a symlink, check the target
                 target=$(readlink "$enabled_site")
+                if [[ "$target" != /* ]]; then
+                    target="$(dirname "$enabled_site")/$target"
+                fi
                 if [ -f "$target" ] && grep -q "server_name.*$DOMAIN" "$target" 2>/dev/null; then
                     print_warning "Found conflicting enabled site: $site_name (symlink)"
                     "${SUDO_CMD[@]}" rm "$enabled_site"
@@ -431,9 +440,21 @@ server {
     error_page 404 /404.html;
     
     # Cache static assets
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot|mp4|webm|ogg|m4v)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+    }
+
+    # Prevent third-party hotlinking of the large demo video.
+    location = /demo.mp4 {
+        valid_referers none blocked server_names *.your-domain.com your-domain.com;
+        if ($invalid_referer) {
+            return 403;
+        }
+
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+        try_files $uri =404;
     }
     
     location = / {
@@ -540,9 +561,21 @@ server {
     error_page 404 /404.html;
     
     # Cache static assets
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot|mp4|webm|ogg|m4v)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+    }
+
+    # Prevent third-party hotlinking of the large demo video.
+    location = /demo.mp4 {
+        valid_referers none blocked server_names *.your-domain.com your-domain.com;
+        if ($invalid_referer) {
+            return 403;
+        }
+
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+        try_files $uri =404;
     }
     
     location = / {
@@ -825,9 +858,21 @@ server {
     error_page 404 /404.html;
     
     # Cache static assets
-    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot)$ {
+    location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot|mp4|webm|ogg|m4v)$ {
         expires 1y;
         add_header Cache-Control "public, immutable";
+    }
+
+    # Prevent third-party hotlinking of the large demo video.
+    location = /demo.mp4 {
+        valid_referers none blocked server_names *.your-domain.com your-domain.com;
+        if ($invalid_referer) {
+            return 403;
+        }
+
+        expires 30d;
+        add_header Cache-Control "public, max-age=2592000";
+        try_files $uri =404;
     }
     
     location = / {

@@ -47,6 +47,7 @@ export default function App() {
     
     // Active section state (0: Home, 1: About, 2: Products Demo, 3: Products Details, 4: Team, 5: Contact)
     const [activeSection, setActiveSection] = useState(0);
+    const [visitedSections, setVisitedSections] = useState(() => new Set([0]));
     
     // Section names for tracking
     const sections = ['home', 'about', 'products', 'products-detail', 'team', 'contact'];
@@ -60,6 +61,18 @@ export default function App() {
     const throttleDuration = 900;
 
     const [isThrottled, setIsThrottled] = useState(false);
+
+    useEffect(() => {
+        setVisitedSections((prev) => {
+            if (prev.has(activeSection)) {
+                return prev;
+            }
+
+            const next = new Set(prev);
+            next.add(activeSection);
+            return next;
+        });
+    }, [activeSection]);
 
     useEffect(() => {
         applyViewportChrome();
@@ -210,22 +223,22 @@ export default function App() {
             />
             
             {/* Home Section */}
-            <HomeSection isVisible={activeSection === 0} />
+            {visitedSections.has(0) && <HomeSection isVisible={activeSection === 0} />}
             
             {/* About Section */}
-            <AboutSection isVisible={activeSection === 1} />
+            {visitedSections.has(1) && <AboutSection isVisible={activeSection === 1} />}
             
             {/* Products Section - Demo Video */}
-            <ProductsDemoSection isVisible={activeSection === 2} />
+            {visitedSections.has(2) && <ProductsDemoSection isVisible={activeSection === 2} />}
             
             {/* Products Section - Details */}
-            <ProductsSection isVisible={activeSection === 3} />
+            {visitedSections.has(3) && <ProductsSection isVisible={activeSection === 3} />}
             
             {/* Team Section */}
-            <TeamSection isVisible={activeSection === 4} />
+            {visitedSections.has(4) && <TeamSection isVisible={activeSection === 4} />}
             
             {/* Contact Section */}
-            <ContactSection isVisible={activeSection === 5} />
+            {visitedSections.has(5) && <ContactSection isVisible={activeSection === 5} />}
             
             {/* Footer */}
             <Footer />

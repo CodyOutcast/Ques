@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { FiAlertCircle } from 'react-icons/fi';
@@ -8,6 +8,7 @@ const ProductsDemoSection = ({ isVisible }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const videoRef = useRef(null);
+  const shouldAttachSource = isVisible;
 
   const handleLoadedData = () => {
     setIsLoaded(true);
@@ -17,6 +18,28 @@ const ProductsDemoSection = ({ isVisible }) => {
     setHasError(true);
     setIsLoaded(true);
   };
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+
+    if (isVisible) {
+      if (video.readyState === 0) {
+        video.load();
+      }
+
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(() => {});
+      }
+      return;
+    }
+
+    video.pause();
+    video.load();
+  }, [isVisible]);
 
   return (
     <motion.div 
@@ -98,17 +121,18 @@ const ProductsDemoSection = ({ isVisible }) => {
               {/* Video element */}
               <video
                 ref={videoRef}
-                autoPlay
+                autoPlay={isVisible}
                 loop
                 muted
                 playsInline
+                preload={isVisible ? 'metadata' : 'none'}
                 onLoadedData={handleLoadedData}
                 onError={handleError}
                 className={`w-full h-auto transition-opacity duration-500 ${
                   isLoaded && !hasError ? 'opacity-100' : 'opacity-0'
                 }`}
               >
-                <source src="/demo.mp4" type="video/mp4" />
+                {shouldAttachSource && <source src="/demo.mp4" type="video/mp4" />}
                 Your browser does not support the video tag.
               </video>
             </motion.div>
