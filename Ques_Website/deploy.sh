@@ -37,6 +37,16 @@ NGINX_ROOT_RATE="${NGINX_ROOT_RATE:-10r/s}"
 NGINX_ROOT_BURST="${NGINX_ROOT_BURST:-40}"
 NGINX_LIMIT_STATUS="${NGINX_LIMIT_STATUS:-429}"
 
+escape_sed_replacement() {
+    local value="$1"
+
+    value=${value//\\/\\\\}
+    value=${value//&/\\&}
+    value=${value//#/\\#}
+
+    printf '%s' "$value"
+}
+
 nginx_conf_includes_conf_d() {
     local nginx_conf="/etc/nginx/nginx.conf"
 
@@ -849,21 +859,33 @@ EOF
 
     # Replace placeholders with actual values
     # Use -i '' for macOS compatibility, -i for Linux
+    local escaped_hardening_include
+    local escaped_domain
+    local escaped_limit_conn_per_ip
+    local escaped_limit_status
+    local escaped_root_burst
+
+    escaped_hardening_include="$(escape_sed_replacement "$hardening_include")"
+    escaped_domain="$(escape_sed_replacement "$DOMAIN")"
+    escaped_limit_conn_per_ip="$(escape_sed_replacement "$NGINX_LIMIT_CONN_PER_IP")"
+    escaped_limit_status="$(escape_sed_replacement "$NGINX_LIMIT_STATUS")"
+    escaped_root_burst="$(escape_sed_replacement "$NGINX_ROOT_BURST")"
+
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' \
-            -e "s#__QUES_HARDENING_INCLUDE__#$hardening_include#g" \
-            -e "s/your-domain.com/$DOMAIN/g" \
-            -e "s/__NGINX_LIMIT_CONN_PER_IP__/$NGINX_LIMIT_CONN_PER_IP/g" \
-            -e "s/__NGINX_LIMIT_STATUS__/$NGINX_LIMIT_STATUS/g" \
-            -e "s/__NGINX_ROOT_BURST__/$NGINX_ROOT_BURST/g" \
+            -e "s#__QUES_HARDENING_INCLUDE__#$escaped_hardening_include#g" \
+            -e "s#your-domain.com#$escaped_domain#g" \
+            -e "s#__NGINX_LIMIT_CONN_PER_IP__#$escaped_limit_conn_per_ip#g" \
+            -e "s#__NGINX_LIMIT_STATUS__#$escaped_limit_status#g" \
+            -e "s#__NGINX_ROOT_BURST__#$escaped_root_burst#g" \
             "$temp_config"
     else
         sed -i \
-            -e "s#__QUES_HARDENING_INCLUDE__#$hardening_include#g" \
-            -e "s/your-domain.com/$DOMAIN/g" \
-            -e "s/__NGINX_LIMIT_CONN_PER_IP__/$NGINX_LIMIT_CONN_PER_IP/g" \
-            -e "s/__NGINX_LIMIT_STATUS__/$NGINX_LIMIT_STATUS/g" \
-            -e "s/__NGINX_ROOT_BURST__/$NGINX_ROOT_BURST/g" \
+            -e "s#__QUES_HARDENING_INCLUDE__#$escaped_hardening_include#g" \
+            -e "s#your-domain.com#$escaped_domain#g" \
+            -e "s#__NGINX_LIMIT_CONN_PER_IP__#$escaped_limit_conn_per_ip#g" \
+            -e "s#__NGINX_LIMIT_STATUS__#$escaped_limit_status#g" \
+            -e "s#__NGINX_ROOT_BURST__#$escaped_root_burst#g" \
             "$temp_config"
     fi
 
@@ -1209,21 +1231,33 @@ EOF
 
     # Replace placeholders with actual values
     # Use -i '' for macOS compatibility, -i for Linux
+    local escaped_hardening_include
+    local escaped_domain
+    local escaped_limit_conn_per_ip
+    local escaped_limit_status
+    local escaped_root_burst
+
+    escaped_hardening_include="$(escape_sed_replacement "$hardening_include")"
+    escaped_domain="$(escape_sed_replacement "$DOMAIN")"
+    escaped_limit_conn_per_ip="$(escape_sed_replacement "$NGINX_LIMIT_CONN_PER_IP")"
+    escaped_limit_status="$(escape_sed_replacement "$NGINX_LIMIT_STATUS")"
+    escaped_root_burst="$(escape_sed_replacement "$NGINX_ROOT_BURST")"
+
     if [[ "$OSTYPE" == "darwin"* ]]; then
         sed -i '' \
-            -e "s#__QUES_HARDENING_INCLUDE__#$hardening_include#g" \
-            -e "s/your-domain.com/$DOMAIN/g" \
-            -e "s/__NGINX_LIMIT_CONN_PER_IP__/$NGINX_LIMIT_CONN_PER_IP/g" \
-            -e "s/__NGINX_LIMIT_STATUS__/$NGINX_LIMIT_STATUS/g" \
-            -e "s/__NGINX_ROOT_BURST__/$NGINX_ROOT_BURST/g" \
+            -e "s#__QUES_HARDENING_INCLUDE__#$escaped_hardening_include#g" \
+            -e "s#your-domain.com#$escaped_domain#g" \
+            -e "s#__NGINX_LIMIT_CONN_PER_IP__#$escaped_limit_conn_per_ip#g" \
+            -e "s#__NGINX_LIMIT_STATUS__#$escaped_limit_status#g" \
+            -e "s#__NGINX_ROOT_BURST__#$escaped_root_burst#g" \
             "$temp_config"
     else
         sed -i \
-            -e "s#__QUES_HARDENING_INCLUDE__#$hardening_include#g" \
-            -e "s/your-domain.com/$DOMAIN/g" \
-            -e "s/__NGINX_LIMIT_CONN_PER_IP__/$NGINX_LIMIT_CONN_PER_IP/g" \
-            -e "s/__NGINX_LIMIT_STATUS__/$NGINX_LIMIT_STATUS/g" \
-            -e "s/__NGINX_ROOT_BURST__/$NGINX_ROOT_BURST/g" \
+            -e "s#__QUES_HARDENING_INCLUDE__#$escaped_hardening_include#g" \
+            -e "s#your-domain.com#$escaped_domain#g" \
+            -e "s#__NGINX_LIMIT_CONN_PER_IP__#$escaped_limit_conn_per_ip#g" \
+            -e "s#__NGINX_LIMIT_STATUS__#$escaped_limit_status#g" \
+            -e "s#__NGINX_ROOT_BURST__#$escaped_root_burst#g" \
             "$temp_config"
     fi
 
