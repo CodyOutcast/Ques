@@ -17,7 +17,6 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Configuration variables
-PROJECT_NAME="ques_website"
 BUILD_DIR="dist"
 NGINX_ROOT="/var/www/ques"
 STAGING_NGINX_ROOT="${NGINX_ROOT}.staging"
@@ -26,6 +25,95 @@ NGINX_CONFIG="/etc/nginx/sites-available/ques"
 NGINX_ENABLED="/etc/nginx/sites-enabled/ques"
 DOMAIN="quesx.com"  # Change this to your domain
 TARGET_NPM_VERSION="11.11.0"
+
+# Nginx http-context hardening snippet (written under /etc/nginx/conf.d/)
+NGINX_HTTP_HARDENING_SNIPPET="/etc/nginx/conf.d/ques-origin-hardening.conf"
+
+# Gentle origin guardrails (Cloudflare remains the primary DDoS layer)
+NGINX_LIMIT_CONN_ZONE_SIZE="${NGINX_LIMIT_CONN_ZONE_SIZE:-10m}"
+NGINX_LIMIT_CONN_PER_IP="${NGINX_LIMIT_CONN_PER_IP:-40}"
+NGINX_LIMIT_REQ_ZONE_SIZE="${NGINX_LIMIT_REQ_ZONE_SIZE:-10m}"
+NGINX_ROOT_RATE="${NGINX_ROOT_RATE:-10r/s}"
+NGINX_ROOT_BURST="${NGINX_ROOT_BURST:-40}"
+NGINX_LIMIT_STATUS="${NGINX_LIMIT_STATUS:-429}"
+
+nginx_conf_includes_conf_d() {
+    local nginx_conf="/etc/nginx/nginx.conf"
+
+    if [ ! -f "$nginx_conf" ]; then
+        return 1
+    fi
+
+    grep -Eq '^[[:space:]]*include[[:space:]]+/etc/nginx/conf\.d/\*\.conf;[[:space:]]*(#.*)?$' "$nginx_conf"
+}
+
+nginx_site_should_include_hardening_snippet() {
+    # Most Debian/Ubuntu configs include /etc/nginx/conf.d/*.conf in http {}.
+    # If they don't, we explicitly include the snippet from the vhost file (still in http context).
+    if nginx_conf_includes_conf_d; then
+        return 1
+    fi
+
+    return 0
+}
+
+nginx_conf_includes_sites_enabled() {
+    local nginx_conf="/etc/nginx/nginx.conf"
+
+    if [ ! -f "$nginx_conf" ]; then
+        return 1
+    fi
+
+    # Debian/Ubuntu typical: include /etc/nginx/sites-enabled/*;
+    grep -Eq '^[[:space:]]*include[[:space:]]+/etc/nginx/sites-enabled/\*[^;]*;[[:space:]]*(#.*)?$' "$nginx_conf" \
+        || grep -Eq 'include[[:space:]]+/etc/nginx/sites-enabled/\*' "$nginx_conf"
+}
+
+verify_nginx_layout() {
+    # We deploy to /etc/nginx/sites-available + sites-enabled, so nginx.conf must include sites-enabled.
+    if ! nginx_conf_includes_sites_enabled; then
+        print_error "Nginx is not configured to load /etc/nginx/sites-enabled/*."
+        print_error "Your deployment would succeed but Nginx would ignore the site config at: $NGINX_ENABLED"
+        echo ""
+        print_info "Fix (typical Debian/Ubuntu): ensure this line exists inside the http { } block in /etc/nginx/nginx.conf:"
+        echo "  include /etc/nginx/sites-enabled/*;"
+        echo ""
+        print_info "Then run: sudo nginx -t && sudo systemctl reload nginx"
+        exit 1
+    fi
+}
+
+ensure_certbot_auto_renewal() {
+    # Best effort: on many Debian/Ubuntu installs, certbot ships a systemd timer.
+    # If no timer/cron is found, we warn so renewal doesn't silently fail.
+    if ! command -v certbot &> /dev/null; then
+        return 0
+    fi
+
+    if command -v systemctl &> /dev/null; then
+        if systemctl list-unit-files 2>/dev/null | awk '{print $1}' | grep -qx 'certbot.timer'; then
+            print_info "Ensuring certbot auto-renew timer is enabled..."
+            "${SUDO_CMD[@]}" systemctl enable --now certbot.timer >/dev/null 2>&1 || true
+
+            if systemctl is-enabled --quiet certbot.timer 2>/dev/null && systemctl is-active --quiet certbot.timer 2>/dev/null; then
+                print_success "certbot.timer is enabled and active"
+                return 0
+            fi
+
+            print_warning "certbot.timer exists but is not enabled/active. Check with: sudo systemctl status certbot.timer"
+            return 0
+        fi
+    fi
+
+    # Cron-based renewal is also common.
+    if [ -f /etc/cron.d/certbot ] || [ -f /etc/cron.daily/certbot ]; then
+        print_success "Certbot renewal appears to be scheduled via cron"
+        return 0
+    fi
+
+    print_warning "Could not detect automatic certbot renewal scheduling (no certbot.timer and no certbot cron job found)."
+    print_warning "Recommended: run 'sudo certbot renew --dry-run' and ensure a scheduled renewal mechanism exists on this host."
+}
 
 PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SUDO_KEEPALIVE_PID=""
@@ -124,13 +212,16 @@ check_node() {
         print_warning "Node.js is not installed. Installing Node.js 20.x LTS..."
         install_node
     else
-        NODE_VERSION=$(node --version | cut -d'v' -f2 | cut -d'.' -f1)
-        if [ "$NODE_VERSION" -lt 18 ]; then
-            print_warning "Node.js version must be 18 or higher. Current version: $(node --version)"
+        local required_node_version="20.17.0"
+        local current_node_version
+        current_node_version="$(node --version | cut -d'v' -f2)"
+
+        if version_lt "$current_node_version" "$required_node_version"; then
+            print_warning "Node.js must be >= $required_node_version for npm@$TARGET_NPM_VERSION. Current version: v$current_node_version"
             print_info "Upgrading Node.js..."
             install_node
         else
-            print_success "Node.js $(node --version) detected"
+            print_success "Node.js v$current_node_version detected"
         fi
     fi
 }
@@ -163,6 +254,64 @@ check_nginx() {
     else
         print_success "Nginx $(nginx -v 2>&1 | cut -d'/' -f2) detected"
     fi
+}
+
+write_nginx_http_hardening_snippet() {
+    print_info "Writing Nginx origin-hardening snippet (http context)..."
+
+    "${SUDO_CMD[@]}" mkdir -p "$(dirname "$NGINX_HTTP_HARDENING_SNIPPET")"
+
+    # NOTE: This is a snapshot of Cloudflare IP ranges.
+    # If Cloudflare updates ranges, refresh these and redeploy.
+    "${SUDO_CMD[@]}" tee "$NGINX_HTTP_HARDENING_SNIPPET" > /dev/null <<EOF
+# Ques origin hardening
+# Generated by deploy.sh on $(date)
+
+server_tokens off;
+
+map \$request_method \$ques_block_invalid_method {
+    default 0;
+    CONNECT 1;
+    PRI 1;
+    TRACE 1;
+    TRACK 1;
+}
+
+limit_conn_zone \$binary_remote_addr zone=ques_conn_per_ip:${NGINX_LIMIT_CONN_ZONE_SIZE};
+limit_req_zone \$binary_remote_addr zone=ques_root:${NGINX_LIMIT_REQ_ZONE_SIZE} rate=${NGINX_ROOT_RATE};
+
+# Cloudflare real client IP (only trusted when the immediate peer is Cloudflare)
+real_ip_header CF-Connecting-IP;
+real_ip_recursive on;
+set_real_ip_from 127.0.0.1;
+set_real_ip_from ::1;
+
+set_real_ip_from 173.245.48.0/20;
+set_real_ip_from 103.21.244.0/22;
+set_real_ip_from 103.22.200.0/22;
+set_real_ip_from 103.31.4.0/22;
+set_real_ip_from 141.101.64.0/18;
+set_real_ip_from 108.162.192.0/18;
+set_real_ip_from 190.93.240.0/20;
+set_real_ip_from 188.114.96.0/20;
+set_real_ip_from 197.234.240.0/22;
+set_real_ip_from 198.41.128.0/17;
+set_real_ip_from 162.158.0.0/15;
+set_real_ip_from 104.16.0.0/13;
+set_real_ip_from 104.24.0.0/14;
+set_real_ip_from 172.64.0.0/13;
+set_real_ip_from 131.0.72.0/22;
+
+set_real_ip_from 2400:cb00::/32;
+set_real_ip_from 2606:4700::/32;
+set_real_ip_from 2803:f800::/32;
+set_real_ip_from 2405:b500::/32;
+set_real_ip_from 2405:8100::/32;
+set_real_ip_from 2a06:98c0::/29;
+set_real_ip_from 2c0f:f248::/32;
+EOF
+
+    print_success "Origin-hardening snippet updated: $NGINX_HTTP_HARDENING_SNIPPET"
 }
 
 # Function to check if host command is available (for DNS lookups)
@@ -250,9 +399,9 @@ copy_build_files() {
         exit 1
     fi
     
-    # Verify critical SEO files
+    # Verify critical public files
     print_info "Verifying critical SEO files..."
-    critical_files=("logo.png" "site.webmanifest" "robots.txt" "sitemap.xml")
+    critical_files=("404.html" "site.webmanifest" "robots.txt" "sitemap.xml")
     for file in "${critical_files[@]}"; do
         if [ ! -f "$STAGING_NGINX_ROOT/$file" ]; then
             print_warning "Critical SEO file missing: $file"
@@ -260,10 +409,31 @@ copy_build_files() {
             print_success "Found: $file"
         fi
     done
+
+    print_info "Verifying required public assets..."
+    required_assets=(
+        "demo.mp4"
+        "geoseer-logo.png"
+        "logo.ico"
+        "police_logo.jpg"
+        "icons/icon-32.png"
+        "icons/icon-192.png"
+    )
+    for asset in "${required_assets[@]}"; do
+        if [ ! -f "$STAGING_NGINX_ROOT/$asset" ]; then
+            print_error "Required deployment asset missing: $asset"
+            exit 1
+        fi
+
+        print_success "Found asset: $asset"
+    done
     
     # Set correct permissions
     "${SUDO_CMD[@]}" chown -R www-data:www-data "$STAGING_NGINX_ROOT"
-    "${SUDO_CMD[@]}" chmod -R 755 "$STAGING_NGINX_ROOT"
+
+    # Directories: 755, Files: 644 (avoid making every file executable)
+    "${SUDO_CMD[@]}" find "$STAGING_NGINX_ROOT" -type d -exec chmod 755 {} +
+    "${SUDO_CMD[@]}" find "$STAGING_NGINX_ROOT" -type f -exec chmod 644 {} +
     
     # Verify permissions
     print_info "Files in $STAGING_NGINX_ROOT:"
@@ -370,12 +540,22 @@ create_nginx_config() {
     print_info "Creating Nginx configuration..."
     local temp_config
     temp_config="$(mktemp)"
+
+    local hardening_include
+    hardening_include="# (origin hardening snippet is loaded via /etc/nginx/conf.d/*.conf)"
+    if nginx_site_should_include_hardening_snippet; then
+        hardening_include="include $NGINX_HTTP_HARDENING_SNIPPET;"
+    fi
+
+    write_nginx_http_hardening_snippet
     
     # Check if SSL certificates exist
     if [ -f "/etc/letsencrypt/live/$DOMAIN/fullchain.pem" ]; then
         print_info "SSL certificates found - creating HTTPS configuration"
         
         cat > "$temp_config" << 'EOF'
+    __QUES_HARDENING_INCLUDE__
+
 # Redirect ALL HTTP traffic to canonical HTTPS URL (handles both www and non-www)
 server {
     listen 80;
@@ -395,6 +575,15 @@ server {
     
     root /var/www/ques;
     index index.html index.htm;
+
+    # Origin guardrails
+    limit_conn ques_conn_per_ip __NGINX_LIMIT_CONN_PER_IP__;
+    limit_req_status __NGINX_LIMIT_STATUS__;
+    limit_conn_status __NGINX_LIMIT_STATUS__;
+
+    if ($ques_block_invalid_method) {
+        return 405;
+    }
     
     # SSL configuration
     ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
@@ -416,6 +605,10 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
+    add_header X-Permitted-Cross-Domain-Policies "none" always;
+    add_header Content-Security-Policy "base-uri 'self'; frame-ancestors 'self'" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     
     # Add canonical Link header
@@ -424,16 +617,22 @@ server {
     # Serve robots.txt and sitemap.xml with correct MIME types
     location = /robots.txt {
         add_header Content-Type text/plain;
+        add_header Cache-Control "public, max-age=3600, must-revalidate";
+        expires 1h;
         try_files $uri =404;
     }
     
     location = /sitemap.xml {
         add_header Content-Type application/xml;
+        add_header Cache-Control "public, max-age=3600, must-revalidate";
+        expires 1h;
         try_files $uri =404;
     }
     
     location = /site.webmanifest {
         add_header Content-Type application/manifest+json;
+        add_header Cache-Control "public, no-cache, must-revalidate";
+        expires 0;
         try_files $uri =404;
     }
 
@@ -442,7 +641,9 @@ server {
     # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot|mp4|webm|ogg|m4v)$ {
         expires 1y;
-        add_header Cache-Control "public, immutable";
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        access_log off;
+        try_files $uri =404;
     }
 
     # Prevent third-party hotlinking of the large demo video.
@@ -458,7 +659,9 @@ server {
     }
     
     location = / {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        limit_req zone=ques_root burst=__NGINX_ROOT_BURST__ nodelay;
+
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
 
@@ -467,7 +670,9 @@ server {
 
     # Everything else should resolve to a real file or return 404.
     location / {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        limit_req zone=ques_root burst=__NGINX_ROOT_BURST__ nodelay;
+
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
 
@@ -475,20 +680,20 @@ server {
     }
 
     location = /index.html {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
     }
 
     location = /404.html {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
     }
     
-    # Deny access to hidden files
-    location ~ /\. {
-        deny all;
+    # Hide dotfiles, but allow /.well-known/ for ACME/certbot
+    location ~ /\.(?!well-known) {
+        return 404;
     }
 }
 
@@ -514,6 +719,8 @@ EOF
         print_info "SSL will be added by certbot in the next step"
         
     cat > "$temp_config" << 'EOF'
+__QUES_HARDENING_INCLUDE__
+
 # HTTP server - will be modified by certbot to add HTTPS
 server {
     listen 80;
@@ -523,6 +730,15 @@ server {
     
     root /var/www/ques;
     index index.html index.htm;
+
+    # Origin guardrails
+    limit_conn ques_conn_per_ip __NGINX_LIMIT_CONN_PER_IP__;
+    limit_req_status __NGINX_LIMIT_STATUS__;
+    limit_conn_status __NGINX_LIMIT_STATUS__;
+
+    if ($ques_block_invalid_method) {
+        return 405;
+    }
     
     # Logging
     access_log /var/log/nginx/ques-access.log;
@@ -538,6 +754,10 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
+    add_header X-Permitted-Cross-Domain-Policies "none" always;
+    add_header Content-Security-Policy "base-uri 'self'; frame-ancestors 'self'" always;
     
     # Add canonical Link header
     add_header Link '<https://your-domain.com/>; rel="canonical"' always;
@@ -545,16 +765,22 @@ server {
     # Serve robots.txt and sitemap.xml with correct MIME types
     location = /robots.txt {
         add_header Content-Type text/plain;
+        add_header Cache-Control "public, max-age=3600, must-revalidate";
+        expires 1h;
         try_files $uri =404;
     }
     
     location = /sitemap.xml {
         add_header Content-Type application/xml;
+        add_header Cache-Control "public, max-age=3600, must-revalidate";
+        expires 1h;
         try_files $uri =404;
     }
     
     location = /site.webmanifest {
         add_header Content-Type application/manifest+json;
+        add_header Cache-Control "public, no-cache, must-revalidate";
+        expires 0;
         try_files $uri =404;
     }
 
@@ -563,7 +789,9 @@ server {
     # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot|mp4|webm|ogg|m4v)$ {
         expires 1y;
-        add_header Cache-Control "public, immutable";
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        access_log off;
+        try_files $uri =404;
     }
 
     # Prevent third-party hotlinking of the large demo video.
@@ -579,7 +807,9 @@ server {
     }
     
     location = / {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        limit_req zone=ques_root burst=__NGINX_ROOT_BURST__ nodelay;
+
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
 
@@ -588,7 +818,9 @@ server {
 
     # Everything else should resolve to a real file or return 404.
     location / {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        limit_req zone=ques_root burst=__NGINX_ROOT_BURST__ nodelay;
+
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
 
@@ -596,31 +828,43 @@ server {
     }
 
     location = /index.html {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
     }
 
     location = /404.html {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
     }
     
-    # Deny access to hidden files
-    location ~ /\. {
-        deny all;
+    # Hide dotfiles, but allow /.well-known/ for ACME/certbot
+    location ~ /\.(?!well-known) {
+        return 404;
     }
 }
 EOF
     fi
 
-    # Replace domain placeholder with actual domain
+    # Replace placeholders with actual values
     # Use -i '' for macOS compatibility, -i for Linux
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s/your-domain.com/$DOMAIN/g" "$temp_config"
+        sed -i '' \
+            -e "s#__QUES_HARDENING_INCLUDE__#$hardening_include#g" \
+            -e "s/your-domain.com/$DOMAIN/g" \
+            -e "s/__NGINX_LIMIT_CONN_PER_IP__/$NGINX_LIMIT_CONN_PER_IP/g" \
+            -e "s/__NGINX_LIMIT_STATUS__/$NGINX_LIMIT_STATUS/g" \
+            -e "s/__NGINX_ROOT_BURST__/$NGINX_ROOT_BURST/g" \
+            "$temp_config"
     else
-        sed -i "s/your-domain.com/$DOMAIN/g" "$temp_config"
+        sed -i \
+            -e "s#__QUES_HARDENING_INCLUDE__#$hardening_include#g" \
+            -e "s/your-domain.com/$DOMAIN/g" \
+            -e "s/__NGINX_LIMIT_CONN_PER_IP__/$NGINX_LIMIT_CONN_PER_IP/g" \
+            -e "s/__NGINX_LIMIT_STATUS__/$NGINX_LIMIT_STATUS/g" \
+            -e "s/__NGINX_ROOT_BURST__/$NGINX_ROOT_BURST/g" \
+            "$temp_config"
     fi
 
     "${SUDO_CMD[@]}" cp "$temp_config" "$NGINX_CONFIG"
@@ -793,7 +1037,17 @@ create_nginx_config_with_ssl() {
     local temp_config
     temp_config="$(mktemp)"
 
+    local hardening_include
+    hardening_include="# (origin hardening snippet is loaded via /etc/nginx/conf.d/*.conf)"
+    if nginx_site_should_include_hardening_snippet; then
+        hardening_include="include $NGINX_HTTP_HARDENING_SNIPPET;"
+    fi
+
+    write_nginx_http_hardening_snippet
+
     cat > "$temp_config" << 'EOF'
+__QUES_HARDENING_INCLUDE__
+
 # Redirect ALL HTTP traffic to canonical HTTPS URL (handles both www and non-www)
 server {
     listen 80;
@@ -813,6 +1067,15 @@ server {
     
     root /var/www/ques;
     index index.html index.htm;
+
+    # Origin guardrails
+    limit_conn ques_conn_per_ip __NGINX_LIMIT_CONN_PER_IP__;
+    limit_req_status __NGINX_LIMIT_STATUS__;
+    limit_conn_status __NGINX_LIMIT_STATUS__;
+
+    if ($ques_block_invalid_method) {
+        return 405;
+    }
     
     # SSL configuration
     ssl_certificate /etc/letsencrypt/live/your-domain.com/fullchain.pem;
@@ -834,6 +1097,10 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
     add_header X-XSS-Protection "1; mode=block" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=(), payment=()" always;
+    add_header X-Permitted-Cross-Domain-Policies "none" always;
+    add_header Content-Security-Policy "base-uri 'self'; frame-ancestors 'self'" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
     
     # Add canonical Link header
@@ -842,16 +1109,22 @@ server {
     # Serve robots.txt and sitemap.xml with correct MIME types
     location = /robots.txt {
         add_header Content-Type text/plain;
+        add_header Cache-Control "public, max-age=3600, must-revalidate";
+        expires 1h;
         try_files $uri =404;
     }
     
     location = /sitemap.xml {
         add_header Content-Type application/xml;
+        add_header Cache-Control "public, max-age=3600, must-revalidate";
+        expires 1h;
         try_files $uri =404;
     }
     
     location = /site.webmanifest {
         add_header Content-Type application/manifest+json;
+        add_header Cache-Control "public, no-cache, must-revalidate";
+        expires 0;
         try_files $uri =404;
     }
 
@@ -860,7 +1133,9 @@ server {
     # Cache static assets
     location ~* \.(jpg|jpeg|png|gif|ico|css|js|svg|woff|woff2|ttf|eot|mp4|webm|ogg|m4v)$ {
         expires 1y;
-        add_header Cache-Control "public, immutable";
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        access_log off;
+        try_files $uri =404;
     }
 
     # Prevent third-party hotlinking of the large demo video.
@@ -876,7 +1151,9 @@ server {
     }
     
     location = / {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        limit_req zone=ques_root burst=__NGINX_ROOT_BURST__ nodelay;
+
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
 
@@ -885,7 +1162,9 @@ server {
 
     # Everything else should resolve to a real file or return 404.
     location / {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        limit_req zone=ques_root burst=__NGINX_ROOT_BURST__ nodelay;
+
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
 
@@ -893,20 +1172,20 @@ server {
     }
 
     location = /index.html {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
     }
 
     location = /404.html {
-        add_header Cache-Control "no-cache, no-store, must-revalidate" always;
+        add_header Cache-Control "public, no-cache, must-revalidate" always;
         add_header Pragma "no-cache" always;
         add_header Expires "0" always;
     }
     
-    # Deny access to hidden files
-    location ~ /\. {
-        deny all;
+    # Hide dotfiles, but allow /.well-known/ for ACME/certbot
+    location ~ /\.(?!well-known) {
+        return 404;
     }
 }
 
@@ -928,12 +1207,24 @@ server {
 }
 EOF
 
-    # Replace domain placeholder with actual domain
+    # Replace placeholders with actual values
     # Use -i '' for macOS compatibility, -i for Linux
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        sed -i '' "s/your-domain.com/$DOMAIN/g" "$temp_config"
+        sed -i '' \
+            -e "s#__QUES_HARDENING_INCLUDE__#$hardening_include#g" \
+            -e "s/your-domain.com/$DOMAIN/g" \
+            -e "s/__NGINX_LIMIT_CONN_PER_IP__/$NGINX_LIMIT_CONN_PER_IP/g" \
+            -e "s/__NGINX_LIMIT_STATUS__/$NGINX_LIMIT_STATUS/g" \
+            -e "s/__NGINX_ROOT_BURST__/$NGINX_ROOT_BURST/g" \
+            "$temp_config"
     else
-        sed -i "s/your-domain.com/$DOMAIN/g" "$temp_config"
+        sed -i \
+            -e "s#__QUES_HARDENING_INCLUDE__#$hardening_include#g" \
+            -e "s/your-domain.com/$DOMAIN/g" \
+            -e "s/__NGINX_LIMIT_CONN_PER_IP__/$NGINX_LIMIT_CONN_PER_IP/g" \
+            -e "s/__NGINX_LIMIT_STATUS__/$NGINX_LIMIT_STATUS/g" \
+            -e "s/__NGINX_ROOT_BURST__/$NGINX_ROOT_BURST/g" \
+            "$temp_config"
     fi
 
     "${SUDO_CMD[@]}" cp "$temp_config" "$NGINX_CONFIG"
@@ -1008,6 +1299,8 @@ main() {
     check_npm
     check_nginx
     check_host_command
+
+    verify_nginx_layout
     
     echo ""
     print_info "Building application..."
@@ -1039,6 +1332,8 @@ main() {
     elif check_dns; then
         ssl_status="failed"
     fi
+
+    ensure_certbot_auto_renewal
     
     # Test and reload Nginx with all configurations
     test_nginx_config

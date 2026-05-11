@@ -21,8 +21,8 @@ Modern, responsive single-page website with 4 main sections:
 
 ## Prerequisites
 
-- Node.js 18.x or higher
-- npm 9.x or higher
+- Node.js 20.17.0 or higher (or >= 22.9.0)
+- npm 11.x or higher
 
 ## Local Development
 
@@ -82,6 +82,7 @@ The script will:
 - Install dependencies and build the project
 - Deploy to `/var/www/ques`
 - Configure Nginx with optimized settings
+- Write an origin-hardening Nginx snippet (Cloudflare real IP + gentle rate limits + invalid-method blocking)
 - Enable the site and reload Nginx
 - Configure firewall rules
 

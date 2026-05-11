@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useEffectEvent } from 'react';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import HomeSection from './components/HomeSection';
@@ -44,6 +44,7 @@ function applyViewportChrome() {
 export default function App() {
     // Language state
     const [isChinese, setIsChinese] = useState(i18n.language === 'cn');
+    const appContainerRef = useRef(null);
     
     // Active section state (0: Home, 1: About, 2: Products Demo, 3: Products Details, 4: Team, 5: Contact)
     const [activeSection, setActiveSection] = useState(0);
@@ -104,7 +105,7 @@ export default function App() {
             }
         };
     }, []);
-    
+
     // Language toggle function
     const toggleLanguage = () => {
         const newLang = isChinese ? 'en' : 'cn';
@@ -121,31 +122,45 @@ export default function App() {
     };
 
     // Touch handling for swipe navigation
-    const [touchStart, setTouchStart] = useState(0);
-    const [touchEnd, setTouchEnd] = useState(0);
+    const touchStartRef = useRef(null);
+    const touchEndRef = useRef(null);
 
     const handleTouchStart = (e) => {
-        setTouchStart(e.targetTouches[0].clientY);
+        const startY = e.targetTouches[0].clientY;
+        touchStartRef.current = startY;
+        touchEndRef.current = startY;
     };
 
     const handleTouchMove = (e) => {
-        setTouchEnd(e.targetTouches[0].clientY);
+        touchEndRef.current = e.targetTouches[0].clientY;
     };
 
     const handleTouchEnd = () => {
-        if (touchStart - touchEnd > 75) {
+        const touchStart = touchStartRef.current;
+        const touchEnd = touchEndRef.current;
+
+        if (touchStart === null || touchEnd === null) {
+            return;
+        }
+
+        const touchDelta = touchStart - touchEnd;
+
+        touchStartRef.current = null;
+        touchEndRef.current = null;
+
+        if (touchDelta > 75) {
             // Swipe up - next section
             setActiveSection(prev => Math.min(prev + 1, sections.length - 1));
         }
 
-        if (touchStart - touchEnd < -75) {
+        if (touchDelta < -75) {
             // Swipe down - previous section
             setActiveSection(prev => Math.max(prev - 1, 0));
         }
     };
 
     // Wheel handling for desktop navigation with momentum control
-    const handleWheel = (e) => {
+    const handleWheel = useEffectEvent((e) => {
         if (typeof e.preventDefault === 'function') {
             e.preventDefault();
         }
@@ -189,10 +204,29 @@ export default function App() {
                 setIsThrottled(false);
             }, throttleDuration);
         }
-    };
+    });
+
+    useEffect(() => {
+        const appContainer = appContainerRef.current;
+
+        if (!appContainer) {
+            return undefined;
+        }
+
+        const handleNativeWheel = (event) => {
+            handleWheel(event);
+        };
+
+        appContainer.addEventListener('wheel', handleNativeWheel, { passive: false });
+
+        return () => {
+            appContainer.removeEventListener('wheel', handleNativeWheel);
+        };
+    }, [handleWheel]);
 
     return (
         <div
+            ref={appContainerRef}
             className="dynamic-height w-full overflow-hidden fixed bg-grid-pattern"
             style={{
                 top: 0,
@@ -207,7 +241,6 @@ export default function App() {
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
             onTouchEnd={handleTouchEnd}
-            onWheel={handleWheel}
         >
             {/* Ambient Background Effects */}
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">

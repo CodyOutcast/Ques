@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
 import { optimizeAnimation } from '../utils/optimizeAnimation';
-import CodyPic from '../assets/profile_pic/Cody_Chen.jpg';
+import CodyPic from '../assets/profile_pic/Cody_Outcast.jpg';
 import WilliamPic from '../assets/profile_pic/William_Kusnomo.jpg';
-import IrenePic from '../assets/profile_pic/irene_chen.png';
-import JimmyPic from '../assets/profile_pic/Jimmy_Chen.jpg';
+import IrenePic from '../assets/profile_pic/irene_chen.jpg';
+import ZhuohengPic from '../assets/profile_pic/Zhuoheng_Chen.jpg';
 
 const TeamSection = ({ isVisible }) => {
   const { t } = useTranslation();
@@ -32,9 +32,9 @@ const TeamSection = ({ isVisible }) => {
       xLink: "https://x.com/imIreneChen"
     },
     {
-      name: "Jimmy",
+      name: "Zhuoheng",
       title: t("team_section.cto_role"),
-      image: JimmyPic,
+      image: ZhuohengPic,
       bio: t("team_section.cto_bio"),
       xLink: "https://x.com/J1mmyC231"
     }
@@ -114,7 +114,7 @@ const TeamSection = ({ isVisible }) => {
                 <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2 font-mono-accent">{member.name}</h3>
               </a>
               <p className="text-gray-300 mb-1 md:mb-3 text-xs sm:text-sm md:text-base font-medium">{member.title}</p>
-              <p className="text-slate-300 text-xs leading-tight sm:leading-normal md:leading-relaxed text-center line-clamp-3 sm:line-clamp-none md:text-sm lg:text-base">{member.bio}</p>
+              <p className="text-slate-300 text-[10px] sm:text-xs md:text-sm lg:text-base leading-snug sm:leading-normal md:leading-relaxed text-center break-words">{member.bio}</p>
             </motion.div>
           ))}
         </div>

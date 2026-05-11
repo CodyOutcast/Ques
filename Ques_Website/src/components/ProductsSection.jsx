@@ -16,7 +16,7 @@ const ProductsSection = ({ isVisible }) => {
   return (
     <motion.div 
       className='absolute w-full h-full flex flex-col 
-        items-center justify-start md:justify-center text-white lg:px-20 md:px-10 px-4 py-16 md:py-0 overflow-y-auto'
+        items-center justify-center text-white lg:px-20 md:px-10 px-4 py-10 md:py-0 overflow-y-auto'
       initial={{ opacity: 0, y: 50 }}
       animate={{
         opacity: isVisible ? 1 : 0,

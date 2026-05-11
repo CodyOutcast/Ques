@@ -10,15 +10,15 @@
     },
     "home_section": {
       "company_name": "Shenzhen Ques Technology Co., Ltd.",
-      "tagline": "Building the Next Super AI"
+      "tagline": "AI Agents for Information Intelligence"
     },
     "about_section": {
       "title": "About Us",
-      "description": "We're building the next generation of super AI tools that push the boundaries of what's possible. Starting with cutting-edge OSINT solutions, we combine advanced machine learning, reverse engineering, and innovative AI techniques to create applications that showcase frontier AI capabilities.",
+      "description": "We build AI agent solutions for information and intelligence. Our work is grounded in turning complex data into actionable understanding through specialized agent systems.",
       "mission_title": "Our Mission",
-      "mission_description": "To develop groundbreaking AI applications that test the limits of frontier AI ability. While our current focus is OSINT tools, we're expanding into diverse domains—building products that demonstrate what becomes possible when you harness the full potential of modern AI.",
+      "mission_description": "We are currently focused on building the best AI agent for geolocation tasks, combining reasoning, multimodal analysis, and domain expertise to deliver reliable intelligence from images and other signals.",
       "vision_title": "Our Vision",
-      "vision_description": "We envision ourselves as pioneers in the super AI application space. Beyond OSINT, we're charting new territories—creating tools that redefine industry standards and prove that the next wave of transformative AI products is already here.",
+      "vision_description": "Over time, we plan to expand this agent framework into other fields where intelligence and decision quality matter, including areas such as corrective AI for financial markets.",
       "address_title": "Office Address",
       "address_value": "Room 807, Block A, North Phase of Longguang Jiuzuan, Hongshan Community, Minzhi Street, Longhua District, Shenzhen",
       "contact_title": "Contact Phone",
@@ -42,13 +42,13 @@
       "title": "Our Team",
       "tagline": "Meet the passionate people behind Ques",
       "ceo_role": "CEO",
-      "ceo_bio": "Riskphilic, Boredomphobic, Workaholic.",
+      "ceo_bio": "B.E. in CSE at CUHK(SZ). Quant Researcher at MetaSignalsPro. Award-winning author and province speech champion.",
       "cto_role": "CTO",
-      "cto_bio": "Specializes in Tactical Project Schedule Delays.",
+      "cto_bio": "M.Sc. in AI at the University of Macau. First author of multiple IEEE journal papers on AI and computer vision. Research Scientist at Ques Technology.",
       "coo_role": "COO",
-      "coo_bio": "\"Boss doesn't pay me, haven't eaten in three days.\"",
+      "coo_bio": "B.E. in CSE at CUHK(SZ). Winner of the Cathay Pacific Hackathon. Software Engineer at Ques Technology.",
       "cmo_role": "CMO",
-      "cmo_bio": "I like nerds."
+      "cmo_bio": "B.S. in MS&E at Stanford University. Virality hacker for social media marketing. Growth Engineer at Ques Technology."
     },
     "contact_section": {
       "title": "Contact Us",

@@ -24,8 +24,8 @@ const Footer = () => {
         </a>
         <span>|</span>
         <a 
-          href=" " 
-          rel="noreferrer" 
+          href="https://beian.mps.gov.cn/#/query/webSearch?code=44030002008139" 
+          rel="noopener noreferrer" 
           target="_blank"
           className="inline-flex items-center hover:text-cyan-400 transition-colors"
         >

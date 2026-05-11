@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 import { useTranslation } from 'react-i18next';
-import { optimizeAnimation } from '../utils/optimizeAnimation';
 
 const AboutSection = ({ isVisible }) => {
   const { t } = useTranslation();
