@@ -15,14 +15,14 @@ const TeamSection = ({ isVisible }) => {
       title: t("team_section.ceo_role"),
       image: CodyPic,
       bio: t("team_section.ceo_bio"),
-      xLink: "https://x.com/CodyOutcast"
+      xLink: "https://www.linkedin.com/in/zhuokaichen"
     },
     {
       name: "William",
       title: t("team_section.coo_role"),
       image: WilliamPic,
       bio: t("team_section.coo_bio"),
-      xLink: "https://x.com/William41681372"
+      xLink: "https://www.linkedin.com/in/williamjkkkk"
     },
     {
       name: "Irene",
@@ -36,7 +36,7 @@ const TeamSection = ({ isVisible }) => {
       title: t("team_section.cto_role"),
       image: ZhuohengPic,
       bio: t("team_section.cto_bio"),
-      xLink: "https://x.com/J1mmyC231"
+      xLink: "https://ieeexplore.ieee.org/author/941313259273488"
     }
   ];
 
