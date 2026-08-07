@@ -2,41 +2,37 @@ import { useTranslation } from 'react-i18next';
 
 const Footer = () => {
   const { t } = useTranslation();
-  
+
   return (
-    <footer 
-      className="absolute bottom-0 w-full py-2 text-center text-slate-400 text-xs flex flex-col items-center"
-      style={{
-        paddingBottom: 'calc(env(safe-area-inset-bottom) + 0.5rem)',
-        marginBottom: 'env(safe-area-inset-bottom, 20px)'
-      }}
-    >
-      <p className="flex items-center space-x-2">
+    <footer className="site-footer">
+      <div className="site-footer__line" aria-hidden="true" />
+      <div className="site-footer__inner">
         <span>{t('footer.company')}</span>
-        <span>|</span>
-        <a 
-          href="https://beian.miit.gov.cn/" 
-          target="_blank" 
-          rel="noopener noreferrer" 
-          className="hover:text-cyan-400 transition-colors"
-        >
-          {t('footer.icp')}
-        </a>
-        <span>|</span>
-        <a 
-          href="https://beian.mps.gov.cn/#/query/webSearch?code=44030002008139" 
-          rel="noopener noreferrer" 
-          target="_blank"
-          className="inline-flex items-center hover:text-cyan-400 transition-colors"
-        >
-          <img 
-            src="/police_logo.jpg" 
-            alt="Police Logo" 
-            className="h-4 mr-1" 
-          />
-          <span className="text-xs">粤公网安备44030002008139号</span>
-        </a>
-      </p>
+        <div className="site-footer__legal">
+          <a
+            href="https://beian.miit.gov.cn/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {t('footer.icp')}
+          </a>
+          <a
+            href="https://beian.mps.gov.cn/#/query/webSearch?code=44030002008139"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              src="/legal/police-badge.png"
+              alt=""
+              width="14"
+              height="16"
+              loading="lazy"
+              decoding="async"
+            />
+            <span>粤公网安备44030002008139号</span>
+          </a>
+        </div>
+      </div>
     </footer>
   );
 };

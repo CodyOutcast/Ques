@@ -6,19 +6,23 @@
       "team": "我们的团队",
       "contact": "联系我们",
       "logo_text": "快索",
-      "language": "语言"
+      "language": "语言",
+      "primary_navigation": "主导航",
+      "mobile_navigation": "移动端导航",
+      "open_menu": "打开导航菜单",
+      "close_menu": "关闭导航菜单"
     },
     "home_section": {
       "company_name": "深圳市快索科技有限公司",
-      "tagline": "面向信息智能的AI Agents"
+      "tagline": "面向未知的自主智能"
     },
     "about_section": {
       "title": "关于我们",
-      "description": "我们构建面向信息与情报分析的AI Agent解决方案，致力于通过专业化的智能体系统，把复杂数据转化为可执行的洞察。",
+      "description": "快索是一家总部位于深圳的人工智能科技公司，致力于构建自主、自我进化的智能体，为复杂且充满不确定性的环境带来秩序与精度。",
       "mission_title": "我们的使命",
-      "mission_description": "我们当前专注于打造地理定位任务中最优秀的AI Agent，结合推理能力、多模态分析与领域知识，从图像及其他信号中提取可靠情报。",
+      "mission_description": "我们为不可避免地存在模糊性、同时对精度要求极高的领域构建智能体系统。目前，我们专注于地理定位与量化交易，让每个系统都能在实践中持续推理、适应与进化。",
       "vision_title": "我们的愿景",
-      "vision_description": "未来，我们计划将这一智能体框架扩展到更多重视信息判断与决策质量的领域，包括金融市场中的纠偏型AI等方向。",
+      "vision_description": "我们的愿景，是成为帮助人们与组织探索未知领域的智能基础设施，让每一次探索都拥有更清晰的判断与更可靠的决策。未来，我们将把这一能力拓展至更多重视复杂性、不确定性与决策质量的领域。",
       "address_title": "办公地址",
       "address_value": "深圳市龙华区民治街道红山社区龙光玖钻北甲期A座807",
       "contact_title": "联系电话",

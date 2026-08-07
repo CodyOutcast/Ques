@@ -1,125 +1,112 @@
 import { motion } from 'framer-motion';
+import { FiArrowUpRight } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
-import { optimizeAnimation } from '../utils/optimizeAnimation';
-import CodyPic from '../assets/profile_pic/Cody_Outcast.jpg';
-import WilliamPic from '../assets/profile_pic/William_Kusnomo.jpg';
-import IrenePic from '../assets/profile_pic/irene_chen.jpg';
-import ZhuohengPic from '../assets/profile_pic/Zhuoheng_Chen.jpg';
 
-const TeamSection = ({ isVisible }) => {
+const TeamSection = () => {
   const { t } = useTranslation();
 
   const teamMembers = [
     {
-      name: "Cody",
-      title: t("team_section.ceo_role"),
-      image: CodyPic,
-      bio: t("team_section.ceo_bio"),
-      xLink: "https://www.linkedin.com/in/zhuokaichen"
+      name: 'Cody',
+      title: t('team_section.ceo_role'),
+      image: '/team/cody-outcast.jpg',
+      bio: t('team_section.ceo_bio'),
+      link: 'https://www.linkedin.com/in/zhuokaichen',
+      width: 1279,
+      height: 1706,
     },
     {
-      name: "William",
-      title: t("team_section.coo_role"),
-      image: WilliamPic,
-      bio: t("team_section.coo_bio"),
-      xLink: "https://www.linkedin.com/in/williamjkkkk"
+      name: 'William',
+      title: t('team_section.coo_role'),
+      image: '/team/william-kusnomo.jpg',
+      bio: t('team_section.coo_bio'),
+      link: 'https://www.linkedin.com/in/williamjkkkk',
+      width: 1076,
+      height: 1032,
     },
     {
-      name: "Irene",
-      title: t("team_section.cmo_role"),
-      image: IrenePic,
-      bio: t("team_section.cmo_bio"),
-      xLink: "https://x.com/imIreneChen"
+      name: 'Irene',
+      title: t('team_section.cmo_role'),
+      image: '/team/irene-chen.png',
+      bio: t('team_section.cmo_bio'),
+      link: 'https://x.com/imIreneChen',
+      width: 784,
+      height: 1168,
     },
     {
-      name: "Zhuoheng",
-      title: t("team_section.cto_role"),
-      image: ZhuohengPic,
-      bio: t("team_section.cto_bio"),
-      xLink: "https://ieeexplore.ieee.org/author/941313259273488"
-    }
+      name: 'Zhuoheng',
+      title: t('team_section.cto_role'),
+      image: '/team/zhuoheng-chen.png',
+      bio: t('team_section.cto_bio'),
+      link: 'https://ieeexplore.ieee.org/author/941313259273488',
+      width: 1200,
+      height: 1600,
+    },
   ];
 
   return (
-    <motion.div 
-      className='absolute w-full h-full flex flex-col
-        items-center justify-start overflow-auto py-6 md:py-10 lg:py-16 text-white lg:px-20 px-3 sm:px-5'
-      initial={{ opacity: 0, y: 50 }}
-      animate={{
-        opacity: isVisible ? 1 : 0,
-        y: isVisible ? 0 : -50
-      }}
-      transition={{
-        duration: 0.5,
-        ease: "easeInOut"
-      }}
-      style={{
-        pointerEvents: isVisible ? 'auto' : 'none'
-      }}
-    >
-      <motion.div
-        className="text-center w-full mt-16 sm:mt-14 md:mt-10 lg:mt-6"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ 
-          opacity: isVisible ? 1 : 0,
-          y: isVisible ? 0 : 20 
-        }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-      >
-        <h2 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-3 md:mb-5 font-tech tracking-wide">
-          {t("team_section.title")}
-        </h2>
-        <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-6 md:mb-10">
-          {t("team_section.tagline")}
-        </p>
-        
-        <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-6 md:gap-8 lg:gap-10 mt-4 md:mt-8">
-          {teamMembers.map((member, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ 
-                opacity: isVisible ? 1 : 0,
-                y: isVisible ? 0 : 50 
-              }}
-              transition={{ 
-                duration: 0.5,
-                delay: isVisible ? 0.3 + (index * 0.1) : 0,
-                ...optimizeAnimation.optimizedSpring
-              }}
-              style={optimizeAnimation.gpuAcceleration}
-              className="bg-slate-900/60 backdrop-blur-xl rounded-xl p-3 sm:p-4 md:p-6 lg:p-8 flex flex-col items-center border border-slate-700/50 shadow-2xl shadow-black/50 hover-glow"
-            >
-              <a 
-                href={member.xLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-16 h-16 sm:w-20 sm:h-20 md:w-28 md:h-28 lg:w-32 lg:h-32 rounded-full overflow-hidden mb-2 md:mb-4 border-2 border-cyan-500 transition-transform hover:scale-110 cursor-pointer shadow-lg shadow-cyan-500/20"
-              >
-                <img 
-                  src={member.image} 
-                  alt={member.name} 
+    <section id="team" data-section="team" className="team-section section-shell">
+      <div className="team-heading">
+        <motion.h2
+          className="section-title"
+          initial={{ opacity: 0, y: 32 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-10%' }}
+          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {t('team_section.title')}
+        </motion.h2>
+        <motion.p
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: '-10%' }}
+          transition={{ duration: 0.75, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+        >
+          {t('team_section.tagline')}
+        </motion.p>
+      </div>
+
+      <div className="team-grid">
+        {teamMembers.map((member, index) => (
+          <motion.article
+            className="team-profile"
+            key={member.name}
+            initial={{ opacity: 0, y: 42 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-8%' }}
+            transition={{
+              duration: 0.75,
+              delay: index * 0.07,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+          >
+            <a href={member.link} target="_blank" rel="noopener noreferrer">
+              <div className="team-profile__portrait">
+                <img
+                  src={member.image}
+                  alt={member.name}
+                  width={member.width}
+                  height={member.height}
                   loading="lazy"
                   decoding="async"
-                  fetchPriority="low"
-                  className="w-full h-full object-cover"
                 />
-              </a>
-              <a 
-                href={member.xLink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-cyan-300 transition-colors cursor-pointer"
-              >
-                <h3 className="text-sm sm:text-base md:text-lg lg:text-xl font-bold mb-1 md:mb-2 font-mono-accent">{member.name}</h3>
-              </a>
-              <p className="text-gray-300 mb-1 md:mb-3 text-xs sm:text-sm md:text-base font-medium">{member.title}</p>
-              <p className="text-slate-300 text-[10px] sm:text-xs md:text-sm lg:text-base leading-snug sm:leading-normal md:leading-relaxed text-center break-words">{member.bio}</p>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-    </motion.div>
+                <span className="team-profile__portrait-shine" aria-hidden="true" />
+              </div>
+
+              <div className="team-profile__heading">
+                <div>
+                  <h3>{member.name}</h3>
+                  <p>{member.title}</p>
+                </div>
+                <FiArrowUpRight aria-hidden="true" />
+              </div>
+
+              <p className="team-profile__bio">{member.bio}</p>
+            </a>
+          </motion.article>
+        ))}
+      </div>
+    </section>
   );
 };
 

@@ -1,7 +1,7 @@
 {
-  "name": "Ques - AI Agents for Information Intelligence",
+  "name": "Ques - Autonomous Intelligence for the Unknown",
   "short_name": "Ques",
-  "description": "Shenzhen Ques Technology - Pioneering next-generation AI tools. Featuring GeoSeer, our AI-powered image geolocation platform with cutting-edge accuracy.",
+  "description": "Shenzhen Ques Technology builds autonomous, self-improving AI agents for complex, high-precision domains including geolocation and quantitative trading.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -11,13 +11,13 @@
   "categories": ["business", "productivity", "utilities"],
   "icons": [
     {
-      "src": "/icons/icon-192.png",
+      "src": "/brand/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/icons/icon-512.png",
+      "src": "/brand/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

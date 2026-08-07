@@ -6,19 +6,23 @@
       "team": "Our Team",
       "contact": "Contact Us",
       "logo_text": "Ques",
-      "language": "Language"
+      "language": "Language",
+      "primary_navigation": "Primary navigation",
+      "mobile_navigation": "Mobile navigation",
+      "open_menu": "Open navigation menu",
+      "close_menu": "Close navigation menu"
     },
     "home_section": {
       "company_name": "Shenzhen Ques Technology Co., Ltd.",
-      "tagline": "AI Agents for Information Intelligence"
+      "tagline": "Autonomous Intelligence for the Unknown"
     },
     "about_section": {
       "title": "About Us",
-      "description": "We build AI agent solutions for information and intelligence. Our work is grounded in turning complex data into actionable understanding through specialized agent systems.",
+      "description": "Ques is an artificial intelligence technology company based in Shenzhen. We build autonomous, self-improving agents that bring structure and precision to complex, uncertain environments.",
       "mission_title": "Our Mission",
-      "mission_description": "We are currently focused on building the best AI agent for geolocation tasks, combining reasoning, multimodal analysis, and domain expertise to deliver reliable intelligence from images and other signals.",
+      "mission_description": "We build agent systems for domains where ambiguity is unavoidable and precision is essential. Our current work spans geolocation and quantitative trading, with each system designed to reason, adapt, and improve through experience.",
       "vision_title": "Our Vision",
-      "vision_description": "Over time, we plan to expand this agent framework into other fields where intelligence and decision quality matter, including areas such as corrective AI for financial markets.",
+      "vision_description": "Our vision is to become the intelligence infrastructure that enables people and organizations to explore unfamiliar domains with greater clarity and confidence. We will expand this foundation into new fields where complexity, uncertainty, and decision quality matter.",
       "address_title": "Office Address",
       "address_value": "Room 807, Block A, North Phase of Longguang Jiuzuan, Hongshan Community, Minzhi Street, Longhua District, Shenzhen",
       "contact_title": "Contact Phone",

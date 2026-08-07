@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>Page Not Found | Ques</title>
     <meta name="robots" content="noindex, follow" />
-    <link rel="icon" type="image/x-icon" href="/logo.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="/icons/icon-32.png" />
+    <link rel="icon" type="image/x-icon" href="/brand/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/brand/icons/icon-32.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet" />
@@ -40,7 +40,7 @@
           linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
           linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
         background-size: 50px 50px;
-        overflow: hidden;
+        overflow-x: hidden;
       }
 
       .ambient {
@@ -79,6 +79,7 @@
         position: relative;
         z-index: 1;
         min-height: 100vh;
+        min-height: 100svh;
         display: grid;
         place-items: center;
         padding: 2rem;
@@ -179,6 +180,11 @@
         background: linear-gradient(90deg, rgba(34, 211, 238, 0.24), rgba(16, 185, 129, 0.24));
       }
 
+      .button:focus-visible {
+        outline: 2px solid var(--accent-a);
+        outline-offset: 4px;
+      }
+
       @keyframes blob {
         0% { transform: translate(0, 0) scale(1); }
         33% { transform: translate(30px, -50px) scale(1.08); }
@@ -191,6 +197,16 @@
           padding: 1.5rem;
         }
       }
+
+      @media (prefers-reduced-motion: reduce) {
+        .blob {
+          animation: none;
+        }
+
+        .button {
+          transition: none;
+        }
+      }
     </style>
   </head>
   <body>
@@ -201,7 +217,7 @@
     <main class="shell">
       <section class="card">
         <div class="brand">
-          <img src="/logo.ico" alt="Ques logo" />
+          <img src="/brand/mark.ico" alt="Ques logo" />
           <span>Ques</span>
         </div>
         <div class="code">404 error</div>

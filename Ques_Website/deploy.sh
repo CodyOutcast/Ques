@@ -422,12 +422,16 @@ copy_build_files() {
 
     print_info "Verifying required public assets..."
     required_assets=(
-        "demo.mp4"
-        "geoseer-logo.png"
-        "logo.ico"
-        "police_logo.jpg"
-        "icons/icon-32.png"
-        "icons/icon-192.png"
+        "brand/favicon.ico"
+        "brand/mark.ico"
+        "brand/icons/icon-32.png"
+        "brand/icons/icon-192.png"
+        "products/geoseer/demo.mp4"
+        "products/geoseer/logo.png"
+        "products/geoseer/screenshots/input.png"
+        "products/geoseer/screenshots/analysis.png"
+        "products/geoseer/screenshots/result.png"
+        "legal/police-badge.png"
     )
     for asset in "${required_assets[@]}"; do
         if [ ! -f "$STAGING_NGINX_ROOT/$asset" ]; then
@@ -657,7 +661,7 @@ server {
     }
 
     # Prevent third-party hotlinking of the large demo video.
-    location = /demo.mp4 {
+    location = /products/geoseer/demo.mp4 {
         valid_referers none blocked server_names;
         if ($invalid_referer) {
             return 403;
@@ -805,7 +809,7 @@ server {
     }
 
     # Prevent third-party hotlinking of the large demo video.
-    location = /demo.mp4 {
+    location = /products/geoseer/demo.mp4 {
         valid_referers none blocked server_names;
         if ($invalid_referer) {
             return 403;
@@ -1161,7 +1165,7 @@ server {
     }
 
     # Prevent third-party hotlinking of the large demo video.
-    location = /demo.mp4 {
+    location = /products/geoseer/demo.mp4 {
         valid_referers none blocked server_names;
         if ($invalid_referer) {
             return 403;

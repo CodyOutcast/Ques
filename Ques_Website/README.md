@@ -171,8 +171,8 @@ sudo ufw allow 4173/tcp
 
 ## Navigation
 
-- **Desktop**: Mouse wheel to scroll between sections (threshold-based)
-- **Mobile**: Swipe up/down to navigate
+- **Desktop**: Scroll naturally between sections
+- **Mobile**: Native touch scrolling
 - **Header**: Click navigation items to jump directly to sections
 - **Language Toggle**: Switch in header (desktop) or mobile menu
 
@@ -181,16 +181,18 @@ sudo ufw allow 4173/tcp
 ```
 new/
 ├── public/
-│   ├── 404.html              # Branded static 404 page
-│   ├── geoseer-logo.png       # GeoSeer product logo
-│   ├── police_logo.jpg        # Police registration logo
-│   └── logo.ico               # Company favicon
+│   ├── brand/                 # Ques logo, favicon, and app icons
+│   ├── legal/                 # Registration and compliance assets
+│   ├── products/
+│   │   └── geoseer/           # GeoSeer logo, demo, and screenshots
+│   ├── team/                  # Team portraits
+│   ├── 404.html               # Branded static 404 page
+│   ├── robots.txt             # Search crawler rules
+│   ├── site.webmanifest       # PWA metadata
+│   └── sitemap.xml            # Search sitemap
 ├── scripts/
 │   └── build-prerender.mjs    # Production build + homepage prerender
 ├── src/
-│   ├── assets/
-│   │   ├── logo.ico           # Header logo
-│   │   └── profile_pic/       # Team member photos
 │   ├── components/
 │   │   ├── AboutSection.jsx   # Company introduction
 │   │   ├── ProductsSection.jsx # GeoSeer product showcase
