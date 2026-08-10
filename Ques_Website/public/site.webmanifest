@@ -1,12 +1,12 @@
 {
-  "name": "Ques - Autonomous Intelligence for the Unknown",
+  "name": "Ques - Autonomous, Adaptive AI Agents",
   "short_name": "Ques",
-  "description": "Shenzhen Ques Technology builds autonomous, self-improving AI agents for complex, high-precision domains including geolocation and quantitative trading.",
+  "description": "Ques builds autonomous, self-improving AI agents for complex and uncertain work—starting with image geolocation and quantitative trading.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#020617",
-  "theme_color": "#020617",
+  "background_color": "#03040a",
+  "theme_color": "#03040a",
   "lang": "en",
   "categories": ["business", "productivity", "utilities"],
   "icons": [

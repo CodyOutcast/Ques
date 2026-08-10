@@ -12,6 +12,8 @@ import { useTranslation } from 'react-i18next';
 
 const ContactSection = () => {
   const { t } = useTranslation();
+  const phone = t('about_section.contact_value');
+  const phoneHref = phone.replace(/[^\d+]/g, '');
 
   const socialLinks = [
     { href: 'https://x.com/GeoSeeer', label: 'X', icon: FaXTwitter },
@@ -24,7 +26,7 @@ const ContactSection = () => {
 
   return (
     <section id="contact" data-section="contact" className="contact-section section-shell">
-      <div className="contact-section__orb" aria-hidden="true">
+      <div className="contact-bloom" aria-hidden="true">
         <span />
         <span />
         <span />
@@ -61,8 +63,8 @@ const ContactSection = () => {
             <FiPhone aria-hidden="true" />
             <div>
               <span>{t('about_section.contact_title')}</span>
-              <a href={`tel:${t('about_section.contact_value')}`}>
-                {t('about_section.contact_value')}
+              <a href={`tel:${phoneHref}`}>
+                {phone}
               </a>
             </div>
           </div>

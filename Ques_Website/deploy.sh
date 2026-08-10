@@ -197,6 +197,48 @@ version_lt() {
     [ "$1" != "$2" ] && [ "$(printf '%s\n%s\n' "$1" "$2" | sort -V | head -n1)" = "$1" ]
 }
 
+node_version_supported() {
+    local version="${1#v}"
+    local major
+
+    major="${version%%.*}"
+
+    if [ "$major" -eq 20 ]; then
+        ! version_lt "$version" "20.19.0"
+    elif [ "$major" -eq 22 ]; then
+        ! version_lt "$version" "22.12.0"
+    elif [ "$major" -gt 22 ]; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+check_supported_host() {
+    if ! command -v apt-get &> /dev/null; then
+        print_error "This deployment script requires a Debian/Ubuntu server with apt-get."
+        exit 1
+    fi
+
+    if ! command -v systemctl &> /dev/null; then
+        print_error "This deployment script requires a systemd-based server with systemctl."
+        exit 1
+    fi
+}
+
+detect_public_ip() {
+    local detected_ip=""
+
+    if command -v curl &> /dev/null; then
+        if detected_ip="$(curl -fsS --max-time 5 https://ifconfig.me 2>/dev/null)" && [ -n "$detected_ip" ]; then
+            printf '%s' "$detected_ip"
+            return 0
+        fi
+    fi
+
+    printf '%s' "YOUR_SERVER_IP"
+}
+
 # Function to install Node.js
 install_node() {
     print_info "Installing Node.js 20.x LTS..."
@@ -222,17 +264,24 @@ check_node() {
         print_warning "Node.js is not installed. Installing Node.js 20.x LTS..."
         install_node
     else
-        local required_node_version="20.17.0"
         local current_node_version
         current_node_version="$(node --version | cut -d'v' -f2)"
 
-        if version_lt "$current_node_version" "$required_node_version"; then
-            print_warning "Node.js must be >= $required_node_version for npm@$TARGET_NPM_VERSION. Current version: v$current_node_version"
-            print_info "Upgrading Node.js..."
+        if ! node_version_supported "$current_node_version"; then
+            print_warning "Node.js must be >=20.19 on 20.x, or >=22.12. Current version: v$current_node_version"
+            print_info "Installing a supported Node.js 20.x release..."
             install_node
         else
             print_success "Node.js v$current_node_version detected"
         fi
+    fi
+
+    local installed_node_version
+    installed_node_version="$(node --version | cut -d'v' -f2)"
+    if ! node_version_supported "$installed_node_version"; then
+        print_error "The installed Node.js version (v$installed_node_version) is not supported by Vite 8."
+        print_error "Install Node.js >=20.19 on 20.x, or >=22.12, then rerun deploy.sh."
+        exit 1
     fi
 }
 
@@ -339,9 +388,10 @@ install_dependencies() {
     print_info "Installing npm dependencies..."
 
     if [ -f "package-lock.json" ]; then
-        run_project_command npm ci
+        # The build requires devDependencies even when the server exports NODE_ENV=production.
+        run_project_command npm ci --include=dev
     else
-        run_project_command npm install
+        run_project_command npm install --include=dev
     fi
 
     print_success "Dependencies installed"
@@ -426,11 +476,11 @@ copy_build_files() {
         "brand/mark.ico"
         "brand/icons/icon-32.png"
         "brand/icons/icon-192.png"
-        "products/geoseer/demo.mp4"
-        "products/geoseer/logo.png"
-        "products/geoseer/screenshots/input.png"
-        "products/geoseer/screenshots/analysis.png"
-        "products/geoseer/screenshots/result.png"
+        "products/geoseer/demo-720.mp4"
+        "products/geoseer/logo-256.webp"
+        "products/geoseer/screenshots/input-1440.webp"
+        "products/geoseer/screenshots/analysis-1440.webp"
+        "products/geoseer/screenshots/result-1440.webp"
         "legal/police-badge.png"
     )
     for asset in "${required_assets[@]}"; do
@@ -661,7 +711,7 @@ server {
     }
 
     # Prevent third-party hotlinking of the large demo video.
-    location = /products/geoseer/demo.mp4 {
+    location = /products/geoseer/demo-720.mp4 {
         valid_referers none blocked server_names;
         if ($invalid_referer) {
             return 403;
@@ -809,7 +859,7 @@ server {
     }
 
     # Prevent third-party hotlinking of the large demo video.
-    location = /products/geoseer/demo.mp4 {
+    location = /products/geoseer/demo-720.mp4 {
         valid_referers none blocked server_names;
         if ($invalid_referer) {
             return 403;
@@ -970,15 +1020,21 @@ configure_firewall() {
 
 # Function to check DNS resolution
 check_dns() {
-    print_info "Checking DNS resolution for $DOMAIN..."
-    
-    if host "$DOMAIN" &> /dev/null; then
-        print_success "DNS is configured for $DOMAIN"
-        return 0
-    else
-        print_warning "DNS does not resolve for $DOMAIN"
-        return 1
-    fi
+    local dns_error=0
+    local hostname
+
+    for hostname in "$DOMAIN" "www.$DOMAIN"; do
+        print_info "Checking DNS resolution for $hostname..."
+
+        if host "$hostname" &> /dev/null; then
+            print_success "DNS is configured for $hostname"
+        else
+            print_warning "DNS does not resolve for $hostname"
+            dns_error=1
+        fi
+    done
+
+    return "$dns_error"
 }
 
 wait_for_certbot() {
@@ -1165,7 +1221,7 @@ server {
     }
 
     # Prevent third-party hotlinking of the large demo video.
-    location = /products/geoseer/demo.mp4 {
+    location = /products/geoseer/demo-720.mp4 {
         valid_referers none blocked server_names;
         if ($invalid_referer) {
             return 403;
@@ -1287,7 +1343,7 @@ display_final_instructions() {
         echo ""
         echo -e "${YELLOW}Next Steps:${NC}"
         if [ "$ssl_status" = "no-dns" ]; then
-            echo "  1. Update DNS records to point $DOMAIN to this server's IP: $(curl -s ifconfig.me)"
+            echo "  1. Update DNS records to point $DOMAIN to this server's IP: $(detect_public_ip)"
             echo "  2. Wait for DNS propagation (may take a few minutes to hours)"
             echo "  3. Install SSL certificate:"
         else
@@ -1333,6 +1389,7 @@ main() {
     print_info "Working directory: $PROJECT_DIR"
     
     # Check prerequisites
+    check_supported_host
     check_node
     check_npm
     check_nginx

@@ -37,10 +37,10 @@ const ProductsSection = () => {
           <div className="product-brand">
             <span className="product-brand__mark">
               <img
-                src="/products/geoseer/logo.png"
+                src="/products/geoseer/logo-256.webp"
                 alt=""
-                width="1080"
-                height="1080"
+                width="256"
+                height="256"
                 loading="lazy"
                 decoding="async"
               />
@@ -77,39 +77,35 @@ const ProductsSection = () => {
           <div className="product-artwork__glow" />
           <div className="product-shot product-shot--analysis">
             <img
-              src="/products/geoseer/screenshots/analysis.png"
+              src="/products/geoseer/screenshots/analysis-1440.webp"
               alt=""
-              width="1920"
-              height="1080"
+              width="1440"
+              height="810"
               loading="lazy"
               decoding="async"
             />
           </div>
           <div className="product-shot product-shot--input">
             <img
-              src="/products/geoseer/screenshots/input.png"
+              src="/products/geoseer/screenshots/input-1440.webp"
               alt=""
-              width="1920"
-              height="1087"
+              width="1440"
+              height="816"
               loading="lazy"
               decoding="async"
             />
           </div>
           <div className="product-shot product-shot--result">
             <img
-              src="/products/geoseer/screenshots/result.png"
+              src="/products/geoseer/screenshots/result-1440.webp"
               alt=""
-              width="1920"
-              height="1081"
+              width="1440"
+              height="811"
               loading="lazy"
               decoding="async"
             />
           </div>
-          <div className="product-artwork__radar" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
+          <div className="product-artwork__current" aria-hidden="true" />
         </motion.div>
       </div>
 
@@ -122,22 +118,14 @@ const ProductsSection = () => {
       >
         <h4>{t('products_section.geoseer_features_title')}</h4>
         <div className="product-capabilities__grid">
-          {features.map((feature, index) => (
-            <motion.div
+          {features.map((feature) => (
+            <div
               key={feature}
               className="capability-row"
-              initial={{ opacity: 0, y: 18 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{
-                duration: 0.55,
-                delay: 0.05 * index,
-                ease: [0.16, 1, 0.3, 1],
-              }}
             >
               <span className="capability-row__signal" aria-hidden="true" />
               <p>{feature}</p>
-            </motion.div>
+            </div>
           ))}
         </div>
       </motion.div>

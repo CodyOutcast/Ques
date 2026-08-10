@@ -14,15 +14,23 @@
     },
     "home_section": {
       "company_name": "深圳市快索科技有限公司",
-      "tagline": "面向未知的自主智能"
+      "tagline": "自主，进化，AI 智能体。"
     },
     "about_section": {
-      "title": "关于我们",
-      "description": "快索是一家总部位于深圳的人工智能科技公司，致力于构建自主、自我进化的智能体，为复杂且充满不确定性的环境带来秩序与精度。",
-      "mission_title": "我们的使命",
-      "mission_description": "我们为不可避免地存在模糊性、同时对精度要求极高的领域构建智能体系统。目前，我们专注于地理定位与量化交易，让每个系统都能在实践中持续推理、适应与进化。",
-      "vision_title": "我们的愿景",
-      "vision_description": "我们的愿景，是成为帮助人们与组织探索未知领域的智能基础设施，让每一次探索都拥有更清晰的判断与更可靠的决策。未来，我们将把这一能力拓展至更多重视复杂性、不确定性与决策质量的领域。",
+      "title": "让不确定的任务，有序可解。",
+      "description": "快索为复杂且不确定的任务构建结构化工作流。我们的 AI 智能体已用于地理定位和量化交易，能够自主运行，并从经验中持续提升。",
+      "mission_title": "规模化自主运行。",
+      "mission_description": "规划、执行、验证的可扩展循环，让智能体在复杂、长期的任务中持续工作，无需人工不断介入。",
+      "vision_title": "在实践中自我进化。",
+      "vision_description": "每个结果都会转化为反馈。智能体沉淀经验、优化推理，并随证据、环境和任务的变化持续适应。",
+      "workflow_kicker": "QUES / 智能体运行时",
+      "workflow_label": "从目标到记忆的执行",
+      "workflow_interpret": "理解目标",
+      "workflow_execute": "规划并执行",
+      "workflow_audit": "审核结果",
+      "workflow_learn": "学习并迭代",
+      "workflow_feedback_title": "审核通过",
+      "workflow_feedback": "结果已写入长期记忆",
       "address_title": "办公地址",
       "address_value": "深圳市龙华区民治街道红山社区龙光玖钻北甲期A座807",
       "contact_title": "联系电话",
@@ -40,7 +48,11 @@
       "geoseer_feature_4": "实时处理，全球覆盖",
       "geoseer_feature_5": "隐私优先 - 图像从不存储",
       "geoseer_feature_6": "开发者API，无缝集成",
-      "visit_website": "访问网站"
+      "visit_website": "访问网站",
+      "demo_error_title": "演示视频加载失败",
+      "demo_error_hint": "请检查视频文件",
+      "demo_play": "播放演示视频",
+      "demo_pause": "暂停演示视频"
     },
     "team_section": {
       "title": "我们的团队",

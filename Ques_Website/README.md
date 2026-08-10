@@ -13,7 +13,7 @@ Modern, responsive single-page website with 4 main sections:
 ## Technology Stack
 
 - **React 19.1.0** - UI framework
-- **Vite 7.0.4** - Build tool and dev server
+- **Vite 8.0.16** - Build tool and dev server
 - **Tailwind CSS 4.1.17** - Utility-first CSS framework
 - **Framer Motion 12.23.12** - Animation library
 - **i18next 25.3.4** - Internationalization (English/Chinese)
@@ -21,7 +21,7 @@ Modern, responsive single-page website with 4 main sections:
 
 ## Prerequisites
 
-- Node.js 20.17.0 or higher (or >= 22.9.0)
+- Node.js 20.19.0 or higher on Node 20, or Node.js 22.12.0 or higher
 - npm 11.x or higher
 
 ## Local Development
@@ -88,7 +88,7 @@ The script will:
 
 The deployment script manages only the main `quesx.com` site and no longer provisions auxiliary redirect domains.
 
-**Before running**: Edit `deploy.sh` and change `DOMAIN="your-domain.com"` to your actual domain.
+**Before running**: Confirm the `DOMAIN` value in `deploy.sh`, point both the root and `www` DNS records at the server, and ensure ports 80 and 443 are reachable.
 
 ### Manual Deployment
 
@@ -203,9 +203,6 @@ new/
 │   ├── i18n/
 │   │   ├── en.json            # English translations
 │   │   └── cn.json            # Chinese translations
-│   ├── utils/
-│   │   ├── optimizeAnimation.js  # Animation optimization
-│   │   └── viewportHeight.js     # Viewport height fix for mobile
 │   ├── App.jsx                # Main app component
 │   ├── entry-server.jsx       # SSR entry for homepage prerender
 │   ├── main.jsx               # Entry point
@@ -239,7 +236,7 @@ new/
 - Modern browser with ES6+ support
 
 ### Production (CVM)
-- Linux-based server (Ubuntu/CentOS recommended)
+- Debian/Ubuntu server using `apt-get` and systemd
 - Nginx or similar web server
 - OR PM2 for Node.js process management
 - Firewall configured for HTTP/HTTPS

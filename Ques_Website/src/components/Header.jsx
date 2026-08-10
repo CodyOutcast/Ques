@@ -5,7 +5,12 @@ import { useTranslation } from 'react-i18next';
 
 const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isHeaderVisible, setIsHeaderVisible] = useState(true);
     const headerRef = useRef(null);
+    const menuButtonRef = useRef(null);
+    const mobileNavRef = useRef(null);
+    const lastScrollYRef = useRef(0);
+    const scrollFrameRef = useRef(null);
     const { t } = useTranslation();
 
     const navigationItems = [
@@ -28,16 +33,43 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
     useEffect(() => {
         if (!isOpen) return undefined;
 
+        const previousOverflow = document.body.style.overflow;
+        const focusFrame = window.requestAnimationFrame(() => {
+            mobileNavRef.current?.querySelector('button')?.focus();
+        });
         const handlePointerDown = (event) => {
             if (!headerRef.current?.contains(event.target)) setIsOpen(false);
         };
         const handleKeyDown = (event) => {
-            if (event.key === 'Escape') setIsOpen(false);
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setIsOpen(false);
+                menuButtonRef.current?.focus();
+                return;
+            }
+
+            if (event.key !== 'Tab') return;
+            const focusable = Array.from(
+                headerRef.current?.querySelectorAll('button:not([disabled]), a[href]') ?? [],
+            ).filter((element) => element.offsetParent !== null);
+            const first = focusable[0];
+            const last = focusable.at(-1);
+
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last?.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first?.focus();
+            }
         };
 
+        document.body.style.overflow = 'hidden';
         document.addEventListener('pointerdown', handlePointerDown);
         document.addEventListener('keydown', handleKeyDown);
         return () => {
+            window.cancelAnimationFrame(focusFrame);
+            document.body.style.overflow = previousOverflow;
             document.removeEventListener('pointerdown', handlePointerDown);
             document.removeEventListener('keydown', handleKeyDown);
         };
@@ -53,8 +85,44 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
         return () => desktopQuery.removeEventListener('change', handleBreakpointChange);
     }, []);
 
+    useEffect(() => {
+        lastScrollYRef.current = Math.max(window.scrollY, 0);
+
+        if (isOpen) setIsHeaderVisible(true);
+
+        const handleScroll = () => {
+            if (scrollFrameRef.current !== null) return;
+
+            scrollFrameRef.current = window.requestAnimationFrame(() => {
+                const currentScrollY = Math.max(window.scrollY, 0);
+                const scrollDelta = currentScrollY - lastScrollYRef.current;
+
+                if (isOpen || currentScrollY < 80) {
+                    setIsHeaderVisible(true);
+                } else if (Math.abs(scrollDelta) > 6) {
+                    setIsHeaderVisible(scrollDelta < 0);
+                }
+
+                lastScrollYRef.current = currentScrollY;
+                scrollFrameRef.current = null;
+            });
+        };
+
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => {
+            window.removeEventListener('scroll', handleScroll);
+            if (scrollFrameRef.current !== null) {
+                window.cancelAnimationFrame(scrollFrameRef.current);
+                scrollFrameRef.current = null;
+            }
+        };
+    }, [isOpen]);
+
     return (
-        <header ref={headerRef} className="site-header">
+        <header
+            ref={headerRef}
+            className={`site-header${isHeaderVisible || isOpen ? '' : ' is-hidden'}`}
+        >
             <motion.div
                 className="site-header__inner"
                 initial={false}
@@ -98,6 +166,7 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
                     </button>
 
                     <button
+                        ref={menuButtonRef}
                         type="button"
                         className="mobile-menu-button"
                         onClick={() => setIsOpen((current) => !current)}
@@ -108,11 +177,13 @@ const Header = ({ isChinese, toggleLanguage, onNavigate, activeSection }) => {
                         {isOpen ? <FiX /> : <FiMenu />}
                     </button>
                 </div>
+
             </motion.div>
 
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
+                        ref={mobileNavRef}
                         id="mobile-navigation"
                         className="mobile-nav"
                         role="navigation"

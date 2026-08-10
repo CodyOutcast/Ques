@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, useInView, useReducedMotion } from 'framer-motion';
 import { FiAlertCircle, FiPause, FiPlay } from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 const ProductsDemoSection = () => {
+  const { t } = useTranslation();
   const [isLoaded, setIsLoaded] = useState(false);
   const [hasError, setHasError] = useState(false);
   const [shouldLoad, setShouldLoad] = useState(false);
+  const [canAutoLoad, setCanAutoLoad] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isUserPaused, setIsUserPaused] = useState(false);
   const stageRef = useRef(null);
@@ -15,24 +18,54 @@ const ProductsDemoSection = () => {
   const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    if (isNearView) setShouldLoad(true);
-  }, [isNearView]);
+    const connection = navigator.connection
+      ?? navigator.mozConnection
+      ?? navigator.webkitConnection;
+    const isSlowConnection = ['slow-2g', '2g'].includes(connection?.effectiveType);
+    const isTouchFirst = window.matchMedia('(pointer: coarse)').matches;
+    setCanAutoLoad(!connection?.saveData && !isSlowConnection && !isTouchFirst);
+  }, []);
+
+  useEffect(() => {
+    if (!isNearView || !canAutoLoad || shouldLoad) return undefined;
+
+    const startLoading = () => setShouldLoad(true);
+    let timeoutId = 0;
+    const queueLoading = () => {
+      window.clearTimeout(timeoutId);
+      timeoutId = window.setTimeout(startLoading, 180);
+    };
+
+    queueLoading();
+    window.addEventListener('scroll', queueLoading, { passive: true });
+    return () => {
+      window.clearTimeout(timeoutId);
+      window.removeEventListener('scroll', queueLoading);
+    };
+  }, [canAutoLoad, isNearView, shouldLoad]);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !shouldLoad) return;
 
-    if (isInView && !reduceMotion && !isUserPaused) {
-      const playPromise = video.play();
-      playPromise?.catch?.(() => {});
-    } else {
+    if (!isInView || reduceMotion || isUserPaused) {
       video.pause();
+      return undefined;
     }
+
+    video.play()?.catch?.(() => {});
+    return undefined;
   }, [isInView, isUserPaused, reduceMotion, shouldLoad]);
 
   const togglePlayback = () => {
     const video = videoRef.current;
     if (!video) return;
+
+    if (!shouldLoad) {
+      setIsUserPaused(false);
+      setShouldLoad(true);
+      return;
+    }
 
     if (video.paused) {
       setIsUserPaused(false);
@@ -55,19 +88,14 @@ const ProductsDemoSection = () => {
         transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
       >
         <div className="demo-stage__halo" aria-hidden="true" />
-        <div className="demo-stage__chrome" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
 
-        {!isLoaded && !hasError && <div className="demo-stage__loading" />}
+        {shouldLoad && !isLoaded && !hasError && <div className="demo-stage__loading" />}
 
         {hasError && (
           <div className="demo-stage__error">
-            <FiAlertCircle />
-            <p>Failed to load demo video</p>
-            <span>Please check the video file</span>
+            <FiAlertCircle aria-hidden="true" />
+            <p>{t('products_section.demo_error_title')}</p>
+            <span>{t('products_section.demo_error_hint')}</span>
           </div>
         )}
 
@@ -76,25 +104,27 @@ const ProductsDemoSection = () => {
           loop
           muted
           playsInline
-          preload="metadata"
-          poster={shouldLoad ? '/products/geoseer/screenshots/analysis.png' : undefined}
-          src={shouldLoad ? '/products/geoseer/demo.mp4' : undefined}
-          onLoadedMetadata={() => setIsLoaded(true)}
+          preload={shouldLoad ? 'metadata' : 'none'}
+          width="1280"
+          height="720"
+          poster="/products/geoseer/screenshots/analysis-1440.webp"
+          src={shouldLoad ? '/products/geoseer/demo-720.mp4' : undefined}
+          onLoadedData={() => setIsLoaded(true)}
           onError={() => {
             setHasError(true);
             setIsLoaded(true);
           }}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
-          className={isLoaded && !hasError ? 'is-loaded' : ''}
+          className={!shouldLoad || (isLoaded && !hasError) ? 'is-loaded' : ''}
         />
 
-        {isLoaded && !hasError && (
+        {(!shouldLoad || isLoaded) && !hasError && (
           <button
             type="button"
-            className="demo-stage__playback"
+            className={`demo-stage__playback${!shouldLoad ? ' is-prompt' : ''}`}
             onClick={togglePlayback}
-            aria-label={isPlaying ? 'Pause demo video' : 'Play demo video'}
+            aria-label={t(isPlaying ? 'products_section.demo_pause' : 'products_section.demo_play')}
           >
             {isPlaying ? <FiPause aria-hidden="true" /> : <FiPlay aria-hidden="true" />}
           </button>

@@ -8,11 +8,15 @@ import ProductsDemoSection from './components/ProductsDemoSection';
 import ProductsSection from './components/ProductsSection';
 import TeamSection from './components/TeamSection';
 import ContactSection from './components/ContactSection';
+import GenerativeField from './components/GenerativeField';
+import InferenceRoute from './components/InferenceRoute';
+import LowerNarrative from './components/LowerNarrative';
 import './i18n';
 import './viewportFix.css';
 import i18n from 'i18next';
 
 const SECTION_IDS = ['home', 'about', 'products', 'team', 'contact'];
+const LANGUAGE_STORAGE_KEY = 'ques-language';
 
 export default function App() {
     const [isChinese, setIsChinese] = useState(i18n.language === 'cn');
@@ -23,37 +27,26 @@ export default function App() {
             .map((id) => document.getElementById(id))
             .filter(Boolean);
 
-        let frameId = 0;
-        const updateActiveSection = () => {
-            frameId = 0;
-            const marker = window.innerHeight * 0.34;
-            let currentSection = sections[0]?.id ?? 'home';
+        if (!sections.length) return undefined;
 
-            sections.forEach((section) => {
-                if (section.getBoundingClientRect().top <= marker) {
-                    currentSection = section.id;
-                }
-            });
+        const observer = new IntersectionObserver((entries) => {
+            const activeEntry = entries.find(
+                (entry) => entry.isIntersecting && entry.intersectionRatio > 0,
+            );
 
-            if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2) {
-                currentSection = sections.at(-1)?.id ?? currentSection;
-            }
+            if (!activeEntry) return;
+            setActiveSection((current) => (
+                current === activeEntry.target.id ? current : activeEntry.target.id
+            ));
+        }, {
+            rootMargin: '-33% 0px -66% 0px',
+            threshold: 0,
+        });
 
-            setActiveSection((current) => current === currentSection ? current : currentSection);
-        };
-
-        const queueUpdate = () => {
-            if (!frameId) frameId = window.requestAnimationFrame(updateActiveSection);
-        };
-
-        updateActiveSection();
-        window.addEventListener('scroll', queueUpdate, { passive: true });
-        window.addEventListener('resize', queueUpdate);
+        sections.forEach((section) => observer.observe(section));
 
         return () => {
-            window.removeEventListener('scroll', queueUpdate);
-            window.removeEventListener('resize', queueUpdate);
-            if (frameId) window.cancelAnimationFrame(frameId);
+            observer.disconnect();
         };
     }, []);
 
@@ -62,10 +55,26 @@ export default function App() {
         document.documentElement.lang = isChinese ? 'zh-CN' : 'en';
     }, [isChinese]);
 
+    useEffect(() => {
+        try {
+            const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+            if (!['en', 'cn'].includes(savedLanguage) || savedLanguage === i18n.language) return;
+            i18n.changeLanguage(savedLanguage);
+            setIsChinese(savedLanguage === 'cn');
+        } catch {
+            // Storage may be unavailable in privacy-restricted browsing contexts.
+        }
+    }, []);
+
     const toggleLanguage = () => {
         const newLang = isChinese ? 'en' : 'cn';
         i18n.changeLanguage(newLang);
         setIsChinese((current) => !current);
+        try {
+            window.localStorage.setItem(LANGUAGE_STORAGE_KEY, newLang);
+        } catch {
+            // The language still changes for the current session when storage is blocked.
+        }
     };
 
     const handleNavigate = (sectionId) => {
@@ -80,10 +89,8 @@ export default function App() {
     return (
         <MotionConfig reducedMotion="user">
             <div className="site-shell">
-                <div className="global-aurora" aria-hidden="true">
-                    <span className="global-aurora__orb global-aurora__orb--one" />
-                    <span className="global-aurora__orb global-aurora__orb--two" />
-                </div>
+                <GenerativeField />
+                <InferenceRoute />
 
                 <Header
                     isChinese={isChinese}
@@ -96,13 +103,15 @@ export default function App() {
                     <HomeSection />
                     <AboutSection />
 
-                    <section id="products" data-section="products" className="product-chapter">
-                        <ProductsSection />
-                        <ProductsDemoSection />
-                    </section>
+                    <LowerNarrative>
+                        <section id="products" data-section="products" className="product-chapter">
+                            <ProductsSection />
+                            <ProductsDemoSection />
+                        </section>
 
-                    <TeamSection />
-                    <ContactSection />
+                        <TeamSection />
+                        <ContactSection />
+                    </LowerNarrative>
                 </main>
 
                 <Footer />

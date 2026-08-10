@@ -9,38 +9,38 @@ const TeamSection = () => {
     {
       name: 'Cody',
       title: t('team_section.ceo_role'),
-      image: '/team/cody-outcast.jpg',
+      image: '/team/cody-outcast-720.webp',
       bio: t('team_section.ceo_bio'),
       link: 'https://www.linkedin.com/in/zhuokaichen',
-      width: 1279,
-      height: 1706,
+      width: 720,
+      height: 961,
     },
     {
       name: 'William',
       title: t('team_section.coo_role'),
-      image: '/team/william-kusnomo.jpg',
+      image: '/team/william-kusnomo-720.webp',
       bio: t('team_section.coo_bio'),
       link: 'https://www.linkedin.com/in/williamjkkkk',
-      width: 1076,
-      height: 1032,
+      width: 720,
+      height: 691,
     },
     {
       name: 'Irene',
       title: t('team_section.cmo_role'),
-      image: '/team/irene-chen.png',
+      image: '/team/irene-chen-720.webp',
       bio: t('team_section.cmo_bio'),
       link: 'https://x.com/imIreneChen',
-      width: 784,
-      height: 1168,
+      width: 720,
+      height: 1073,
     },
     {
       name: 'Zhuoheng',
       title: t('team_section.cto_role'),
-      image: '/team/zhuoheng-chen.png',
+      image: '/team/zhuoheng-chen-720.webp',
       bio: t('team_section.cto_bio'),
       link: 'https://ieeexplore.ieee.org/author/941313259273488',
-      width: 1200,
-      height: 1600,
+      width: 720,
+      height: 960,
     },
   ];
 
@@ -66,19 +66,17 @@ const TeamSection = () => {
         </motion.p>
       </div>
 
-      <div className="team-grid">
-        {teamMembers.map((member, index) => (
-          <motion.article
+      <motion.div
+        className="team-grid"
+        initial={{ opacity: 0, y: 36 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-8%' }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+      >
+        {teamMembers.map((member) => (
+          <article
             className="team-profile"
             key={member.name}
-            initial={{ opacity: 0, y: 42 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: '-8%' }}
-            transition={{
-              duration: 0.75,
-              delay: index * 0.07,
-              ease: [0.16, 1, 0.3, 1],
-            }}
           >
             <a href={member.link} target="_blank" rel="noopener noreferrer">
               <div className="team-profile__portrait">
@@ -90,7 +88,6 @@ const TeamSection = () => {
                   loading="lazy"
                   decoding="async"
                 />
-                <span className="team-profile__portrait-shine" aria-hidden="true" />
               </div>
 
               <div className="team-profile__heading">
@@ -103,9 +100,9 @@ const TeamSection = () => {
 
               <p className="team-profile__bio">{member.bio}</p>
             </a>
-          </motion.article>
+          </article>
         ))}
-      </div>
+      </motion.div>
     </section>
   );
 };
