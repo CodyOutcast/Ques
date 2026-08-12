@@ -24,12 +24,12 @@
       "vision_title": "在实践中自我进化。",
       "vision_description": "每个结果都会转化为反馈。智能体沉淀经验、优化推理，并随证据、环境和任务的变化持续适应。",
       "workflow_kicker": "QUES / 智能体运行时",
-      "workflow_label": "从目标到记忆的执行",
-      "workflow_interpret": "理解目标",
+      "workflow_label": "状态监控",
+      "workflow_interpret": "调研并创建",
       "workflow_execute": "规划并执行",
-      "workflow_audit": "审核结果",
+      "workflow_audit": "审核并修复",
       "workflow_learn": "学习并迭代",
-      "workflow_feedback_title": "审核通过",
+      "workflow_feedback_title": "任务已完成",
       "workflow_feedback": "结果已写入长期记忆",
       "address_title": "办公地址",
       "address_value": "深圳市龙华区民治街道红山社区龙光玖钻北甲期A座807",
@@ -73,7 +73,7 @@
       "social_media": "关注我们"
     },
     "footer": {
-      "company": "深圳市快索科技有限责任公司",
+      "company": "深圳市快索科技有限公司",
       "icp": "粤ICP备2025472398号-1"
     }
   }

@@ -1207,20 +1207,14 @@ body {
 }
 
 .premium-link {
-  border-color: rgba(171, 181, 224, 0.16);
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.035);
+  background:
+    linear-gradient(135deg, rgba(20, 20, 39, 0.96), rgba(8, 11, 22, 0.96)) padding-box,
+    linear-gradient(120deg, rgba(255, 255, 255, 0.2), rgba(154, 114, 230, 0.46), rgba(111, 212, 216, 0.34)) border-box;
 }
 
 .premium-link svg {
   border-radius: 8px;
   background: linear-gradient(135deg, #9a72e6, #6fd4d8);
-}
-
-.premium-link:hover {
-  border-color: rgba(127, 185, 218, 0.32);
-  background: rgba(112, 104, 202, 0.07);
-  transform: none;
 }
 
 .product-artwork {
@@ -1515,10 +1509,6 @@ body {
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .premium-link:hover {
-    transform: translateY(-2px);
-  }
-
   .product-artwork:hover .product-shot {
     border-color: rgba(181, 188, 226, 0.22);
   }
